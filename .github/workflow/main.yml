@@ -1,0 +1,71 @@
+name: 🛠 Android CI / Build APK
+
+on:
+  push:
+    branches: [ main ]
+    # tags:    [ 'v*.*.*' ] # release tags
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: write # upload apk files
+  actions:  read # read actions from github market place
+
+concurrency: # only the last commit will run
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build_and_release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📂 Checkout code
+        uses: actions/checkout@v3 # action to clone repo
+
+      - name: 🚀 Cache pub deps  # optimize dependecies
+        uses: actions/cache@v3
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.yaml') }}
+          restore-keys: ${{ runner.os }}-pub-
+
+      - name: ☕️ Setup Java (Temurin 17) # android apps require JAVA
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: 🦋 Setup Flutter (v3.35.1)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.1'
+          channel: 'stable'
+          cache: true       # Optional, but recommended for faster builds
+
+      - name: 📥 Get dependencies
+        run: flutter pub get
+
+      - name: ✅ Run Analyzer
+        run: flutter analyze
+
+      - name: ✅ Run tests
+        run: flutter test --coverage
+
+      - name: 🏗️ Build APKs
+        run: flutter build apk --release --split-per-abi
+
+      - name: 📦 Prepare artifacts
+        run: |
+          mkdir -p artifacts
+          cp build/app/outputs/flutter-apk/*.apk artifacts/
+
+      # ─────────────── ONLY ON TAGS ───────────────
+      - name: 🏷️ Create or update Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: ncipollo/release-action@v1.16.0
+        with:
+          tag:       ${{ github.ref_name }}
+          name:      Release ${{ github.ref_name }}
+          artifacts: artifacts/*.apk
+          token:     ${{ secrets.GITHUB_TOKEN }}
