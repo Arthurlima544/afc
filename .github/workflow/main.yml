@@ -23,7 +23,7 @@ jobs:
       - name: 📂 Checkout code
         uses: actions/checkout@v3 # action to clone repo
 
-      - name: 🚀 Cache pub deps  # optimize dependecies
+      - name: 🚀 Cache pub deps  # optimize dependencies
         uses: actions/cache@v3
         with:
           path: ~/.pub-cache
