@@ -15,7 +15,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ShadcnApp.router(
     debugShowCheckedModeBanner: false,
-
     title: 'AFC',
     routerConfig: router,
     theme: ThemeData(colorScheme: ColorSchemes.darkViolet),
