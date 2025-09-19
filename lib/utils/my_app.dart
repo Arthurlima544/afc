@@ -1,13 +1,6 @@
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
-import 'config/routes/router.dart';
-import 'utils/logger.dart';
-
-void main() {
-  logger.i('App Starting');
-
-  runApp(const MyApp());
-}
+import '../config/routes/router.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

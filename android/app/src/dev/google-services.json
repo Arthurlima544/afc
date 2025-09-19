@@ -1,0 +1,118 @@
+{
+  "project_info": {
+    "project_number": "232489420015",
+    "project_id": "afc-mobile-9f0dc",
+    "storage_bucket": "afc-mobile-9f0dc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:232489420015:android:414a42b6f42a2ef6e0c71a",
+        "android_client_info": {
+          "package_name": "com.example.afc"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "232489420015-8cq1c5nja61d26mhpipmlq8nn5mdlnt7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKpeCewBT2fPh310NpIm4Odm-aP6IH1sc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "232489420015-8cq1c5nja61d26mhpipmlq8nn5mdlnt7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "232489420015-6fuhju9gmth8q7mds785qs7hihtnfrn2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.afc"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:232489420015:android:38d26e184660db09e0c71a",
+        "android_client_info": {
+          "package_name": "org.awesomefinancialcontrol.br"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "232489420015-8cq1c5nja61d26mhpipmlq8nn5mdlnt7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKpeCewBT2fPh310NpIm4Odm-aP6IH1sc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "232489420015-8cq1c5nja61d26mhpipmlq8nn5mdlnt7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "232489420015-6fuhju9gmth8q7mds785qs7hihtnfrn2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.afc"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:232489420015:android:ddf4f8b945985eb0e0c71a",
+        "android_client_info": {
+          "package_name": "org.awesomefinancialcontrol.br.dev"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "232489420015-8cq1c5nja61d26mhpipmlq8nn5mdlnt7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKpeCewBT2fPh310NpIm4Odm-aP6IH1sc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "232489420015-8cq1c5nja61d26mhpipmlq8nn5mdlnt7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "232489420015-6fuhju9gmth8q7mds785qs7hihtnfrn2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.afc"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

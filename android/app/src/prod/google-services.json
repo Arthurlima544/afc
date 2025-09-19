@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1020196034079",
+    "project_id": "afc-mobile-prod",
+    "storage_bucket": "afc-mobile-prod.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1020196034079:android:b3ee29d1fb58791f9be72a",
+        "android_client_info": {
+          "package_name": "org.awesomefinancialcontrol.br"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyADJXvNhUlRAEPVopr_gZltDYx88dB6-0s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
