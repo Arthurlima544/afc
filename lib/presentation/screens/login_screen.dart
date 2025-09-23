@@ -1,6 +1,10 @@
 import 'package:clerk_flutter/clerk_flutter.dart';
-import 'package:flutter/material.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' hide ThemeData;
+import 'package:flutter/material.dart' hide Colors;
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' hide ThemeData, Scaffold;
+
+import '../blocs/cubit/category_cubit.dart';
+import 'cadastrar_categoria.dart';
 
 class LoginScreen extends StatelessWidget {
   /// Constructs an instance of Example App
@@ -18,7 +22,12 @@ class LoginScreen extends StatelessWidget {
         child: ClerkErrorListener(
           child: ClerkAuthBuilder(
             signedInBuilder: (BuildContext context, ClerkAuthState authState) =>
-                const ClerkUserButton(),
+                Scaffold(
+                  body: BlocProvider<CategoryCubit>(
+                    create: (BuildContext context) => CategoryCubit(),
+                    child: const CadastrarCategoria(),
+                  ),
+                ),
             signedOutBuilder:
                 (BuildContext context, ClerkAuthState authState) =>
                     const ClerkAuthentication(),
