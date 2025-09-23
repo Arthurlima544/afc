@@ -1,7 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
+import '../../domain/entity/category_entity.dart';
 import '../blocs/cubit/category_cubit.dart';
+import 'package:uuid/uuid.dart';
 
 List<IconData> iconList = <IconData>[
   Icons.share_outlined,
@@ -32,62 +34,90 @@ class _CadastrarCategoriaState extends State<CadastrarCategoria> {
   Widget build(BuildContext context) => SizedBox(
     width: 480,
     child: Form(
-      child: BlocBuilder<CategoryCubit, int>(
-        builder: (BuildContext context, int state) => Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            FormTableLayout(
-              rows: <FormField<String>>[
-                FormField<String>(
-                  key: _categoryKey,
-                  label: const Text('Categoria'),
-                  child: const TextField(hintText: 'Adicione uma Categoria'),
-                ),
-              ],
-            ).withPadding(top: 40, left: 20, right: 20, bottom: 20),
-            const Text('Selecione um ícone'),
-            Row(
-              children: <Widget>[
-                for (int i = 0; i < 6; i++)
-                  IconButton(
-                    onPressed: () {
-                      print('Sou gay');
-                      context.read<CategoryCubit>().changeSelectedCategory(i);
-                    },
-                    variance: state == i
-                        ? const ButtonStyle.primary()
-                        : const ButtonStyle.outline(),
-
-                    shape: ButtonShape.circle,
-
-                    icon: Icon(iconList[i]),
+      child: BlocBuilder<CategoryCubit, CategoryState>(
+        builder: (BuildContext context, CategoryState state) => state.when(
+          initial: (int index) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              FormTableLayout(
+                rows: <FormField<String>>[
+                  FormField<String>(
+                    key: _categoryKey,
+                    label: const Text('Categoria'),
+                    child: const TextField(hintText: 'Adicione uma Categoria'),
                   ),
-              ],
-            ).gap(20).withPadding(left: 10, right: 10),
-            Row(
-              children: <Widget>[
-                for (int i = 6; i < 12; i++)
-                  IconButton(
-                    onPressed: () {
-                      context.read<CategoryCubit>().changeSelectedCategory(i);
-                    },
-                    variance: state == i
-                        ? const ButtonStyle.primary()
-                        : const ButtonStyle.outline(),
-                    shape: ButtonShape.circle,
-                    icon: Icon(iconList[i]),
-                  ),
-              ],
-            ).gap(20).withPadding(left: 10, right: 10),
-          ],
-        ).gap(20),
+                ],
+              ).withPadding(top: 40, left: 20, right: 20, bottom: 20),
+              const Text('Selecione um ícone'),
+              Row(
+                children: <Widget>[
+                  for (int i = 0; i < 6; i++)
+                    IconButton(
+                      onPressed: () {
+                        print('Sou gay');
+                        context.read<CategoryCubit>().changeSelectedCategory(i);
+                      },
+                      variance: index == i
+                          ? const ButtonStyle.primary()
+                          : const ButtonStyle.outline(),
+
+                      shape: ButtonShape.circle,
+
+                      icon: Icon(iconList[i]),
+                    ),
+                ],
+              ).gap(20).withPadding(left: 10, right: 10),
+              Row(
+                children: <Widget>[
+                  for (int i = 6; i < 12; i++)
+                    IconButton(
+                      onPressed: () {
+                        context.read<CategoryCubit>().changeSelectedCategory(i);
+                      },
+                      variance: index == i
+                          ? const ButtonStyle.primary()
+                          : const ButtonStyle.outline(),
+                      shape: ButtonShape.circle,
+                      icon: Icon(iconList[i]),
+                    ),
+                ],
+              ).gap(20).withPadding(left: 10, right: 10),
+
+              PrimaryButton(
+                onPressed: () {
+                  final String? categoryOrNull = Form.of(
+                    context,
+                  ).getValue(_categoryKey);
+                  if (categoryOrNull != null) {
+                    context.read<CategoryCubit>().saveCategory(
+                      CategoryEntity(
+                        uuid: const Uuid().v1(),
+                        name: categoryOrNull,
+                        iconType: index,
+                      ),
+                    );
+                  }
+                },
+                trailing: const Icon(Icons.add),
+                child: const Text('Add'),
+              ),
+            ],
+          ).gap(20),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (String error) => Center(child: Text(error)),
+          success: (CategoryEntity category) => Center(
+            child: Text(
+              '${category.uuid} ${category.name} ${category.iconType}',
+            ),
+          ),
+        ),
       ),
     ),
   );
 }
 
-bool isEnabled(int currentIndex, int? enabledIndex) {
+bool isEnabled(int currentIndex, int? enabledIndex, CategoryState state) {
   if (enabledIndex != null) {
     return currentIndex == enabledIndex;
   }

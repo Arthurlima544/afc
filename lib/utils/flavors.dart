@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 
 import '../firebase_options_dev.dart' as dev;
+import '../firebase_options_prod.dart' as prod;
 
 enum FlavorTypes { dev, prod }
 
@@ -35,8 +36,7 @@ class Flavor {
       case FlavorTypes.dev:
         return dev.DefaultFirebaseOptions.currentPlatform;
       case FlavorTypes.prod:
-        return null;
-      // return prod.DefaultFirebaseOptions.currentPlatform;
+        return prod.DefaultFirebaseOptions.currentPlatform;
     }
   }
 }
