@@ -1,9 +1,10 @@
 import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart' hide Colors;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' hide ThemeData, Scaffold;
 
-import '../blocs/cubit/category_cubit.dart';
+import '../blocs/category/category_cubit.dart';
 import 'cadastrar_categoria.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -22,18 +23,41 @@ class LoginScreen extends StatelessWidget {
         child: ClerkErrorListener(
           child: ClerkAuthBuilder(
             signedInBuilder: (BuildContext context, ClerkAuthState authState) =>
-                Scaffold(
-                  body: BlocProvider<CategoryCubit>(
-                    create: (BuildContext context) => CategoryCubit(),
-                    child: const CadastrarCategoria(),
-                  ),
-                ),
+                const Scaffold(body: AuthenticatedRouterScreen()),
             signedOutBuilder:
                 (BuildContext context, ClerkAuthState authState) =>
                     const ClerkAuthentication(),
           ),
         ),
       ),
+    ),
+  );
+}
+
+class AuthenticatedRouterScreen extends StatelessWidget {
+  const AuthenticatedRouterScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Column(
+      children: <Widget>[
+        const Spacer(),
+        OutlineButton(
+          onPressed: () {
+            GoRouter.of(context).push('/cadastro-categoria');
+          },
+          child: const Text('Categoria Cadastro Screen'),
+        ),
+        const Gap(15),
+        OutlineButton(
+          onPressed: () {
+            GoRouter.of(context).push('/cadastro-transacao');
+          },
+          child: const Text('Transaction Cadastro Screen'),
+        ),
+        const Gap(15),
+        const Spacer(),
+      ],
     ),
   );
 }
