@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../domain/entity/category_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
+import '../../domain/entity/type_entity.dart';
 import '../blocs/transaction/transaction_cubit.dart';
 
 class CadastrarTransacao extends StatefulWidget {
@@ -99,7 +100,7 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
                   popup: SelectPopup(
                     items: SelectItemList(
                       children: <Widget>[
-                        for (final Object i in <Object>['Fake Type'])
+                        for (final Object i in TypeEntity.values)
                           SelectItemButton<String>(
                             value: convertToString(i),
                             child: Text(convertToString(i)),
@@ -177,6 +178,8 @@ String convertToString(Object item) {
     return item.name;
   } else if (item is String) {
     return item;
+  } else if (item is TypeEntity) {
+    return item.name;
   } else {
     return '';
   }

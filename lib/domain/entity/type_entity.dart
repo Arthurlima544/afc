@@ -1,0 +1,1 @@
+enum TypeEntity { income, expense }
