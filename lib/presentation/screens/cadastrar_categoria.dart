@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 import '../../domain/entity/category_entity.dart';
-import '../blocs/cubit/category_cubit.dart';
+import '../blocs/category/category_cubit.dart';
 import 'package:uuid/uuid.dart';
 
 List<IconData> iconList = <IconData>[
@@ -55,7 +55,6 @@ class _CadastrarCategoriaState extends State<CadastrarCategoria> {
                   for (int i = 0; i < 6; i++)
                     IconButton(
                       onPressed: () {
-                        print('Sou gay');
                         context.read<CategoryCubit>().changeSelectedCategory(i);
                       },
                       variance: index == i
