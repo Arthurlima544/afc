@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../presentation/blocs/auth/auth_cubit.dart';
 import '../../presentation/blocs/category/category_cubit.dart';
 import '../../presentation/blocs/limit/limit_cubit.dart';
 import '../../presentation/blocs/transaction/transaction_cubit.dart';

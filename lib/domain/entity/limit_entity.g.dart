@@ -11,6 +11,7 @@ _LimitEntity _$LimitEntityFromJson(Map<String, dynamic> json) => _LimitEntity(
   categoryUUid: json['categoryUUid'] as String,
   month: json['month'] as String,
   limitAmount: (json['limitAmount'] as num).toDouble(),
+  userId: json['userId'] as String,
 );
 
 Map<String, dynamic> _$LimitEntityToJson(_LimitEntity instance) =>
@@ -19,4 +20,5 @@ Map<String, dynamic> _$LimitEntityToJson(_LimitEntity instance) =>
       'categoryUUid': instance.categoryUUid,
       'month': instance.month,
       'limitAmount': instance.limitAmount,
+      'userId': instance.userId,
     };

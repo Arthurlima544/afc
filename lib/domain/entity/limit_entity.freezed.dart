@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$LimitEntity {
 
- String get uuid; String get categoryUUid; String get month; double get limitAmount;
+ String get uuid; String get categoryUUid; String get month; double get limitAmount; String get userId;
 /// Create a copy of LimitEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $LimitEntityCopyWith<LimitEntity> get copyWith => _$LimitEntityCopyWithImpl<Limi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LimitEntity&&(identical(other.uuid, uuid) || other.uuid == uuid)&&(identical(other.categoryUUid, categoryUUid) || other.categoryUUid == categoryUUid)&&(identical(other.month, month) || other.month == month)&&(identical(other.limitAmount, limitAmount) || other.limitAmount == limitAmount));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LimitEntity&&(identical(other.uuid, uuid) || other.uuid == uuid)&&(identical(other.categoryUUid, categoryUUid) || other.categoryUUid == categoryUUid)&&(identical(other.month, month) || other.month == month)&&(identical(other.limitAmount, limitAmount) || other.limitAmount == limitAmount)&&(identical(other.userId, userId) || other.userId == userId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,uuid,categoryUUid,month,limitAmount);
+int get hashCode => Object.hash(runtimeType,uuid,categoryUUid,month,limitAmount,userId);
 
 @override
 String toString() {
-  return 'LimitEntity(uuid: $uuid, categoryUUid: $categoryUUid, month: $month, limitAmount: $limitAmount)';
+  return 'LimitEntity(uuid: $uuid, categoryUUid: $categoryUUid, month: $month, limitAmount: $limitAmount, userId: $userId)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $LimitEntityCopyWith<$Res>  {
   factory $LimitEntityCopyWith(LimitEntity value, $Res Function(LimitEntity) _then) = _$LimitEntityCopyWithImpl;
 @useResult
 $Res call({
- String uuid, String categoryUUid, String month, double limitAmount
+ String uuid, String categoryUUid, String month, double limitAmount, String userId
 });
 
 
@@ -65,13 +65,14 @@ class _$LimitEntityCopyWithImpl<$Res>
 
 /// Create a copy of LimitEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? uuid = null,Object? categoryUUid = null,Object? month = null,Object? limitAmount = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? uuid = null,Object? categoryUUid = null,Object? month = null,Object? limitAmount = null,Object? userId = null,}) {
   return _then(_self.copyWith(
 uuid: null == uuid ? _self.uuid : uuid // ignore: cast_nullable_to_non_nullable
 as String,categoryUUid: null == categoryUUid ? _self.categoryUUid : categoryUUid // ignore: cast_nullable_to_non_nullable
 as String,month: null == month ? _self.month : month // ignore: cast_nullable_to_non_nullable
 as String,limitAmount: null == limitAmount ? _self.limitAmount : limitAmount // ignore: cast_nullable_to_non_nullable
-as double,
+as double,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 
@@ -153,10 +154,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String uuid,  String categoryUUid,  String month,  double limitAmount)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String uuid,  String categoryUUid,  String month,  double limitAmount,  String userId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LimitEntity() when $default != null:
-return $default(_that.uuid,_that.categoryUUid,_that.month,_that.limitAmount);case _:
+return $default(_that.uuid,_that.categoryUUid,_that.month,_that.limitAmount,_that.userId);case _:
   return orElse();
 
 }
@@ -174,10 +175,10 @@ return $default(_that.uuid,_that.categoryUUid,_that.month,_that.limitAmount);cas
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String uuid,  String categoryUUid,  String month,  double limitAmount)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String uuid,  String categoryUUid,  String month,  double limitAmount,  String userId)  $default,) {final _that = this;
 switch (_that) {
 case _LimitEntity():
-return $default(_that.uuid,_that.categoryUUid,_that.month,_that.limitAmount);}
+return $default(_that.uuid,_that.categoryUUid,_that.month,_that.limitAmount,_that.userId);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -191,10 +192,10 @@ return $default(_that.uuid,_that.categoryUUid,_that.month,_that.limitAmount);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String uuid,  String categoryUUid,  String month,  double limitAmount)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String uuid,  String categoryUUid,  String month,  double limitAmount,  String userId)?  $default,) {final _that = this;
 switch (_that) {
 case _LimitEntity() when $default != null:
-return $default(_that.uuid,_that.categoryUUid,_that.month,_that.limitAmount);case _:
+return $default(_that.uuid,_that.categoryUUid,_that.month,_that.limitAmount,_that.userId);case _:
   return null;
 
 }
@@ -206,13 +207,14 @@ return $default(_that.uuid,_that.categoryUUid,_that.month,_that.limitAmount);cas
 @JsonSerializable()
 
 class _LimitEntity implements LimitEntity {
-  const _LimitEntity({required this.uuid, required this.categoryUUid, required this.month, required this.limitAmount});
+  const _LimitEntity({required this.uuid, required this.categoryUUid, required this.month, required this.limitAmount, required this.userId});
   factory _LimitEntity.fromJson(Map<String, dynamic> json) => _$LimitEntityFromJson(json);
 
 @override final  String uuid;
 @override final  String categoryUUid;
 @override final  String month;
 @override final  double limitAmount;
+@override final  String userId;
 
 /// Create a copy of LimitEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -227,16 +229,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LimitEntity&&(identical(other.uuid, uuid) || other.uuid == uuid)&&(identical(other.categoryUUid, categoryUUid) || other.categoryUUid == categoryUUid)&&(identical(other.month, month) || other.month == month)&&(identical(other.limitAmount, limitAmount) || other.limitAmount == limitAmount));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LimitEntity&&(identical(other.uuid, uuid) || other.uuid == uuid)&&(identical(other.categoryUUid, categoryUUid) || other.categoryUUid == categoryUUid)&&(identical(other.month, month) || other.month == month)&&(identical(other.limitAmount, limitAmount) || other.limitAmount == limitAmount)&&(identical(other.userId, userId) || other.userId == userId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,uuid,categoryUUid,month,limitAmount);
+int get hashCode => Object.hash(runtimeType,uuid,categoryUUid,month,limitAmount,userId);
 
 @override
 String toString() {
-  return 'LimitEntity(uuid: $uuid, categoryUUid: $categoryUUid, month: $month, limitAmount: $limitAmount)';
+  return 'LimitEntity(uuid: $uuid, categoryUUid: $categoryUUid, month: $month, limitAmount: $limitAmount, userId: $userId)';
 }
 
 
@@ -247,7 +249,7 @@ abstract mixin class _$LimitEntityCopyWith<$Res> implements $LimitEntityCopyWith
   factory _$LimitEntityCopyWith(_LimitEntity value, $Res Function(_LimitEntity) _then) = __$LimitEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String uuid, String categoryUUid, String month, double limitAmount
+ String uuid, String categoryUUid, String month, double limitAmount, String userId
 });
 
 
@@ -264,13 +266,14 @@ class __$LimitEntityCopyWithImpl<$Res>
 
 /// Create a copy of LimitEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? uuid = null,Object? categoryUUid = null,Object? month = null,Object? limitAmount = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? uuid = null,Object? categoryUUid = null,Object? month = null,Object? limitAmount = null,Object? userId = null,}) {
   return _then(_LimitEntity(
 uuid: null == uuid ? _self.uuid : uuid // ignore: cast_nullable_to_non_nullable
 as String,categoryUUid: null == categoryUUid ? _self.categoryUUid : categoryUUid // ignore: cast_nullable_to_non_nullable
 as String,month: null == month ? _self.month : month // ignore: cast_nullable_to_non_nullable
 as String,limitAmount: null == limitAmount ? _self.limitAmount : limitAmount // ignore: cast_nullable_to_non_nullable
-as double,
+as double,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 

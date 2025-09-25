@@ -1,3 +1,4 @@
+import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
@@ -7,6 +8,7 @@ import '../../domain/entity/calendar_entity.dart';
 import '../../domain/entity/category_entity.dart';
 import '../../domain/entity/limit_entity.dart';
 import '../../domain/entity/type_entity.dart';
+import '../blocs/auth/auth_cubit.dart';
 import '../blocs/limit/limit_cubit.dart';
 
 class CadastrarLimites extends StatefulWidget {
@@ -116,13 +118,19 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
                           (CategoryEntity e) => e.name == categoryValue,
                         );
 
-                    context.read<LimitCubit>().saveLimit(
-                      LimitEntity(
-                        uuid: const Uuid().v1(),
-                        limitAmount: money,
-                        categoryUUid: selectedCategory.uuid,
-                        month: monthValue ?? '',
-                      ),
+                    context.read<AuthCubit>().state.whenOrNull(
+                      signedIn: (ClerkAuthState authState) {
+                        final String userId = authState.user?.id ?? '';
+                        context.read<LimitCubit>().saveLimit(
+                          LimitEntity(
+                            uuid: const Uuid().v1(),
+                            limitAmount: money,
+                            categoryUUid: selectedCategory.uuid,
+                            month: monthValue ?? '',
+                            userId: userId,
+                          ),
+                        );
+                      },
                     );
                   },
                   trailing: const Icon(Icons.add),

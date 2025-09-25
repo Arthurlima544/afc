@@ -12,6 +12,7 @@ sealed class TransactionEntity with _$TransactionEntity {
     required String typeUuid,
     required DateTime data,
     required String title,
+    required String userId,
   }) = _TransactionEntity;
 
   factory TransactionEntity.fromJson(Map<String, Object?> json) =>

@@ -1,3 +1,4 @@
+import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
@@ -6,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../../domain/entity/category_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
+import '../blocs/auth/auth_cubit.dart';
 import '../blocs/transaction/transaction_cubit.dart';
 
 class CadastrarTransacao extends StatefulWidget {
@@ -149,15 +151,21 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
                           (CategoryEntity e) => e.name == categoryValue,
                         );
 
-                    context.read<TransactionCubit>().saveTransaction(
-                      TransactionEntity(
-                        uuid: const Uuid().v1(),
-                        amount: money,
-                        categoryUUid: selectedCategory.uuid,
-                        typeUuid: typeValue ?? '',
-                        data: _value ?? DateTime.now(),
-                        title: titleOrNull ?? '',
-                      ),
+                    context.read<AuthCubit>().state.whenOrNull(
+                      signedIn: (ClerkAuthState authState) {
+                        final String userId = authState.user?.id ?? '';
+                        context.read<TransactionCubit>().saveTransaction(
+                          TransactionEntity(
+                            uuid: const Uuid().v1(),
+                            amount: money,
+                            categoryUUid: selectedCategory.uuid,
+                            typeUuid: typeValue ?? '',
+                            data: _value ?? DateTime.now(),
+                            title: titleOrNull ?? '',
+                            userId: userId,
+                          ),
+                        );
+                      },
                     );
                   },
                   trailing: const Icon(Icons.add),

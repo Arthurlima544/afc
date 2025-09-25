@@ -10,6 +10,7 @@ sealed class LimitEntity with _$LimitEntity {
     required String categoryUUid,
     required String month,
     required double limitAmount,
+    required String userId,
   }) = _LimitEntity;
 
   factory LimitEntity.fromJson(Map<String, Object?> json) =>
