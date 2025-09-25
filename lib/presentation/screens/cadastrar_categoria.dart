@@ -13,7 +13,7 @@ List<IconData> iconList = <IconData>[
   Icons.camera_alt_outlined,
   Icons.calendar_month,
   Icons.file_upload_outlined,
-  Icons.star_border,
+  Icons.coffee,
   Icons.savings,
   Icons.access_time_rounded,
   Icons.heart_broken,

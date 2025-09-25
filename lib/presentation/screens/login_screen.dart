@@ -56,6 +56,12 @@ class AuthenticatedRouterScreen extends StatelessWidget {
           child: const Text('Transaction Cadastro Screen'),
         ),
         const Gap(15),
+        OutlineButton(
+          onPressed: () {
+            GoRouter.of(context).push('/cadastro-limite');
+          },
+          child: const Text('Limite Cadastro Screen'),
+        ),
         const Spacer(),
       ],
     ),
