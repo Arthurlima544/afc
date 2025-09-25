@@ -1,11 +1,7 @@
 import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart' hide Colors;
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' hide ThemeData, Scaffold;
-
-import '../blocs/category/category_cubit.dart';
-import 'cadastrar_categoria.dart';
 
 class LoginScreen extends StatelessWidget {
   /// Constructs an instance of Example App
