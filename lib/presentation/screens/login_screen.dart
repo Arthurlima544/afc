@@ -68,6 +68,13 @@ class AuthenticatedRouterScreen extends StatelessWidget {
           },
           child: const Text('Limite Cadastro Screen'),
         ),
+        const Gap(15),
+        OutlineButton(
+          onPressed: () {
+            GoRouter.of(context).push('/home');
+          },
+          child: const Text('Home Screen'),
+        ),
         const Spacer(),
       ],
     ),
