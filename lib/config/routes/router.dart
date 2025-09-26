@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../presentation/blocs/auth/auth_cubit.dart';
@@ -23,9 +24,8 @@ final GoRouter router = GoRouter(
 
     GoRoute(
       path: '/login',
-      builder: (BuildContext context, GoRouterState state) => const LoginScreen(
-        publishableKey:
-            'pk_test_Y3VycmVudC1waWdsZXQtMTYuY2xlcmsuYWNjb3VudHMuZGV2JA',
+      builder: (BuildContext context, GoRouterState state) => LoginScreen(
+        publishableKey: dotenv.env['CLERK_PUBLISHABLE_KEY'] ?? '',
       ),
     ),
 

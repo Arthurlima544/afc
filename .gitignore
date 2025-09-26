@@ -45,3 +45,26 @@ app.*.map.json
 /android/app/release
 
 .vscode
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Firebase configuration
+lib/firebase_options_*.dart
+android/app/src/*/google-services.json
+ios/Runner/GoogleService-Info.plist
+macos/Runner/GoogleService-Info.plist
+
+# Local configuration
+android/local.properties
+android/app/src/*/google-services.json
+ios/Runner/GoogleService-Info.plist
+macos/Runner/GoogleService-Info.plist
+
+# Local configuration
+android/local.properties
+
+# Environment files
+.env*
