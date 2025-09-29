@@ -8,7 +8,7 @@ import '../../domain/entity/calendar_entity.dart';
 import '../../domain/entity/category_entity.dart';
 import '../../domain/entity/limit_entity.dart';
 import '../../domain/entity/type_entity.dart';
-import '../blocs/auth/auth_cubit.dart';
+import '../blocs/auth/auth_bloc.dart';
 import '../blocs/limit/limit_cubit.dart';
 
 class CadastrarLimites extends StatefulWidget {
@@ -118,7 +118,7 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
                           (CategoryEntity e) => e.name == categoryValue,
                         );
 
-                    context.read<AuthCubit>().state.whenOrNull(
+                    context.read<AuthBloc>().state.whenOrNull(
                       signedIn: (ClerkAuthState authState) {
                         final String userId = authState.user?.id ?? '';
                         context.read<LimitCubit>().saveLimit(
