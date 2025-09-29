@@ -1,10 +1,12 @@
+import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../presentation/blocs/auth/auth_cubit.dart';
+import '../../presentation/blocs/auth/auth_bloc.dart';
 import '../../presentation/blocs/category/category_cubit.dart';
+import '../../presentation/blocs/home/home_bloc.dart';
 import '../../presentation/blocs/limit/limit_cubit.dart';
 import '../../presentation/blocs/transaction/transaction_cubit.dart';
 import '../../presentation/screens/cadastrar_categoria.dart';
@@ -13,6 +15,7 @@ import '../../presentation/screens/cadastrar_transacao.dart';
 import '../../presentation/screens/home_page.dart';
 import '../../presentation/screens/home_screen.dart';
 import '../../presentation/screens/login_screen.dart';
+import '../../utils/logger.dart';
 
 final GoRouter router = GoRouter(
   routes: <RouteBase>[
@@ -59,7 +62,26 @@ final GoRouter router = GoRouter(
 
     GoRoute(
       path: '/home',
-      builder: (BuildContext context, GoRouterState state) => const HomePage(),
+      builder: (BuildContext context, GoRouterState state) {
+        final AuthState authState = context.read<AuthBloc>().state;
+
+        final String? uuidOrNull = authState.whenOrNull(
+          signedIn: (ClerkAuthState authState) => authState.user?.id,
+        );
+
+        //validate uuid
+        if (uuidOrNull == null || uuidOrNull.isEmpty) {
+          logger.f('Invalid UUID!!!!!, $uuidOrNull}');
+
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return BlocProvider<HomeBloc>(
+          create: (BuildContext context) =>
+              HomeBloc()..add(HomeEvent.loadHome(uuidOrNull)),
+          child: const HomePage(),
+        );
+      },
     ),
   ],
 );

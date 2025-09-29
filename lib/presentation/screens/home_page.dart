@@ -1,7 +1,10 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+
+import '../blocs/home/home_bloc.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -9,15 +12,18 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SafeArea(
     child: SingleChildScrollView(
-      child: const Column(
+      child: Column(
         children: <Widget>[
-          Gap(20),
-          SummaryWidget(),
-          Gap(20),
-          LastTransactionsWidget(),
-          MonthLimitWidget(),
-          Gap(20),
-          StatsWidget(),
+          const Gap(20),
+          BlocBuilder<HomeBloc, HomeState>(
+            builder: (BuildContext context, HomeState state) =>
+                const SummaryWidget(),
+          ),
+          const Gap(20),
+          const LastTransactionsWidget(),
+          const MonthLimitWidget(),
+          const Gap(20),
+          const StatsWidget(),
         ],
       ).withPadding(all: 20),
     ),

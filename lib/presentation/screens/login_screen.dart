@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' hide ThemeData, Scaffold;
 
-import '../blocs/auth/auth_cubit.dart';
+import '../blocs/auth/auth_bloc.dart';
 
 class LoginScreen extends StatelessWidget {
   /// Constructs an instance of Example App
@@ -14,7 +14,7 @@ class LoginScreen extends StatelessWidget {
   final String publishableKey;
 
   @override
-  Widget build(BuildContext context) => BlocBuilder<AuthCubit, AuthState>(
+  Widget build(BuildContext context) => BlocBuilder<AuthBloc, AuthState>(
     builder: (BuildContext context, AuthState state) => MaterialApp(
       theme: ThemeData.dark(),
       home: ClerkAuth(
@@ -24,12 +24,12 @@ class LoginScreen extends StatelessWidget {
             child: ClerkAuthBuilder(
               signedInBuilder:
                   (BuildContext context, ClerkAuthState authState) {
-                    context.read<AuthCubit>().signIn(authState);
+                    context.read<AuthBloc>().add(AuthEvent.signIn(authState));
                     return const Scaffold(body: AuthenticatedRouterScreen());
                   },
               signedOutBuilder:
                   (BuildContext context, ClerkAuthState authState) {
-                    context.read<AuthCubit>().signOut();
+                    context.read<AuthBloc>().add(const AuthEvent.signOut());
                     return const ClerkAuthentication();
                   },
             ),
