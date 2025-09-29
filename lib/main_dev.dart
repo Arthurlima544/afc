@@ -7,11 +7,10 @@ import 'utils/logger.dart';
 import 'utils/my_app.dart';
 
 void main() async {
-  logger.i('App Starting');
-
+  WidgetsFlutterBinding.ensureInitialized();
   Flavor.flavorType = FlavorTypes.dev;
 
-  WidgetsFlutterBinding.ensureInitialized();
+  await startupLogger(Flavor.flavorType);
 
   // Load environment variables
   await dotenv.load();
