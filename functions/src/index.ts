@@ -91,7 +91,7 @@ export const createConnectToken = onCall(
       throw new HttpsError('unauthenticated', 'Authentication required.');
     }
 
-    const { itemId, clerkUserId } = request.data as {
+    const { itemId } = request.data as {
       itemId?: string;
       clerkUserId: string;
     };
