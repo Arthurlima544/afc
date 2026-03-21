@@ -10,13 +10,15 @@ part 'limit_state.dart';
 part 'limit_cubit.freezed.dart';
 
 class LimitCubit extends Cubit<LimitState> {
-  LimitCubit() : super(const LimitState.initial(<CategoryEntity>[]));
+  LimitCubit({FirebaseFirestore? firestore})
+    : _firestore = firestore ?? FirebaseFirestore.instance,
+      super(const LimitState.initial(<CategoryEntity>[]));
+
+  final FirebaseFirestore _firestore;
 
   Future<void> getCategories() async {
-    final QuerySnapshot<Map<String, dynamic>> res = await FirebaseFirestore
-        .instance
-        .collection('category')
-        .get();
+    final QuerySnapshot<Map<String, dynamic>> res =
+        await _firestore.collection('category').get();
 
     final List<CategoryEntity> categories = res.docs
         .map(
@@ -30,7 +32,7 @@ class LimitCubit extends Cubit<LimitState> {
   Future<void> saveLimit(LimitEntity limit) async {
     try {
       emit(const LimitState.loading());
-      await FirebaseFirestore.instance
+      await _firestore
           .collection('limit')
           .add(limit.toJson())
           .then(

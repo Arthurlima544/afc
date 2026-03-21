@@ -9,7 +9,11 @@ part 'category_state.dart';
 part 'category_cubit.freezed.dart';
 
 class CategoryCubit extends Cubit<CategoryState> {
-  CategoryCubit() : super(const CategoryState.initial(-1));
+  CategoryCubit({FirebaseFirestore? firestore})
+    : _firestore = firestore ?? FirebaseFirestore.instance,
+      super(const CategoryState.initial(-1));
+
+  final FirebaseFirestore _firestore;
 
   void changeSelectedCategory(int index) {
     if (state == CategoryState.initial(index)) {
@@ -22,7 +26,7 @@ class CategoryCubit extends Cubit<CategoryState> {
   Future<void> saveCategory(CategoryEntity category) async {
     try {
       emit(const CategoryState.loading());
-      await FirebaseFirestore.instance
+      await _firestore
           .collection('category')
           .add(category.toJson())
           .then(

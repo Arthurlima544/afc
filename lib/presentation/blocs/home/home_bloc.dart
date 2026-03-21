@@ -11,7 +11,9 @@ part 'home_state.dart';
 part 'home_bloc.freezed.dart';
 
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
-  HomeBloc() : super(HomeState.initial()) {
+  HomeBloc({FirebaseFirestore? firestore})
+    : _firestore = firestore ?? FirebaseFirestore.instance,
+      super(HomeState.initial()) {
     on<HomeEvent>((HomeEvent event, Emitter<HomeState> emit) {
       event.when(
         loadHome: (String userUuid) async {
@@ -22,9 +24,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     });
   }
 
+  final FirebaseFirestore _firestore;
+
   Future<void> _loadStats(String userUuid) async {
-    final QuerySnapshot<Map<String, dynamic>> s = await FirebaseFirestore
-        .instance
+    final QuerySnapshot<Map<String, dynamic>> s = await _firestore
         .collection('category')
         .where('uuid', isEqualTo: userUuid)
         .get();

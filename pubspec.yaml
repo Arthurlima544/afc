@@ -32,13 +32,18 @@ dependencies:
 
 dev_dependencies:
   bloc_lint: ^0.4.0
+  bloc_test: ^10.0.0
   build_runner: ^2.8.0
+  fake_cloud_firestore: ^4.0.2
   flutter_launcher_icons: ^0.14.4
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
   freezed: ^3.2.0
+  integration_test:
+    sdk: flutter
   json_serializable: ^6.11.1
+  mocktail: ^1.0.4
 
 flutter:
   uses-material-design: true
