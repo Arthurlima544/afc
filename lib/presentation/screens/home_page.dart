@@ -46,43 +46,99 @@ class StatsWidget extends StatelessWidget {
   const StatsWidget({super.key});
 
   @override
-  Widget build(BuildContext context) => Column(
-    children: <Widget>[
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          const Text(
-            'Estatísticas',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          TextButton(
-            onPressed: () {
-              //TODO Navigate to all transactions page
+  Widget build(BuildContext context) =>
+      BlocBuilder<HomeBloc, HomeState>(
+        builder: (BuildContext context, HomeState state) {
+          List<FlSpot> expenseSpots = <FlSpot>[const FlSpot(0, 0)];
+          List<FlSpot> incomeSpots = <FlSpot>[const FlSpot(0, 0)];
+
+          state.statsState.whenOrNull(
+            success: (List<StatsEntity> stats) {
+              final List<FlSpot> expenses = stats
+                  .where((StatsEntity s) => s.type == TypeEntity.expense)
+                  .map(
+                    (StatsEntity s) =>
+                        FlSpot(s.date.index.toDouble(), s.total),
+                  )
+                  .toList()
+                ..sort((FlSpot a, FlSpot b) => a.x.compareTo(b.x));
+
+              final List<FlSpot> income = stats
+                  .where((StatsEntity s) => s.type == TypeEntity.income)
+                  .map(
+                    (StatsEntity s) =>
+                        FlSpot(s.date.index.toDouble(), s.total),
+                  )
+                  .toList()
+                ..sort((FlSpot a, FlSpot b) => a.x.compareTo(b.x));
+
+              if (expenses.isNotEmpty) {
+                expenseSpots = expenses;
+              }
+              if (income.isNotEmpty) {
+                incomeSpots = income;
+              }
             },
-            child: const Text(
-              'Ver Todas',
-              style: TextStyle(fontSize: 14, color: Colors.blue),
-            ),
-          ),
-        ],
-      ),
-      const Gap(10),
-      const LineChartSample7(line1Color: Colors.red, line2Color: Colors.green),
-    ],
-  );
+          );
+
+          final double maxY = <FlSpot>[...expenseSpots, ...incomeSpots]
+              .map((FlSpot s) => s.y)
+              .fold(0.0, (double max, double y) => y > max ? y : max);
+          final double yInterval =
+              maxY > 0 ? (maxY / 5).ceilToDouble() : 500;
+
+          return Column(
+            children: <Widget>[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  const Text(
+                    'Estatísticas',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      //TODO Navigate to all transactions page
+                    },
+                    child: const Text(
+                      'Ver Todas',
+                      style: TextStyle(fontSize: 14, color: Colors.blue),
+                    ),
+                  ),
+                ],
+              ),
+              const Gap(10),
+              LineChartSample7(
+                line1Color: Colors.red,
+                line2Color: Colors.green,
+                expenseSpots: expenseSpots,
+                incomeSpots: incomeSpots,
+                yInterval: yInterval,
+              ),
+            ],
+          );
+        },
+      );
 }
 
 class LineChartSample7 extends StatelessWidget {
   const LineChartSample7({
     required this.line1Color,
     required this.line2Color,
+    required this.expenseSpots,
+    required this.incomeSpots,
+    required this.yInterval,
     super.key,
-    // required  this.betweenColor,
   });
 
   final Color line1Color;
   final Color line2Color;
-  //  Color get betweenColor => contentColorRed.withValues(alpha: 0.5);
+  final List<FlSpot> expenseSpots;
+  final List<FlSpot> incomeSpots;
+  final double yInterval;
 
   Widget bottomTitleWidgets(double value, TitleMeta meta) {
     const TextStyle style = TextStyle(
@@ -165,26 +221,12 @@ class LineChartSample7 extends StatelessWidget {
           lineTouchData: const LineTouchData(enabled: false),
           lineBarsData: <LineChartBarData>[
             LineChartBarData(
-              spots: const <FlSpot>[
-                FlSpot(0, 400),
-                FlSpot(1, 500),
-                FlSpot(2, 1100),
-                FlSpot(3, 600),
-                FlSpot(4, 700),
-                FlSpot(5, 500),
-              ],
+              spots: expenseSpots,
               color: line1Color,
               dotData: const FlDotData(show: false),
             ),
             LineChartBarData(
-              spots: const <FlSpot>[
-                FlSpot(0, 1500),
-                FlSpot(1, 1600),
-                FlSpot(2, 1400),
-                FlSpot(3, 1550),
-                FlSpot(4, 1600),
-                FlSpot(5, 1400),
-              ],
+              spots: incomeSpots,
               color: line2Color,
               dotData: const FlDotData(show: false),
             ),
@@ -206,7 +248,7 @@ class LineChartSample7 extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 getTitlesWidget: leftTitleWidgets,
-                interval: 500,
+                interval: yInterval,
                 reservedSize: 36,
               ),
             ),
