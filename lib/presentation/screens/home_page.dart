@@ -5,31 +5,40 @@ import 'package:intl/intl.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart'
     hide Column, Row, Expanded;
 
+import '../../domain/entity/stats_entity.dart';
+import '../../domain/entity/transaction_entity.dart';
+import '../../domain/entity/type_entity.dart';
 import '../../utils/logger.dart';
 import '../blocs/home/home_bloc.dart';
+import '../blocs/home/stats_state.dart';
+import '../blocs/home/transaction_state.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) => SafeArea(
+  Widget build(BuildContext context) => const SafeArea(
     child: SingleChildScrollView(
-      child: Column(
-        children: <Widget>[
-          const Gap(20),
-          BlocBuilder<HomeBloc, HomeState>(
-            builder: (BuildContext context, HomeState state) =>
-                const SummaryWidget(),
-          ),
-          const Gap(20),
-          const LastTransactionsWidget(),
-          const MonthLimitWidget(),
-          const Gap(20),
-          const StatsWidget(),
-        ],
-      ).withPadding(all: 20),
+      child: _HomeContent(),
     ),
   );
+}
+
+class _HomeContent extends StatelessWidget {
+  const _HomeContent();
+
+  @override
+  Widget build(BuildContext context) => const Column(
+    children: <Widget>[
+      Gap(20),
+      SummaryWidget(),
+      Gap(20),
+      LastTransactionsWidget(),
+      MonthLimitWidget(),
+      Gap(20),
+      StatsWidget(),
+    ],
+  ).withPadding(all: 20);
 }
 
 class StatsWidget extends StatelessWidget {
@@ -320,41 +329,62 @@ class SummaryWidget extends StatelessWidget {
   const SummaryWidget({super.key});
 
   @override
-  Widget build(BuildContext context) => const Column(
-    children: <Widget>[
-      HomeCard(
-        title: 'Saldo',
-        totalAmount: 1000,
-        icon: Icons.savings_outlined,
-        backgroundColor: Color(0xFFDCE1FF),
-        iconColor: Colors.black,
-      ),
-      Gap(20),
-      Row(
-        children: <Widget>[
-          Expanded(
-            child: HomeCard(
-              title: 'Entradas',
-              totalAmount: 5000,
-              icon: Icons.attach_money,
-              backgroundColor: Color(0xFFBDECB5),
-              iconColor: Colors.black,
-            ),
-          ),
-          Gap(5),
-          Expanded(
-            child: HomeCard(
-              title: 'Despesas',
-              totalAmount: 4000,
-              icon: Icons.currency_exchange,
-              backgroundColor: Color(0xFFFFDAD6),
-              iconColor: Colors.black,
-            ),
-          ),
-        ],
-      ),
-    ],
-  );
+  Widget build(BuildContext context) =>
+      BlocBuilder<HomeBloc, HomeState>(
+        builder: (BuildContext context, HomeState state) {
+          double totalIncome = 0;
+          double totalExpenses = 0;
+
+          state.statsState.whenOrNull(
+            success: (List<StatsEntity> stats) {
+              totalIncome = stats
+                  .where((StatsEntity s) => s.type == TypeEntity.income)
+                  .fold(0.0, (double sum, StatsEntity s) => sum + s.total);
+              totalExpenses = stats
+                  .where((StatsEntity s) => s.type == TypeEntity.expense)
+                  .fold(0.0, (double sum, StatsEntity s) => sum + s.total);
+            },
+          );
+
+          final double balance = totalIncome - totalExpenses;
+
+          return Column(
+            children: <Widget>[
+              HomeCard(
+                title: 'Saldo',
+                totalAmount: balance,
+                icon: Icons.savings_outlined,
+                backgroundColor: const Color(0xFFDCE1FF),
+                iconColor: Colors.black,
+              ),
+              const Gap(20),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: HomeCard(
+                      title: 'Entradas',
+                      totalAmount: totalIncome,
+                      icon: Icons.attach_money,
+                      backgroundColor: const Color(0xFFBDECB5),
+                      iconColor: Colors.black,
+                    ),
+                  ),
+                  const Gap(5),
+                  Expanded(
+                    child: HomeCard(
+                      title: 'Despesas',
+                      totalAmount: totalExpenses,
+                      icon: Icons.currency_exchange,
+                      backgroundColor: const Color(0xFFFFDAD6),
+                      iconColor: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      );
 }
 
 class LastTransactionsWidget extends StatelessWidget {
@@ -382,23 +412,28 @@ class LastTransactionsWidget extends StatelessWidget {
         ],
       ),
       const Gap(10),
-      const SizedBox(
-        height: 150,
-        child: Column(
-          children: <Widget>[
-            LastTransactions(
-              category: 'Compras',
-              amount: -5000,
-              icon: Icons.attach_money,
+      BlocBuilder<HomeBloc, HomeState>(
+        builder: (BuildContext context, HomeState state) =>
+            state.transactionState.when(
+              initial: () => const SizedBox(),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: Text.new,
+              success: (List<TransactionEntity> transactions) => Column(
+                children: <Widget>[
+                  for (final TransactionEntity tx in transactions)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: LastTransactions(
+                        category: tx.title,
+                        amount: tx.typeUuid == TypeEntity.income.name
+                            ? tx.amount
+                            : -tx.amount,
+                        icon: Icons.attach_money,
+                      ),
+                    ),
+                ],
+              ),
             ),
-            Gap(10),
-            LastTransactions(
-              category: 'Freela',
-              amount: 5000,
-              icon: Icons.attach_money,
-            ),
-          ],
-        ),
       ),
     ],
   );
