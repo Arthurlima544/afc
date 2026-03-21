@@ -56,23 +56,25 @@ Build a complete personal finance management app where users can:
 
 ## Sprint 2 — Limits & Charts
 
-### US-03 · Spending limits progress 🔲
+### US-03 · Spending limits progress ✅
 **As a** user, **I want** to see how much of my monthly limit I've used per category,
 **so that** I know when I'm approaching or exceeding my budget.
 
-- [ ] `LimitCubit` computes spent vs. limit per category from Firestore
-- [ ] Progress bar UI on limits screen with real data
-- [ ] Unit tests
+- [x] `LimitCubit.loadLimitsWithProgress` queries limits, categories, and transactions from Firestore
+- [x] Computes `spent` per category for the current month (expense transactions only)
+- [x] `MonthLimitWidget` uses `BlocBuilder<LimitCubit>` with real progress bars
+- [x] Unit tests (6)
 
 ---
 
-### US-04 · Real chart data 🔲
+### US-04 · Real chart data ✅
 **As a** user, **I want** the financial charts to reflect my actual transaction history,
 **so that** I can see real spending trends over time.
 
-- [ ] `HomeBloc` aggregates transactions by period for chart series
-- [ ] `fl_chart` bar/line chart rendered with real data
-- [ ] Unit tests for aggregation logic
+- [x] `StatsWidget` uses `BlocBuilder<HomeBloc>` to read `StatsState.success`
+- [x] `StatsEntity` list converted to `FlSpot` series (income / expense per month)
+- [x] Dynamic y-axis interval based on max data value
+- [x] Aggregation logic covered by existing `HomeBloc` unit tests
 
 ---
 
@@ -117,5 +119,5 @@ Build a complete personal finance management app where users can:
 |--------|--------|
 | Sprint 1 (US-05, US-06) | `feat/us-05-06-auth-navigation` ✅ |
 | Sprint 1 (US-01, US-02) | `feat/us-01-02-dashboard-data` |
-| Sprint 2 | `feat/us-03-04-limits-charts` |
+| Sprint 2 (US-03, US-04) | `feat/us-03-04-limits-charts` ✅ |
 | Sprint 3 | `feat/us-07-13-crud-lists` |
