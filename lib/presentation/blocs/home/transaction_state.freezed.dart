@@ -128,7 +128,7 @@ return error(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<String> transactions)?  success,TResult Function( String message)?  error,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function()?  loading,TResult Function( List<TransactionEntity> transactions)?  success,TResult Function( String message)?  error,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TransactionInitial() when initial != null:
 return initial();case _TransactionLoading() when loading != null:
@@ -152,7 +152,7 @@ return error(_that.message);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<String> transactions)  success,required TResult Function( String message)  error,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function()  loading,required TResult Function( List<TransactionEntity> transactions)  success,required TResult Function( String message)  error,}) {final _that = this;
 switch (_that) {
 case _TransactionInitial():
 return initial();case _TransactionLoading():
@@ -175,7 +175,7 @@ return error(_that.message);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<String> transactions)?  success,TResult? Function( String message)?  error,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function()?  loading,TResult? Function( List<TransactionEntity> transactions)?  success,TResult? Function( String message)?  error,}) {final _that = this;
 switch (_that) {
 case _TransactionInitial() when initial != null:
 return initial();case _TransactionLoading() when loading != null:
@@ -257,11 +257,11 @@ String toString() {
 
 
 class _TransactionSuccess implements LastTransactionState {
-  const _TransactionSuccess(final  List<String> transactions): _transactions = transactions;
+  const _TransactionSuccess(final  List<TransactionEntity> transactions): _transactions = transactions;
   
 
- final  List<String> _transactions;
- List<String> get transactions {
+ final  List<TransactionEntity> _transactions;
+ List<TransactionEntity> get transactions {
   if (_transactions is EqualUnmodifiableListView) return _transactions;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_transactions);
@@ -298,7 +298,7 @@ abstract mixin class _$TransactionSuccessCopyWith<$Res> implements $LastTransact
   factory _$TransactionSuccessCopyWith(_TransactionSuccess value, $Res Function(_TransactionSuccess) _then) = __$TransactionSuccessCopyWithImpl;
 @useResult
 $Res call({
- List<String> transactions
+ List<TransactionEntity> transactions
 });
 
 
@@ -318,7 +318,7 @@ class __$TransactionSuccessCopyWithImpl<$Res>
 @pragma('vm:prefer-inline') $Res call({Object? transactions = null,}) {
   return _then(_TransactionSuccess(
 null == transactions ? _self._transactions : transactions // ignore: cast_nullable_to_non_nullable
-as List<String>,
+as List<TransactionEntity>,
   ));
 }
 
