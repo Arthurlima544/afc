@@ -1,83 +1,33 @@
 import 'package:clerk_flutter/clerk_flutter.dart';
-import 'package:flutter/material.dart' hide Colors;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart'
-    hide ThemeData, Scaffold, Column;
 
 import '../blocs/auth/auth_bloc.dart';
 
+/// Authentication screen shown at `/login`.
+///
+/// Displays the Clerk sign-in UI. The ClerkAuthObserver in MyApp handles
+/// dispatching AuthEvent.signIn when Clerk detects a session. This screen
+/// only listens to AuthBloc for the resulting AuthState.signedIn and
+/// navigates to `/home` — no direct Clerk dependency in the navigation logic.
 class LoginScreen extends StatelessWidget {
-  /// Constructs an instance of Example App
-  const LoginScreen({required this.publishableKey, super.key});
+  const LoginScreen({super.key, @visibleForTesting this.child});
 
-  /// Publishable Key
-  final String publishableKey;
+  /// Override the default [ClerkAuthentication] child.
+  /// Used in widget tests to avoid a live [ClerkAuth] dependency.
+  final Widget? child;
 
   @override
-  Widget build(BuildContext context) => BlocBuilder<AuthBloc, AuthState>(
-    builder: (BuildContext context, AuthState state) => MaterialApp(
-      theme: ThemeData.dark(),
-      home: ClerkAuth(
-        config: ClerkAuthConfig(publishableKey: publishableKey),
-        child: SafeArea(
+  Widget build(BuildContext context) => BlocListener<AuthBloc, AuthState>(
+    listener: (BuildContext context, AuthState state) {
+      state.whenOrNull(signedIn: (_) => context.go('/home'));
+    },
+    child: child ??
+        const SafeArea(
           child: ClerkErrorListener(
-            child: ClerkAuthBuilder(
-              signedInBuilder:
-                  (BuildContext context, ClerkAuthState authState) {
-                    context.read<AuthBloc>().add(AuthEvent.signIn(authState));
-                    return const Scaffold(body: AuthenticatedRouterScreen());
-                  },
-              signedOutBuilder:
-                  (BuildContext context, ClerkAuthState authState) {
-                    context.read<AuthBloc>().add(const AuthEvent.signOut());
-                    return const ClerkAuthentication();
-                  },
-            ),
+            child: ClerkAuthentication(),
           ),
         ),
-      ),
-    ),
-  );
-}
-
-class AuthenticatedRouterScreen extends StatelessWidget {
-  const AuthenticatedRouterScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Column(
-      children: <Widget>[
-        const Spacer(),
-        OutlineButton(
-          onPressed: () {
-            GoRouter.of(context).push('/cadastro-categoria');
-          },
-          child: const Text('Categoria Cadastro Screen'),
-        ),
-        const Gap(15),
-        OutlineButton(
-          onPressed: () {
-            GoRouter.of(context).push('/cadastro-transacao');
-          },
-          child: const Text('Transaction Cadastro Screen'),
-        ),
-        const Gap(15),
-        OutlineButton(
-          onPressed: () {
-            GoRouter.of(context).push('/cadastro-limite');
-          },
-          child: const Text('Limite Cadastro Screen'),
-        ),
-        const Gap(15),
-        OutlineButton(
-          onPressed: () {
-            GoRouter.of(context).push('/home');
-          },
-          child: const Text('Home Screen'),
-        ),
-        const Spacer(),
-      ],
-    ),
   );
 }

@@ -1,5 +1,5 @@
 import 'package:clerk_flutter/clerk_flutter.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Colors;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -26,9 +26,8 @@ final GoRouter router = GoRouter(
 
     GoRoute(
       path: '/login',
-      builder: (BuildContext context, GoRouterState state) => const LoginScreen(
-        publishableKey: String.fromEnvironment('CLERK_PUBLISHABLE_KEY'),
-      ),
+      builder: (BuildContext context, GoRouterState state) =>
+          const LoginScreen(),
     ),
 
     GoRoute(
