@@ -10,14 +10,15 @@ part 'transaction_state.dart';
 part 'transaction_cubit.freezed.dart';
 
 class TransactionCubit extends Cubit<TransactionState> {
-  TransactionCubit()
-    : super(const TransactionState.initial(<CategoryEntity>[]));
+  TransactionCubit({FirebaseFirestore? firestore})
+    : _firestore = firestore ?? FirebaseFirestore.instance,
+      super(const TransactionState.initial(<CategoryEntity>[]));
+
+  final FirebaseFirestore _firestore;
 
   Future<void> getCategories() async {
-    final QuerySnapshot<Map<String, dynamic>> res = await FirebaseFirestore
-        .instance
-        .collection('category')
-        .get();
+    final QuerySnapshot<Map<String, dynamic>> res =
+        await _firestore.collection('category').get();
 
     final List<CategoryEntity> categories = res.docs
         .map(
@@ -31,7 +32,7 @@ class TransactionCubit extends Cubit<TransactionState> {
   Future<void> saveTransaction(TransactionEntity transaction) async {
     try {
       emit(const TransactionState.loading());
-      await FirebaseFirestore.instance
+      await _firestore
           .collection('transaction')
           .add(transaction.toJson())
           .then(
