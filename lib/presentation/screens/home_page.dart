@@ -12,6 +12,7 @@ import '../../utils/logger.dart';
 import '../blocs/home/home_bloc.dart';
 import '../blocs/home/stats_state.dart';
 import '../blocs/home/transaction_state.dart';
+import '../blocs/limit/limit_cubit.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -239,7 +240,7 @@ class MonthLimitWidget extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              //TODO Navigate to all transactions page
+              //TODO Navigate to all limits page
             },
             child: const Text(
               'Ver Todas',
@@ -249,25 +250,30 @@ class MonthLimitWidget extends StatelessWidget {
         ],
       ),
       const Gap(10),
-      const SizedBox(
-        height: 150,
-        child: Column(
-          children: <Widget>[
-            MonthLimit(
-              category: 'Transporte',
-              amount: 900,
-              icon: Icons.local_taxi,
-              totalLimit: 1000,
+      BlocBuilder<LimitCubit, LimitState>(
+        builder: (BuildContext context, LimitState state) =>
+            state.when(
+              initial: (_) => const SizedBox(),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: Text.new,
+              success: (_) => const SizedBox(),
+              loaded: (List<LimitProgressItem> items) => items.isEmpty
+                  ? const SizedBox()
+                  : Column(
+                      children: <Widget>[
+                        for (final LimitProgressItem item in items)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: MonthLimit(
+                              category: item.categoryName,
+                              amount: item.spent,
+                              icon: _iconFromType(item.iconType),
+                              totalLimit: item.limitAmount,
+                            ),
+                          ),
+                      ],
+                    ),
             ),
-            Gap(10),
-            MonthLimit(
-              category: 'Compras',
-              amount: 200,
-              icon: Icons.shop,
-              totalLimit: 1000,
-            ),
-          ],
-        ),
       ),
     ],
   );
@@ -568,6 +574,26 @@ class HomeAppBar extends StatelessWidget {
     ],
   );
 }
+
+final List<IconData> _categoryIcons = <IconData>[
+  Icons.share_outlined,
+  Icons.play_arrow_rounded,
+  Icons.local_taxi,
+  Icons.star_border,
+  Icons.camera_alt_outlined,
+  Icons.calendar_month,
+  Icons.file_upload_outlined,
+  Icons.coffee,
+  Icons.savings,
+  Icons.access_time_rounded,
+  Icons.heart_broken,
+  Icons.compare_arrows_rounded,
+];
+
+IconData _iconFromType(int iconType) =>
+    (iconType >= 0 && iconType < _categoryIcons.length)
+        ? _categoryIcons[iconType]
+        : Icons.category;
 
 String convertToCurrencyFormated(double amount) {
   final NumberFormat format = NumberFormat.currency(

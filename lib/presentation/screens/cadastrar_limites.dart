@@ -34,6 +34,7 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
             loading: () =>
                 const Center(child: CircularProgressIndicator(size: 20)),
             error: (String message) => Center(child: Text(message)),
+            loaded: (_) => const SizedBox(),
             success: (LimitEntity limit) =>
                 Center(child: Text(limit.toString())),
             initial: (List<CategoryEntity> categories) => Column(
