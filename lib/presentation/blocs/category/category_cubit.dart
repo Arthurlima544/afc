@@ -1,9 +1,9 @@
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../domain/entity/category_entity.dart';
+import '../../../utils/logger.dart';
 
 part 'category_state.dart';
 part 'category_cubit.freezed.dart';
@@ -12,8 +12,9 @@ class CategoryCubit extends Cubit<CategoryState> {
   CategoryCubit() : super(const CategoryState.initial(-1));
 
   void changeSelectedCategory(int index) {
-    if (state == index) {
+    if (state == CategoryState.initial(index)) {
       emit(const CategoryState.initial(-1));
+      return;
     }
     emit(CategoryState.initial(index));
   }
@@ -26,7 +27,7 @@ class CategoryCubit extends Cubit<CategoryState> {
           .add(category.toJson())
           .then(
             (DocumentReference<Object> doc) =>
-                print('DocumentSnapshot added with ID: ${doc.id}'),
+                logger.d('DocumentSnapshot added with ID: ${doc.id}'),
           );
       emit(CategoryState.success(category));
     } on Exception catch (e) {

@@ -4,6 +4,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../domain/entity/category_entity.dart';
 import '../../../domain/entity/transaction_entity.dart';
+import '../../../utils/logger.dart';
 
 part 'transaction_state.dart';
 part 'transaction_cubit.freezed.dart';
@@ -35,7 +36,7 @@ class TransactionCubit extends Cubit<TransactionState> {
           .add(transaction.toJson())
           .then(
             (DocumentReference<Object> doc) =>
-                print('DocumentSnapshot added with ID: ${doc.id}'),
+                logger.d('DocumentSnapshot added with ID: ${doc.id}'),
           );
       emit(TransactionState.success(transaction));
     } on Exception catch (e) {

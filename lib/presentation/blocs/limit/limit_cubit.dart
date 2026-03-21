@@ -4,6 +4,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../domain/entity/category_entity.dart';
 import '../../../domain/entity/limit_entity.dart';
+import '../../../utils/logger.dart';
 
 part 'limit_state.dart';
 part 'limit_cubit.freezed.dart';
@@ -34,7 +35,7 @@ class LimitCubit extends Cubit<LimitState> {
           .add(limit.toJson())
           .then(
             (DocumentReference<Object> doc) =>
-                print('DocumentSnapshot added with ID: ${doc.id}'),
+                logger.d('DocumentSnapshot added with ID: ${doc.id}'),
           );
       emit(LimitState.success(limit));
     } on Exception catch (e) {

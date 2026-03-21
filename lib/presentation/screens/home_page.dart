@@ -2,8 +2,10 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart'
+    hide Column, Row, Expanded;
 
+import '../../utils/logger.dart';
 import '../blocs/home/home_bloc.dart';
 
 class HomePage extends StatelessWidget {
@@ -283,7 +285,7 @@ class MonthLimit extends StatelessWidget {
     children: <Widget>[
       IconButton(
         variance: const ButtonStyle.primary(),
-        onPressed: () => print('percent: $percent'),
+        onPressed: () => logger.d('percent: $percent'),
         enabled: true,
         shape: ButtonShape.circle,
         icon: Icon(icon, size: 24, color: Colors.white),
