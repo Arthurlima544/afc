@@ -52,7 +52,7 @@ jobs:
 
       - name: 🔧 Pre-install Android CMake 3.22.1
         run: |
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "cmake;3.22.1" > /dev/null
+          echo y | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "cmake;3.22.1" > /dev/null
 
       - name: 📥 Get dependencies
         run: flutter pub get
