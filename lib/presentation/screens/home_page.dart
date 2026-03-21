@@ -9,6 +9,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart'
 import '../../domain/entity/stats_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
+import '../../utils/flavors.dart';
 import '../../utils/logger.dart';
 import '../blocs/home/home_bloc.dart';
 import '../blocs/home/stats_state.dart';
@@ -30,15 +31,24 @@ class _HomeContent extends StatelessWidget {
   const _HomeContent();
 
   @override
-  Widget build(BuildContext context) => const Column(
+  Widget build(BuildContext context) => Column(
     children: <Widget>[
-      Gap(20),
-      SummaryWidget(),
-      Gap(20),
-      LastTransactionsWidget(),
-      MonthLimitWidget(),
-      Gap(20),
-      StatsWidget(),
+      const Gap(20),
+      if (Flavor.isDevelopment())
+        Align(
+          alignment: Alignment.centerRight,
+          child: IconButton(
+            variance: const ButtonStyle.outline(),
+            onPressed: () => context.push('/seed'),
+            icon: const Icon(Icons.data_object, size: 20),
+          ),
+        ),
+      const SummaryWidget(),
+      const Gap(20),
+      const LastTransactionsWidget(),
+      const MonthLimitWidget(),
+      const Gap(20),
+      const StatsWidget(),
     ],
   ).withPadding(all: 20);
 }
@@ -598,17 +608,25 @@ class HomeAppBar extends StatelessWidget {
   const HomeAppBar({super.key});
 
   @override
-  Widget build(BuildContext context) => const Row(
+  Widget build(BuildContext context) => Row(
     children: <Widget>[
       // user icon
-      Icon(Icons.person, size: 40),
-      Gap(10),
-      Text('Welcome, User!', style: TextStyle(fontSize: 20)),
-      Gap(10),
-      Icon(Icons.notifications, size: 30),
-      Gap(10),
-      Icon(Icons.settings, size: 30),
-      Gap(10),
+      const Icon(Icons.person, size: 40),
+      const Gap(10),
+      const Text('Welcome, User!', style: TextStyle(fontSize: 20)),
+      const Gap(10),
+      const Icon(Icons.notifications, size: 30),
+      const Gap(10),
+      const Icon(Icons.settings, size: 30),
+      const Gap(10),
+      if (Flavor.isDevelopment()) ...<Widget>[
+        const Gap(10),
+        IconButton(
+          variance: const ButtonStyle.outline(),
+          onPressed: () => context.push('/seed'),
+          icon: const Icon(Icons.data_object, size: 20),
+        ),
+      ],
     ],
   );
 }
