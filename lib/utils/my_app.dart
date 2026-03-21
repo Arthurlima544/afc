@@ -1,4 +1,5 @@
 import 'package:clerk_flutter/clerk_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
@@ -10,7 +11,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BlocProvider<AuthBloc>(
-    create: (BuildContext context) => AuthBloc(),
+    create: (BuildContext context) => AuthBloc(
+        onFirebaseSignIn: () => FirebaseAuth.instance.signInAnonymously(),
+        onFirebaseSignOut: () => FirebaseAuth.instance.signOut(),
+      ),
     child: ClerkAuth(
       config: ClerkAuthConfig(
         publishableKey: const String.fromEnvironment('CLERK_PUBLISHABLE_KEY'),

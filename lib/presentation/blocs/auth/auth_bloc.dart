@@ -7,19 +7,31 @@ part 'auth_state.dart';
 part 'auth_bloc.freezed.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  AuthBloc() : super(const _Initial()) {
-    on<AuthEvent>((AuthEvent event, Emitter<AuthState> emit) {
-      event.map(
-        started: (_Started e) {
+  AuthBloc({
+    Future<void> Function()? onFirebaseSignIn,
+    Future<void> Function()? onFirebaseSignOut,
+  }) : _onFirebaseSignIn = onFirebaseSignIn ?? _noOp,
+       _onFirebaseSignOut = onFirebaseSignOut ?? _noOp,
+       super(const _Initial()) {
+    on<AuthEvent>((AuthEvent event, Emitter<AuthState> emit) async {
+      await event.map(
+        started: (_Started e) async {
           emit(const AuthState.unknown());
         },
-        signIn: (_SignIn e) {
+        signIn: (_SignIn e) async {
+          await _onFirebaseSignIn();
           emit(AuthState.signedIn(e.authState));
         },
-        signOut: (_SignOut e) {
+        signOut: (_SignOut e) async {
+          await _onFirebaseSignOut();
           emit(const AuthState.signedOut());
         },
       );
     });
   }
+
+  final Future<void> Function() _onFirebaseSignIn;
+  final Future<void> Function() _onFirebaseSignOut;
+
+  static Future<void> _noOp() async {}
 }

@@ -14,6 +14,7 @@ import '../../presentation/blocs/transaction/transaction_cubit.dart';
 import '../../presentation/screens/cadastrar_categoria.dart';
 import '../../presentation/screens/cadastrar_limites.dart';
 import '../../presentation/screens/cadastrar_transacao.dart';
+import '../../presentation/screens/dev_seed_screen.dart';
 import '../../presentation/screens/home_page.dart';
 import '../../presentation/screens/home_screen.dart';
 import '../../presentation/screens/lista_categorias.dart';
@@ -166,6 +167,12 @@ final GoRouter router = GoRouter(
           child: CadastrarCategoria(initialCategory: cat),
         );
       },
+    ),
+
+    GoRoute(
+      path: '/seed',
+      builder: (BuildContext context, GoRouterState state) =>
+          const DevSeedScreen(),
     ),
 
     GoRoute(
