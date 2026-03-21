@@ -38,4 +38,53 @@ class CategoryCubit extends Cubit<CategoryState> {
       emit(CategoryState.error(e.toString()));
     }
   }
+
+  Future<void> loadCategories() async {
+    try {
+      emit(const CategoryState.loading());
+      final QuerySnapshot<Map<String, dynamic>> snap =
+          await _firestore.collection('category').get();
+      final List<CategoryEntity> cats = snap.docs
+          .map(
+            (QueryDocumentSnapshot<Map<String, dynamic>> doc) =>
+                CategoryEntity.fromJson(doc.data()),
+          )
+          .toList();
+      emit(CategoryState.listed(cats));
+    } on Exception catch (e) {
+      emit(CategoryState.error(e.toString()));
+    }
+  }
+
+  Future<void> deleteCategory(String catUuid) async {
+    try {
+      emit(const CategoryState.loading());
+      final QuerySnapshot<Map<String, dynamic>> snap = await _firestore
+          .collection('category')
+          .where('uuid', isEqualTo: catUuid)
+          .get();
+      if (snap.docs.isNotEmpty) {
+        await snap.docs.first.reference.delete();
+      }
+      await loadCategories();
+    } on Exception catch (e) {
+      emit(CategoryState.error(e.toString()));
+    }
+  }
+
+  Future<void> updateCategory(CategoryEntity category) async {
+    try {
+      emit(const CategoryState.loading());
+      final QuerySnapshot<Map<String, dynamic>> snap = await _firestore
+          .collection('category')
+          .where('uuid', isEqualTo: category.uuid)
+          .get();
+      if (snap.docs.isNotEmpty) {
+        await snap.docs.first.reference.set(category.toJson());
+      }
+      emit(CategoryState.success(category));
+    } on Exception catch (e) {
+      emit(CategoryState.error(e.toString()));
+    }
+  }
 }

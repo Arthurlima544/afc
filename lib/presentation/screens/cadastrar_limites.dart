@@ -12,7 +12,9 @@ import '../blocs/auth/auth_bloc.dart';
 import '../blocs/limit/limit_cubit.dart';
 
 class CadastrarLimites extends StatefulWidget {
-  const CadastrarLimites({super.key});
+  const CadastrarLimites({super.key, this.initialLimit});
+
+  final LimitEntity? initialLimit;
 
   @override
   State<CadastrarLimites> createState() => _CadastrarLimitesState();
@@ -25,16 +27,43 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
   double money = 0;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.initialLimit != null) {
+      final LimitEntity limit = widget.initialLimit!;
+      money = limit.limitAmount;
+      monthValue = limit.month;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) => DrawerOverlay(
     child: SizedBox(
       width: 480,
       child: Form(
-        child: BlocBuilder<LimitCubit, LimitState>(
+        child: BlocConsumer<LimitCubit, LimitState>(
+          listener: (BuildContext context, LimitState state) {
+            state.whenOrNull(
+              initial: (List<CategoryEntity> categories) {
+                if (widget.initialLimit != null && categoryValue == null) {
+                  for (final CategoryEntity cat in categories) {
+                    if (cat.uuid == widget.initialLimit!.categoryUUid) {
+                      setState(() {
+                        categoryValue = cat.name;
+                      });
+                      break;
+                    }
+                  }
+                }
+              },
+            );
+          },
           builder: (BuildContext context, LimitState state) => state.when(
             loading: () =>
                 const Center(child: CircularProgressIndicator(size: 20)),
             error: (String message) => Center(child: Text(message)),
             loaded: (_) => const SizedBox(),
+            listed: (_) => const SizedBox(),
             success: (LimitEntity limit) =>
                 Center(child: Text(limit.toString())),
             initial: (List<CategoryEntity> categories) => Column(
@@ -122,20 +151,34 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
                     context.read<AuthBloc>().state.whenOrNull(
                       signedIn: (ClerkAuthState authState) {
                         final String userId = authState.user?.id ?? '';
-                        context.read<LimitCubit>().saveLimit(
-                          LimitEntity(
-                            uuid: const Uuid().v1(),
-                            limitAmount: money,
-                            categoryUUid: selectedCategory.uuid,
-                            month: monthValue ?? '',
-                            userId: userId,
-                          ),
-                        );
+                        if (widget.initialLimit != null) {
+                          context.read<LimitCubit>().updateLimit(
+                            LimitEntity(
+                              uuid: widget.initialLimit!.uuid,
+                              limitAmount: money,
+                              categoryUUid: selectedCategory.uuid,
+                              month: monthValue ?? '',
+                              userId: userId,
+                            ),
+                          );
+                        } else {
+                          context.read<LimitCubit>().saveLimit(
+                            LimitEntity(
+                              uuid: const Uuid().v1(),
+                              limitAmount: money,
+                              categoryUUid: selectedCategory.uuid,
+                              month: monthValue ?? '',
+                              userId: userId,
+                            ),
+                          );
+                        }
                       },
                     );
                   },
                   trailing: const Icon(Icons.add),
-                  child: const Text('Add'),
+                  child: Text(
+                    widget.initialLimit != null ? 'Salvar' : 'Add',
+                  ),
                 ),
                 const Spacer(),
               ],

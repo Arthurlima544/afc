@@ -12,7 +12,9 @@ import '../blocs/auth/auth_bloc.dart';
 import '../blocs/transaction/transaction_cubit.dart';
 
 class CadastrarTransacao extends StatefulWidget {
-  const CadastrarTransacao({super.key});
+  const CadastrarTransacao({super.key, this.initialTransaction});
+
+  final TransactionEntity? initialTransaction;
 
   @override
   State<CadastrarTransacao> createState() => _CadastrarTransacaoState();
@@ -27,155 +29,211 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
   double money = 0;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.initialTransaction != null) {
+      final TransactionEntity tx = widget.initialTransaction!;
+      money = tx.amount;
+      _value = tx.data;
+      typeValue = tx.typeUuid;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) => DrawerOverlay(
     child: SizedBox(
       width: 480,
       child: Form(
-        child: BlocBuilder<TransactionCubit, TransactionState>(
-          builder: (BuildContext context, TransactionState state) => state.when(
-            loading: () =>
-                const Center(child: CircularProgressIndicator(size: 20)),
-            error: (String message) => Center(child: Text(message)),
-            success: (TransactionEntity transaction) =>
-                Center(child: Text(transaction.toString())),
-            initial: (List<CategoryEntity> categories) => Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                const Spacer(),
-                DatePicker(
-                  value: _value,
-                  mode: PromptMode.dialog,
-                  dialogTitle: const Text('Select Date'),
-                  stateBuilder: (DateTime date) {
-                    if (date.isAfter(DateTime.now())) {
-                      return DateState.disabled;
-                    }
-                    return DateState.enabled;
-                  },
-                  onChanged: (DateTime? value) {
-                    setState(() {
-                      _value = value;
-                    });
-                    logger.d('Date picked $_value');
-                  },
-                ),
-                const Gap(20),
-                FormTableLayout(
-                  rows: <FormField<String>>[
-                    FormField<String>(
-                      key: _titleKey,
-                      label: const Text('Título'),
-                      child: const TextField(),
-                    ),
-                  ],
-                ),
-                const Gap(20),
-                SizedBox(
-                  width: 100,
-                  child: TextField(
-                    initialValue: money.toString(),
-                    onChanged: (String money) {
+        child: BlocConsumer<TransactionCubit, TransactionState>(
+          listener: (BuildContext context, TransactionState state) {
+            state.whenOrNull(
+              initial: (List<CategoryEntity> categories) {
+                if (widget.initialTransaction != null &&
+                    categoryValue == null) {
+                  for (final CategoryEntity cat in categories) {
+                    if (cat.uuid ==
+                        widget.initialTransaction!.categoryUUid) {
                       setState(() {
-                        this.money = double.tryParse(money) ?? 0;
+                        categoryValue = cat.name;
                       });
-                    },
-                    features: const <InputFeature>[InputFeature.spinner()],
-                    submitFormatters: <TextInputFormatter>[
-                      TextInputFormatters.mathExpression(),
-                    ],
-                  ),
-                ),
-                const Gap(20),
-                Select<String>(
-                  itemBuilder: (BuildContext context, String item) =>
-                      Text(item),
-                  popupConstraints: const BoxConstraints(
-                    maxHeight: 300,
-                    maxWidth: 200,
-                  ),
-                  onChanged: (String? value) {
-                    setState(() {
-                      typeValue = value;
-                    });
-                  },
-                  value: typeValue,
-                  placeholder: const Text('Tipo'),
-                  popup: SelectPopup<String>(
-                    items: SelectItemList(
-                      children: <Widget>[
-                        for (final Object i in TypeEntity.values)
-                          SelectItemButton<String>(
-                            value: convertToString(i),
-                            child: Text(convertToString(i)),
+                      break;
+                    }
+                  }
+                }
+              },
+            );
+          },
+          builder: (BuildContext context, TransactionState state) =>
+              state.when(
+                loading: () =>
+                    const Center(child: CircularProgressIndicator(size: 20)),
+                error: (String message) => Center(child: Text(message)),
+                success: (TransactionEntity transaction) =>
+                    Center(child: Text(transaction.toString())),
+                listed: (_) => const SizedBox(),
+                initial: (List<CategoryEntity> categories) => Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    const Spacer(),
+                    DatePicker(
+                      value: _value,
+                      mode: PromptMode.dialog,
+                      dialogTitle: const Text('Select Date'),
+                      stateBuilder: (DateTime date) {
+                        if (date.isAfter(DateTime.now())) {
+                          return DateState.disabled;
+                        }
+                        return DateState.enabled;
+                      },
+                      onChanged: (DateTime? value) {
+                        setState(() {
+                          _value = value;
+                        });
+                        logger.d('Date picked $_value');
+                      },
+                    ),
+                    const Gap(20),
+                    FormTableLayout(
+                      rows: <FormField<String>>[
+                        FormField<String>(
+                          key: _titleKey,
+                          label: const Text('Título'),
+                          child: TextField(
+                            initialValue: widget.initialTransaction?.title,
                           ),
+                        ),
                       ],
                     ),
-                  ).call,
-                ),
-                const Gap(20),
-                Select<String>(
-                  itemBuilder: (BuildContext context, String item) =>
-                      Text(item),
-                  popupConstraints: const BoxConstraints(
-                    maxHeight: 300,
-                    maxWidth: 200,
-                  ),
-                  onChanged: (String? value) {
-                    setState(() {
-                      categoryValue = value;
-                    });
-                  },
-                  value: categoryValue,
-                  placeholder: const Text('Categoria'),
-                  popup: SelectPopup<String>(
-                    items: SelectItemList(
-                      children: <Widget>[
-                        for (final Object i in categories)
-                          SelectItemButton<String>(
-                            value: convertToString(i),
-                            child: Text(convertToString(i)),
-                          ),
-                      ],
+                    const Gap(20),
+                    SizedBox(
+                      width: 100,
+                      child: TextField(
+                        initialValue: money.toString(),
+                        onChanged: (String money) {
+                          setState(() {
+                            this.money = double.tryParse(money) ?? 0;
+                          });
+                        },
+                        features: const <InputFeature>[
+                          InputFeature.spinner(),
+                        ],
+                        submitFormatters: <TextInputFormatter>[
+                          TextInputFormatters.mathExpression(),
+                        ],
+                      ),
                     ),
-                  ).call,
-                ),
-                const Gap(20),
+                    const Gap(20),
+                    Select<String>(
+                      itemBuilder: (BuildContext context, String item) =>
+                          Text(item),
+                      popupConstraints: const BoxConstraints(
+                        maxHeight: 300,
+                        maxWidth: 200,
+                      ),
+                      onChanged: (String? value) {
+                        setState(() {
+                          typeValue = value;
+                        });
+                      },
+                      value: typeValue,
+                      placeholder: const Text('Tipo'),
+                      popup: SelectPopup<String>(
+                        items: SelectItemList(
+                          children: <Widget>[
+                            for (final Object i in TypeEntity.values)
+                              SelectItemButton<String>(
+                                value: convertToString(i),
+                                child: Text(convertToString(i)),
+                              ),
+                          ],
+                        ),
+                      ).call,
+                    ),
+                    const Gap(20),
+                    Select<String>(
+                      itemBuilder: (BuildContext context, String item) =>
+                          Text(item),
+                      popupConstraints: const BoxConstraints(
+                        maxHeight: 300,
+                        maxWidth: 200,
+                      ),
+                      onChanged: (String? value) {
+                        setState(() {
+                          categoryValue = value;
+                        });
+                      },
+                      value: categoryValue,
+                      placeholder: const Text('Categoria'),
+                      popup: SelectPopup<String>(
+                        items: SelectItemList(
+                          children: <Widget>[
+                            for (final Object i in categories)
+                              SelectItemButton<String>(
+                                value: convertToString(i),
+                                child: Text(convertToString(i)),
+                              ),
+                          ],
+                        ),
+                      ).call,
+                    ),
+                    const Gap(20),
 
-                PrimaryButton(
-                  onPressed: () {
-                    final String? titleOrNull = Form.of(
-                      context,
-                    ).getValue(_titleKey);
+                    PrimaryButton(
+                      onPressed: () {
+                        final String? titleOrNull = Form.of(
+                          context,
+                        ).getValue(_titleKey);
 
-                    final CategoryEntity selectedCategory = categories
-                        .firstWhere(
-                          (CategoryEntity e) => e.name == categoryValue,
-                        );
+                        final CategoryEntity selectedCategory =
+                            categories.firstWhere(
+                              (CategoryEntity e) => e.name == categoryValue,
+                            );
 
-                    context.read<AuthBloc>().state.whenOrNull(
-                      signedIn: (ClerkAuthState authState) {
-                        final String userId = authState.user?.id ?? '';
-                        context.read<TransactionCubit>().saveTransaction(
-                          TransactionEntity(
-                            uuid: const Uuid().v1(),
-                            amount: money,
-                            categoryUUid: selectedCategory.uuid,
-                            typeUuid: typeValue ?? '',
-                            data: _value ?? DateTime.now(),
-                            title: titleOrNull ?? '',
-                            userId: userId,
-                          ),
+                        context.read<AuthBloc>().state.whenOrNull(
+                          signedIn: (ClerkAuthState authState) {
+                            final String userId = authState.user?.id ?? '';
+                            if (widget.initialTransaction != null) {
+                              context
+                                  .read<TransactionCubit>()
+                                  .updateTransaction(
+                                    TransactionEntity(
+                                      uuid: widget.initialTransaction!.uuid,
+                                      amount: money,
+                                      categoryUUid: selectedCategory.uuid,
+                                      typeUuid: typeValue ?? '',
+                                      data: _value ?? DateTime.now(),
+                                      title: titleOrNull ??
+                                          widget.initialTransaction!.title,
+                                      userId: userId,
+                                    ),
+                                  );
+                            } else {
+                              context
+                                  .read<TransactionCubit>()
+                                  .saveTransaction(
+                                    TransactionEntity(
+                                      uuid: const Uuid().v1(),
+                                      amount: money,
+                                      categoryUUid: selectedCategory.uuid,
+                                      typeUuid: typeValue ?? '',
+                                      data: _value ?? DateTime.now(),
+                                      title: titleOrNull ?? '',
+                                      userId: userId,
+                                    ),
+                                  );
+                            }
+                          },
                         );
                       },
-                    );
-                  },
-                  trailing: const Icon(Icons.add),
-                  child: const Text('Add'),
+                      trailing: const Icon(Icons.add),
+                      child: Text(
+                        widget.initialTransaction != null ? 'Salvar' : 'Add',
+                      ),
+                    ),
+                    const Spacer(),
+                  ],
                 ),
-                const Spacer(),
-              ],
-            ),
-          ),
+              ),
         ),
       ),
     ),

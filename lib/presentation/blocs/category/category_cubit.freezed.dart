@@ -55,14 +55,15 @@ extension CategoryStatePatterns on CategoryState {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Initial value)?  initial,TResult Function( _Loading value)?  loading,TResult Function( _Error value)?  error,TResult Function( _Success value)?  success,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Initial value)?  initial,TResult Function( _Loading value)?  loading,TResult Function( _Error value)?  error,TResult Function( _Success value)?  success,TResult Function( _Listed value)?  listed,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
 return initial(_that);case _Loading() when loading != null:
 return loading(_that);case _Error() when error != null:
 return error(_that);case _Success() when success != null:
-return success(_that);case _:
+return success(_that);case _Listed() when listed != null:
+return listed(_that);case _:
   return orElse();
 
 }
@@ -80,14 +81,15 @@ return success(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Initial value)  initial,required TResult Function( _Loading value)  loading,required TResult Function( _Error value)  error,required TResult Function( _Success value)  success,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Initial value)  initial,required TResult Function( _Loading value)  loading,required TResult Function( _Error value)  error,required TResult Function( _Success value)  success,required TResult Function( _Listed value)  listed,}){
 final _that = this;
 switch (_that) {
 case _Initial():
 return initial(_that);case _Loading():
 return loading(_that);case _Error():
 return error(_that);case _Success():
-return success(_that);}
+return success(_that);case _Listed():
+return listed(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -101,14 +103,15 @@ return success(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Initial value)?  initial,TResult? Function( _Loading value)?  loading,TResult? Function( _Error value)?  error,TResult? Function( _Success value)?  success,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Initial value)?  initial,TResult? Function( _Loading value)?  loading,TResult? Function( _Error value)?  error,TResult? Function( _Success value)?  success,TResult? Function( _Listed value)?  listed,}){
 final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
 return initial(_that);case _Loading() when loading != null:
 return loading(_that);case _Error() when error != null:
 return error(_that);case _Success() when success != null:
-return success(_that);case _:
+return success(_that);case _Listed() when listed != null:
+return listed(_that);case _:
   return null;
 
 }
@@ -125,13 +128,14 @@ return success(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( int index)?  initial,TResult Function()?  loading,TResult Function( String message)?  error,TResult Function( CategoryEntity category)?  success,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( int index)?  initial,TResult Function()?  loading,TResult Function( String message)?  error,TResult Function( CategoryEntity category)?  success,TResult Function( List<CategoryEntity> categories)?  listed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
 return initial(_that.index);case _Loading() when loading != null:
 return loading();case _Error() when error != null:
 return error(_that.message);case _Success() when success != null:
-return success(_that.category);case _:
+return success(_that.category);case _Listed() when listed != null:
+return listed(_that.categories);case _:
   return orElse();
 
 }
@@ -149,13 +153,14 @@ return success(_that.category);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( int index)  initial,required TResult Function()  loading,required TResult Function( String message)  error,required TResult Function( CategoryEntity category)  success,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( int index)  initial,required TResult Function()  loading,required TResult Function( String message)  error,required TResult Function( CategoryEntity category)  success,required TResult Function( List<CategoryEntity> categories)  listed,}) {final _that = this;
 switch (_that) {
 case _Initial():
 return initial(_that.index);case _Loading():
 return loading();case _Error():
 return error(_that.message);case _Success():
-return success(_that.category);}
+return success(_that.category);case _Listed():
+return listed(_that.categories);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -169,13 +174,14 @@ return success(_that.category);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( int index)?  initial,TResult? Function()?  loading,TResult? Function( String message)?  error,TResult? Function( CategoryEntity category)?  success,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( int index)?  initial,TResult? Function()?  loading,TResult? Function( String message)?  error,TResult? Function( CategoryEntity category)?  success,TResult? Function( List<CategoryEntity> categories)?  listed,}) {final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
 return initial(_that.index);case _Loading() when loading != null:
 return loading();case _Error() when error != null:
 return error(_that.message);case _Success() when success != null:
-return success(_that.category);case _:
+return success(_that.category);case _Listed() when listed != null:
+return listed(_that.categories);case _:
   return null;
 
 }
@@ -420,6 +426,78 @@ $CategoryEntityCopyWith<$Res> get category {
     return _then(_self.copyWith(category: value));
   });
 }
+}
+
+/// @nodoc
+
+
+class _Listed implements CategoryState {
+  const _Listed(final  List<CategoryEntity> categories): _categories = categories;
+  
+
+ final  List<CategoryEntity> _categories;
+ List<CategoryEntity> get categories {
+  if (_categories is EqualUnmodifiableListView) return _categories;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_categories);
+}
+
+
+/// Create a copy of CategoryState
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$ListedCopyWith<_Listed> get copyWith => __$ListedCopyWithImpl<_Listed>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Listed&&const DeepCollectionEquality().equals(other._categories, _categories));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_categories));
+
+@override
+String toString() {
+  return 'CategoryState.listed(categories: $categories)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$ListedCopyWith<$Res> implements $CategoryStateCopyWith<$Res> {
+  factory _$ListedCopyWith(_Listed value, $Res Function(_Listed) _then) = __$ListedCopyWithImpl;
+@useResult
+$Res call({
+ List<CategoryEntity> categories
+});
+
+
+
+
+}
+/// @nodoc
+class __$ListedCopyWithImpl<$Res>
+    implements _$ListedCopyWith<$Res> {
+  __$ListedCopyWithImpl(this._self, this._then);
+
+  final _Listed _self;
+  final $Res Function(_Listed) _then;
+
+/// Create a copy of CategoryState
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? categories = null,}) {
+  return _then(_Listed(
+null == categories ? _self._categories : categories // ignore: cast_nullable_to_non_nullable
+as List<CategoryEntity>,
+  ));
+}
+
+
 }
 
 // dart format on

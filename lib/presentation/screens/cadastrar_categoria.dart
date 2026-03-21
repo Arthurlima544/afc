@@ -21,7 +21,9 @@ List<IconData> iconList = <IconData>[
 ];
 
 class CadastrarCategoria extends StatefulWidget {
-  const CadastrarCategoria({super.key});
+  const CadastrarCategoria({super.key, this.initialCategory});
+
+  final CategoryEntity? initialCategory;
 
   @override
   State<CadastrarCategoria> createState() => _CadastrarCategoriaState();
@@ -45,7 +47,10 @@ class _CadastrarCategoriaState extends State<CadastrarCategoria> {
                   FormField<String>(
                     key: _categoryKey,
                     label: const Text('Categoria'),
-                    child: const TextField(hintText: 'Adicione uma Categoria'),
+                    child: TextField(
+                      initialValue: widget.initialCategory?.name,
+                      hintText: 'Adicione uma Categoria',
+                    ),
                   ),
                 ],
               ).withPadding(top: 40, left: 20, right: 20, bottom: 20),
@@ -55,7 +60,9 @@ class _CadastrarCategoriaState extends State<CadastrarCategoria> {
                   for (int i = 0; i < 6; i++)
                     IconButton(
                       onPressed: () {
-                        context.read<CategoryCubit>().changeSelectedCategory(i);
+                        context
+                            .read<CategoryCubit>()
+                            .changeSelectedCategory(i);
                       },
                       variance: index == i
                           ? const ButtonStyle.primary()
@@ -72,7 +79,9 @@ class _CadastrarCategoriaState extends State<CadastrarCategoria> {
                   for (int i = 6; i < 12; i++)
                     IconButton(
                       onPressed: () {
-                        context.read<CategoryCubit>().changeSelectedCategory(i);
+                        context
+                            .read<CategoryCubit>()
+                            .changeSelectedCategory(i);
                       },
                       variance: index == i
                           ? const ButtonStyle.primary()
@@ -89,17 +98,29 @@ class _CadastrarCategoriaState extends State<CadastrarCategoria> {
                     context,
                   ).getValue(_categoryKey);
                   if (categoryOrNull != null) {
-                    context.read<CategoryCubit>().saveCategory(
-                      CategoryEntity(
-                        uuid: const Uuid().v1(),
-                        name: categoryOrNull,
-                        iconType: index,
-                      ),
-                    );
+                    if (widget.initialCategory != null) {
+                      context.read<CategoryCubit>().updateCategory(
+                        CategoryEntity(
+                          uuid: widget.initialCategory!.uuid,
+                          name: categoryOrNull,
+                          iconType: index,
+                        ),
+                      );
+                    } else {
+                      context.read<CategoryCubit>().saveCategory(
+                        CategoryEntity(
+                          uuid: const Uuid().v1(),
+                          name: categoryOrNull,
+                          iconType: index,
+                        ),
+                      );
+                    }
                   }
                 },
                 trailing: const Icon(Icons.add),
-                child: const Text('Add'),
+                child: Text(
+                  widget.initialCategory != null ? 'Salvar' : 'Add',
+                ),
               ),
             ],
           ).gap(20),
@@ -110,6 +131,7 @@ class _CadastrarCategoriaState extends State<CadastrarCategoria> {
               '${category.uuid} ${category.name} ${category.iconType}',
             ),
           ),
+          listed: (_) => const SizedBox(),
         ),
       ),
     ),

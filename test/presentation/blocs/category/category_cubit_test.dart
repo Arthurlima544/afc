@@ -79,5 +79,84 @@ void main() {
         await cubit.close();
       });
     });
+
+    group('loadCategories', () {
+      blocTest<CategoryCubit, CategoryState>(
+        'emits [loading, listed([])] when no categories exist',
+        build: () => CategoryCubit(firestore: fakeFirestore),
+        act: (CategoryCubit cubit) async => cubit.loadCategories(),
+        expect: () => <CategoryState>[
+          const CategoryState.loading(),
+          const CategoryState.listed(<CategoryEntity>[]),
+        ],
+      );
+
+      blocTest<CategoryCubit, CategoryState>(
+        'emits listed with all categories from Firestore',
+        setUp: () async {
+          await fakeFirestore.collection('category').add(tCategory.toJson());
+        },
+        build: () => CategoryCubit(firestore: fakeFirestore),
+        act: (CategoryCubit cubit) async => cubit.loadCategories(),
+        expect: () => <CategoryState>[
+          const CategoryState.loading(),
+          const CategoryState.listed(<CategoryEntity>[tCategory]),
+        ],
+      );
+    });
+
+    group('deleteCategory', () {
+      blocTest<CategoryCubit, CategoryState>(
+        'removes category and reloads listed state',
+        setUp: () async {
+          await fakeFirestore.collection('category').add(tCategory.toJson());
+        },
+        build: () => CategoryCubit(firestore: fakeFirestore),
+        act: (CategoryCubit cubit) async {
+          await cubit.loadCategories();
+          await cubit.deleteCategory(tCategory.uuid);
+        },
+        verify: (CategoryCubit cubit) {
+          cubit.state.whenOrNull(
+            listed: (List<CategoryEntity> cats) {
+              expect(cats.isEmpty, isTrue);
+            },
+          );
+        },
+      );
+    });
+
+    group('updateCategory', () {
+      blocTest<CategoryCubit, CategoryState>(
+        'emits [loading, success] after update',
+        setUp: () async {
+          await fakeFirestore.collection('category').add(tCategory.toJson());
+        },
+        build: () => CategoryCubit(firestore: fakeFirestore),
+        act: (CategoryCubit cubit) async => cubit.updateCategory(
+          tCategory.copyWith(name: 'Transporte'),
+        ),
+        expect: () => <CategoryState>[
+          const CategoryState.loading(),
+          const CategoryState.success(
+            CategoryEntity(uuid: 'user-1', name: 'Transporte', iconType: 1),
+          ),
+        ],
+      );
+
+      test('persists updated name to Firestore', () async {
+        await fakeFirestore.collection('category').add(tCategory.toJson());
+
+        final CategoryCubit cubit = CategoryCubit(firestore: fakeFirestore);
+        await cubit.updateCategory(tCategory.copyWith(name: 'Transporte'));
+
+        final QuerySnapshot<Map<String, dynamic>> snap = await fakeFirestore
+            .collection('category')
+            .where('uuid', isEqualTo: tCategory.uuid)
+            .get();
+        expect(snap.docs.first.data()['name'], 'Transporte');
+        await cubit.close();
+      });
+    });
   });
 }

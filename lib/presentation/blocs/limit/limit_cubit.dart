@@ -17,6 +17,7 @@ class LimitCubit extends Cubit<LimitState> {
       super(const LimitState.initial(<CategoryEntity>[]));
 
   final FirebaseFirestore _firestore;
+  String _userId = '';
 
   Future<void> getCategories() async {
     final QuerySnapshot<Map<String, dynamic>> res =
@@ -138,6 +139,78 @@ class LimitCubit extends Cubit<LimitState> {
       ];
 
       emit(LimitState.loaded(items));
+    } on Exception catch (e) {
+      emit(LimitState.error(e.toString()));
+    }
+  }
+
+  Future<void> loadLimits(String userId) async {
+    try {
+      _userId = userId;
+      emit(const LimitState.loading());
+      final QuerySnapshot<Map<String, dynamic>> limitsSnap = await _firestore
+          .collection('limit')
+          .where('userId', isEqualTo: userId)
+          .get();
+      final List<LimitEntity> limits = limitsSnap.docs
+          .map(
+            (QueryDocumentSnapshot<Map<String, dynamic>> doc) =>
+                LimitEntity.fromJson(doc.data()),
+          )
+          .toList();
+      if (limits.isEmpty) {
+        emit(const LimitState.listed(<LimitListItem>[]));
+        return;
+      }
+      final QuerySnapshot<Map<String, dynamic>> catsSnap =
+          await _firestore.collection('category').get();
+      final Map<String, String> catNames = <String, String>{
+        for (final QueryDocumentSnapshot<Map<String, dynamic>> doc
+            in catsSnap.docs)
+          doc.data()['uuid'] as String:
+              doc.data()['name'] as String? ?? '',
+      };
+      final List<LimitListItem> items = limits
+          .map(
+            (LimitEntity l) => LimitListItem(
+              limit: l,
+              categoryName: catNames[l.categoryUUid] ?? l.categoryUUid,
+            ),
+          )
+          .toList();
+      emit(LimitState.listed(items));
+    } on Exception catch (e) {
+      emit(LimitState.error(e.toString()));
+    }
+  }
+
+  Future<void> deleteLimit(String limitUuid) async {
+    try {
+      emit(const LimitState.loading());
+      final QuerySnapshot<Map<String, dynamic>> snap = await _firestore
+          .collection('limit')
+          .where('uuid', isEqualTo: limitUuid)
+          .get();
+      if (snap.docs.isNotEmpty) {
+        await snap.docs.first.reference.delete();
+      }
+      await loadLimits(_userId);
+    } on Exception catch (e) {
+      emit(LimitState.error(e.toString()));
+    }
+  }
+
+  Future<void> updateLimit(LimitEntity limit) async {
+    try {
+      emit(const LimitState.loading());
+      final QuerySnapshot<Map<String, dynamic>> snap = await _firestore
+          .collection('limit')
+          .where('uuid', isEqualTo: limit.uuid)
+          .get();
+      if (snap.docs.isNotEmpty) {
+        await snap.docs.first.reference.set(limit.toJson());
+      }
+      emit(LimitState.success(limit));
     } on Exception catch (e) {
       emit(LimitState.error(e.toString()));
     }
