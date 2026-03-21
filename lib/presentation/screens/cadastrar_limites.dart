@@ -70,7 +70,7 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
                   },
                   value: monthValue,
                   placeholder: const Text('Mês'),
-                  popup: SelectPopup(
+                  popup: SelectPopup<String>(
                     items: SelectItemList(
                       children: <Widget>[
                         for (final Object i in CalendarEntity.values)
@@ -97,7 +97,7 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
                   },
                   value: categoryValue,
                   placeholder: const Text('Categoria'),
-                  popup: SelectPopup(
+                  popup: SelectPopup<String>(
                     items: SelectItemList(
                       children: <Widget>[
                         for (final Object i in categories)

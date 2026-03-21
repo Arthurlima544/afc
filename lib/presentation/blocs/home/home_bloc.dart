@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../utils/logger.dart';
 import 'stats_state.dart';
 import 'transaction_state.dart';
 
@@ -33,11 +34,11 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         .toList();
 
     for (final Map<String, dynamic> t in transactions) {
-      final month = t['month'];
-      final type = t['type'];
+      final dynamic month = t['month'];
+      final dynamic type = t['type'];
       final double amount = (t['amount'] as num).toDouble();
 
-      print('Month: $month, Type: $type, Amount: $amount');
+      logger.d('Month: $month, Type: $type, Amount: $amount');
     }
   }
 

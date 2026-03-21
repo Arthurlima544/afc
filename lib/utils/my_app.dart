@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'AFC',
       routerConfig: router,
-      theme: ThemeData(colorScheme: ColorSchemes.darkViolet),
+      theme: ThemeData(colorScheme: LegacyColorSchemes.darkViolet()),
     ),
   );
 }

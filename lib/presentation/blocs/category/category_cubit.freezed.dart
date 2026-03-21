@@ -12,17 +12,11 @@ part of 'category_cubit.dart';
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
-mixin _$CategoryState implements DiagnosticableTreeMixin {
+mixin _$CategoryState {
 
 
 
 
-@override
-void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
-    ..add(DiagnosticsProperty('type', 'CategoryState'))
-    ;
-}
 
 @override
 bool operator ==(Object other) {
@@ -34,7 +28,7 @@ bool operator ==(Object other) {
 int get hashCode => runtimeType.hashCode;
 
 @override
-String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+String toString() {
   return 'CategoryState()';
 }
 
@@ -192,7 +186,7 @@ return success(_that.category);case _:
 /// @nodoc
 
 
-class _Initial with DiagnosticableTreeMixin implements CategoryState {
+class _Initial implements CategoryState {
   const _Initial(this.index);
   
 
@@ -205,12 +199,6 @@ class _Initial with DiagnosticableTreeMixin implements CategoryState {
 _$InitialCopyWith<_Initial> get copyWith => __$InitialCopyWithImpl<_Initial>(this, _$identity);
 
 
-@override
-void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
-    ..add(DiagnosticsProperty('type', 'CategoryState.initial'))
-    ..add(DiagnosticsProperty('index', index));
-}
 
 @override
 bool operator ==(Object other) {
@@ -222,7 +210,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,index);
 
 @override
-String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+String toString() {
   return 'CategoryState.initial(index: $index)';
 }
 
@@ -264,7 +252,7 @@ as int,
 /// @nodoc
 
 
-class _Loading with DiagnosticableTreeMixin implements CategoryState {
+class _Loading implements CategoryState {
   const _Loading();
   
 
@@ -272,12 +260,6 @@ class _Loading with DiagnosticableTreeMixin implements CategoryState {
 
 
 
-@override
-void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
-    ..add(DiagnosticsProperty('type', 'CategoryState.loading'))
-    ;
-}
 
 @override
 bool operator ==(Object other) {
@@ -289,7 +271,7 @@ bool operator ==(Object other) {
 int get hashCode => runtimeType.hashCode;
 
 @override
-String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+String toString() {
   return 'CategoryState.loading()';
 }
 
@@ -302,7 +284,7 @@ String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
 /// @nodoc
 
 
-class _Error with DiagnosticableTreeMixin implements CategoryState {
+class _Error implements CategoryState {
   const _Error(this.message);
   
 
@@ -315,12 +297,6 @@ class _Error with DiagnosticableTreeMixin implements CategoryState {
 _$ErrorCopyWith<_Error> get copyWith => __$ErrorCopyWithImpl<_Error>(this, _$identity);
 
 
-@override
-void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
-    ..add(DiagnosticsProperty('type', 'CategoryState.error'))
-    ..add(DiagnosticsProperty('message', message));
-}
 
 @override
 bool operator ==(Object other) {
@@ -332,7 +308,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,message);
 
 @override
-String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+String toString() {
   return 'CategoryState.error(message: $message)';
 }
 
@@ -374,7 +350,7 @@ as String,
 /// @nodoc
 
 
-class _Success with DiagnosticableTreeMixin implements CategoryState {
+class _Success implements CategoryState {
   const _Success(this.category);
   
 
@@ -387,12 +363,6 @@ class _Success with DiagnosticableTreeMixin implements CategoryState {
 _$SuccessCopyWith<_Success> get copyWith => __$SuccessCopyWithImpl<_Success>(this, _$identity);
 
 
-@override
-void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-  properties
-    ..add(DiagnosticsProperty('type', 'CategoryState.success'))
-    ..add(DiagnosticsProperty('category', category));
-}
 
 @override
 bool operator ==(Object other) {
@@ -404,7 +374,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,category);
 
 @override
-String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+String toString() {
   return 'CategoryState.success(category: $category)';
 }
 

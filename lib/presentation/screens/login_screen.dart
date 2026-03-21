@@ -2,7 +2,8 @@ import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart' hide Colors;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' hide ThemeData, Scaffold;
+import 'package:shadcn_flutter/shadcn_flutter.dart'
+    hide ThemeData, Scaffold, Column;
 
 import '../blocs/auth/auth_bloc.dart';
 

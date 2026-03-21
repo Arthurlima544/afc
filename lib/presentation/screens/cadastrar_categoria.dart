@@ -1,9 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../domain/entity/category_entity.dart';
 import '../blocs/category/category_cubit.dart';
-import 'package:uuid/uuid.dart';
 
 List<IconData> iconList = <IconData>[
   Icons.share_outlined,

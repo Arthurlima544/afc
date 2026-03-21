@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../../domain/entity/category_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
+import '../../utils/logger.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/transaction/transaction_cubit.dart';
 
@@ -55,7 +56,7 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
                     setState(() {
                       _value = value;
                     });
-                    print('Date picked $_value');
+                    logger.d('Date picked $_value');
                   },
                 ),
                 const Gap(20),
@@ -99,7 +100,7 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
                   },
                   value: typeValue,
                   placeholder: const Text('Tipo'),
-                  popup: SelectPopup(
+                  popup: SelectPopup<String>(
                     items: SelectItemList(
                       children: <Widget>[
                         for (final Object i in TypeEntity.values)
@@ -126,7 +127,7 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
                   },
                   value: categoryValue,
                   placeholder: const Text('Categoria'),
-                  popup: SelectPopup(
+                  popup: SelectPopup<String>(
                     items: SelectItemList(
                       children: <Widget>[
                         for (final Object i in categories)
