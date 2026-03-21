@@ -269,6 +269,23 @@ Workflow: `.github/workflows/main.yml`
 
 ---
 
+## Starting a New Implementation
+
+**Always** follow these steps before writing any code for a new sprint or feature:
+
+```bash
+git checkout main
+git pull
+git checkout -b <branch-name>
+```
+
+Branch names follow the pattern from the Branch Strategy table in `ROADMAP.md`:
+- Sprint branches: `feat/us-XX-YY-short-description`
+- Bug fixes: `fix/short-description`
+- Chores: `chore/short-description`
+
+---
+
 ## Commit Convention
 
 Single-line commit messages using Conventional Commits. No co-author lines.

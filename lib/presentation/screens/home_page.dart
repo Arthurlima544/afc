@@ -1,3 +1,5 @@
+import 'package:clerk_flutter/clerk_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,6 +13,7 @@ import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
 import '../../utils/flavors.dart';
 import '../../utils/logger.dart';
+import '../blocs/auth/auth_bloc.dart';
 import '../blocs/home/home_bloc.dart';
 import '../blocs/home/stats_state.dart';
 import '../blocs/home/transaction_state.dart';
@@ -43,6 +46,7 @@ class _HomeContent extends StatelessWidget {
             icon: const Icon(Icons.data_object, size: 20),
           ),
         ),
+      const SyncStatusWidget(),
       const SummaryWidget(),
       const Gap(20),
       const LastTransactionsWidget(),
@@ -657,4 +661,170 @@ String convertToCurrencyFormated(double amount) {
     symbol: 'R\$',
   );
   return format.format(amount);
+}
+
+class SyncStatusWidget extends StatelessWidget {
+  const SyncStatusWidget({super.key});
+
+  String _formatSyncTime(DateTime? lastSynced) {
+    if (lastSynced == null) {
+      return 'Nunca sincronizado';
+    }
+    final Duration diff = DateTime.now().difference(lastSynced);
+    if (diff.inMinutes < 1) {
+      return 'agora';
+    }
+    if (diff.inHours < 1) {
+      return '${diff.inMinutes} min atrás';
+    }
+    return '${diff.inHours}h atrás';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String userId =
+        context.watch<AuthBloc>().state.whenOrNull(
+              signedIn: (ClerkAuthState s) => s.user?.id,
+            ) ??
+        '';
+
+    if (userId.isEmpty) {
+      return const SizedBox();
+    }
+
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('connected_account')
+          .where('userId', isEqualTo: userId)
+          .snapshots(),
+      builder: (
+        BuildContext context,
+        AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot,
+      ) {
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const SizedBox();
+        }
+
+        final List<QueryDocumentSnapshot<Map<String, dynamic>>> docs =
+            snapshot.data!.docs;
+
+        DateTime? mostRecent;
+        bool hasExpired = false;
+
+        for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in docs) {
+          final dynamic rawSynced = doc.data()['lastSyncedAt'];
+          if (rawSynced is Timestamp) {
+            final DateTime dt = rawSynced.toDate();
+            if (mostRecent == null || dt.isAfter(mostRecent)) {
+              mostRecent = dt;
+            }
+          }
+          final dynamic status = doc.data()['status'];
+          if (status == 'consent_expired') {
+            hasExpired = true;
+          }
+        }
+
+        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance
+              .collection('raw_transaction')
+              .where('userId', isEqualTo: userId)
+              .where('status', isEqualTo: 'pending')
+              .snapshots(),
+          builder: (
+            BuildContext context,
+            AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> pendingSnap,
+          ) {
+            final int pendingCount =
+                pendingSnap.hasData ? pendingSnap.data!.docs.length : 0;
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Row(
+                        children: <Widget>[
+                          const Icon(Icons.sync, size: 18),
+                          const Gap(6),
+                          Expanded(
+                            child: Text(
+                              'Última sincronização: ${_formatSyncTime(mostRecent)}',
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () =>
+                                context.push('/contas-conectadas'),
+                            child: const Text(
+                              'Open Finance',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.blue,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (hasExpired) ...<Widget>[
+                        const Gap(6),
+                        GestureDetector(
+                          onTap: () => context.push('/contas-conectadas'),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF3C7),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                Icon(
+                                  Icons.warning_amber,
+                                  size: 14,
+                                  color: Color(0xFFF59E0B),
+                                ),
+                                Gap(4),
+                                Text(
+                                  'Consentimento expirado — reconecte',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF92400E),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (pendingCount > 0) ...<Widget>[
+                        const Gap(6),
+                        TextButton(
+                          onPressed: () =>
+                              context.push('/revisar-transacoes'),
+                          child: Text(
+                            'Revisar $pendingCount importação(ões) pendente(s)',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 }
