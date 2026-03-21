@@ -300,6 +300,26 @@ void main() {
     );
 
     blocTest<LimitCubit, LimitState>(
+      'does not include limits for other users',
+      setUp: () async {
+        await fakeFirestore.collection('limit').add(<String, dynamic>{
+          'uuid': 'limit-other',
+          'categoryUUid': catId,
+          'month': currentMonth,
+          'limitAmount': 100.0,
+          'userId': 'other-user',
+        });
+      },
+      build: () => LimitCubit(firestore: fakeFirestore),
+      act: (LimitCubit cubit) async =>
+          cubit.loadLimitsWithProgress(userId),
+      expect: () => <LimitState>[
+        const LimitState.loading(),
+        const LimitState.loaded(<LimitProgressItem>[]),
+      ],
+    );
+
+    blocTest<LimitCubit, LimitState>(
       'uses category name and iconType from category collection',
       setUp: () async {
         await fakeFirestore.collection('limit').add(<String, dynamic>{
@@ -328,6 +348,96 @@ void main() {
             limitAmount: 800.0,
           ),
         ]),
+      ],
+    );
+  });
+
+  group('LimitCubit loadLimits / deleteLimit / updateLimit', () {
+    late FakeFirebaseFirestore fakeFirestore;
+
+    const String userId = 'user-10';
+    const String catId = 'cat-food';
+
+    const LimitEntity tLimit = LimitEntity(
+      uuid: 'limit-10',
+      categoryUUid: catId,
+      month: 'march',
+      limitAmount: 300.0,
+      userId: userId,
+    );
+
+    setUp(() {
+      fakeFirestore = FakeFirebaseFirestore();
+    });
+
+    blocTest<LimitCubit, LimitState>(
+      'loadLimits emits [loading, listed([])] when no limits exist',
+      build: () => LimitCubit(firestore: fakeFirestore),
+      act: (LimitCubit cubit) async => cubit.loadLimits(userId),
+      expect: () => <LimitState>[
+        const LimitState.loading(),
+        const LimitState.listed(<LimitListItem>[]),
+      ],
+    );
+
+    blocTest<LimitCubit, LimitState>(
+      'loadLimits emits listed with resolved category name',
+      setUp: () async {
+        await fakeFirestore.collection('limit').add(tLimit.toJson());
+        await fakeFirestore.collection('category').add(<String, dynamic>{
+          'uuid': catId,
+          'name': 'Alimentação',
+          'iconType': 7,
+        });
+      },
+      build: () => LimitCubit(firestore: fakeFirestore),
+      act: (LimitCubit cubit) async => cubit.loadLimits(userId),
+      expect: () => <LimitState>[
+        const LimitState.loading(),
+        const LimitState.listed(<LimitListItem>[
+          LimitListItem(limit: tLimit, categoryName: 'Alimentação'),
+        ]),
+      ],
+    );
+
+    blocTest<LimitCubit, LimitState>(
+      'deleteLimit removes limit and reloads listed state',
+      setUp: () async {
+        await fakeFirestore.collection('limit').add(tLimit.toJson());
+      },
+      build: () => LimitCubit(firestore: fakeFirestore),
+      act: (LimitCubit cubit) async {
+        await cubit.loadLimits(userId);
+        await cubit.deleteLimit(tLimit.uuid);
+      },
+      verify: (LimitCubit cubit) {
+        cubit.state.whenOrNull(
+          listed: (List<LimitListItem> items) {
+            expect(items.isEmpty, isTrue);
+          },
+        );
+      },
+    );
+
+    blocTest<LimitCubit, LimitState>(
+      'updateLimit emits [loading, success] after update',
+      setUp: () async {
+        await fakeFirestore.collection('limit').add(tLimit.toJson());
+      },
+      build: () => LimitCubit(firestore: fakeFirestore),
+      act: (LimitCubit cubit) async =>
+          cubit.updateLimit(tLimit.copyWith(limitAmount: 500.0)),
+      expect: () => <LimitState>[
+        const LimitState.loading(),
+        const LimitState.success(
+          LimitEntity(
+            uuid: 'limit-10',
+            categoryUUid: catId,
+            month: 'march',
+            limitAmount: 500.0,
+            userId: userId,
+          ),
+        ),
       ],
     );
   });

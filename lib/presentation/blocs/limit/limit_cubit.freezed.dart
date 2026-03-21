@@ -55,7 +55,7 @@ extension LimitStatePatterns on LimitState {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Initial value)?  initial,TResult Function( _Loading value)?  loading,TResult Function( _Loaded value)?  loaded,TResult Function( _Error value)?  error,TResult Function( _Success value)?  success,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Initial value)?  initial,TResult Function( _Loading value)?  loading,TResult Function( _Loaded value)?  loaded,TResult Function( _Error value)?  error,TResult Function( _Success value)?  success,TResult Function( _Listed value)?  listed,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
@@ -63,7 +63,8 @@ return initial(_that);case _Loading() when loading != null:
 return loading(_that);case _Loaded() when loaded != null:
 return loaded(_that);case _Error() when error != null:
 return error(_that);case _Success() when success != null:
-return success(_that);case _:
+return success(_that);case _Listed() when listed != null:
+return listed(_that);case _:
   return orElse();
 
 }
@@ -81,7 +82,7 @@ return success(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Initial value)  initial,required TResult Function( _Loading value)  loading,required TResult Function( _Loaded value)  loaded,required TResult Function( _Error value)  error,required TResult Function( _Success value)  success,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Initial value)  initial,required TResult Function( _Loading value)  loading,required TResult Function( _Loaded value)  loaded,required TResult Function( _Error value)  error,required TResult Function( _Success value)  success,required TResult Function( _Listed value)  listed,}){
 final _that = this;
 switch (_that) {
 case _Initial():
@@ -89,7 +90,8 @@ return initial(_that);case _Loading():
 return loading(_that);case _Loaded():
 return loaded(_that);case _Error():
 return error(_that);case _Success():
-return success(_that);case _:
+return success(_that);case _Listed():
+return listed(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -106,7 +108,7 @@ return success(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Initial value)?  initial,TResult? Function( _Loading value)?  loading,TResult? Function( _Loaded value)?  loaded,TResult? Function( _Error value)?  error,TResult? Function( _Success value)?  success,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Initial value)?  initial,TResult? Function( _Loading value)?  loading,TResult? Function( _Loaded value)?  loaded,TResult? Function( _Error value)?  error,TResult? Function( _Success value)?  success,TResult? Function( _Listed value)?  listed,}){
 final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
@@ -114,7 +116,8 @@ return initial(_that);case _Loading() when loading != null:
 return loading(_that);case _Loaded() when loaded != null:
 return loaded(_that);case _Error() when error != null:
 return error(_that);case _Success() when success != null:
-return success(_that);case _:
+return success(_that);case _Listed() when listed != null:
+return listed(_that);case _:
   return null;
 
 }
@@ -131,14 +134,15 @@ return success(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( List<CategoryEntity> categories)?  initial,TResult Function()?  loading,TResult Function( List<LimitProgressItem> items)?  loaded,TResult Function( String message)?  error,TResult Function( LimitEntity limit)?  success,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( List<CategoryEntity> categories)?  initial,TResult Function()?  loading,TResult Function( List<LimitProgressItem> items)?  loaded,TResult Function( String message)?  error,TResult Function( LimitEntity limit)?  success,TResult Function( List<LimitListItem> items)?  listed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
 return initial(_that.categories);case _Loading() when loading != null:
 return loading();case _Loaded() when loaded != null:
 return loaded(_that.items);case _Error() when error != null:
 return error(_that.message);case _Success() when success != null:
-return success(_that.limit);case _:
+return success(_that.limit);case _Listed() when listed != null:
+return listed(_that.items);case _:
   return orElse();
 
 }
@@ -156,14 +160,15 @@ return success(_that.limit);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( List<CategoryEntity> categories)  initial,required TResult Function()  loading,required TResult Function( List<LimitProgressItem> items)  loaded,required TResult Function( String message)  error,required TResult Function( LimitEntity limit)  success,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( List<CategoryEntity> categories)  initial,required TResult Function()  loading,required TResult Function( List<LimitProgressItem> items)  loaded,required TResult Function( String message)  error,required TResult Function( LimitEntity limit)  success,required TResult Function( List<LimitListItem> items)  listed,}) {final _that = this;
 switch (_that) {
 case _Initial():
 return initial(_that.categories);case _Loading():
 return loading();case _Loaded():
 return loaded(_that.items);case _Error():
 return error(_that.message);case _Success():
-return success(_that.limit);case _:
+return success(_that.limit);case _Listed():
+return listed(_that.items);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -180,14 +185,15 @@ return success(_that.limit);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( List<CategoryEntity> categories)?  initial,TResult? Function()?  loading,TResult? Function( List<LimitProgressItem> items)?  loaded,TResult? Function( String message)?  error,TResult? Function( LimitEntity limit)?  success,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( List<CategoryEntity> categories)?  initial,TResult? Function()?  loading,TResult? Function( List<LimitProgressItem> items)?  loaded,TResult? Function( String message)?  error,TResult? Function( LimitEntity limit)?  success,TResult? Function( List<LimitListItem> items)?  listed,}) {final _that = this;
 switch (_that) {
 case _Initial() when initial != null:
 return initial(_that.categories);case _Loading() when loading != null:
 return loading();case _Loaded() when loaded != null:
 return loaded(_that.items);case _Error() when error != null:
 return error(_that.message);case _Success() when success != null:
-return success(_that.limit);case _:
+return success(_that.limit);case _Listed() when listed != null:
+return listed(_that.items);case _:
   return null;
 
 }
@@ -510,6 +516,78 @@ $LimitEntityCopyWith<$Res> get limit {
     return _then(_self.copyWith(limit: value));
   });
 }
+}
+
+/// @nodoc
+
+
+class _Listed implements LimitState {
+  const _Listed(final  List<LimitListItem> items): _items = items;
+  
+
+ final  List<LimitListItem> _items;
+ List<LimitListItem> get items {
+  if (_items is EqualUnmodifiableListView) return _items;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_items);
+}
+
+
+/// Create a copy of LimitState
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$ListedCopyWith<_Listed> get copyWith => __$ListedCopyWithImpl<_Listed>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Listed&&const DeepCollectionEquality().equals(other._items, _items));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_items));
+
+@override
+String toString() {
+  return 'LimitState.listed(items: $items)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$ListedCopyWith<$Res> implements $LimitStateCopyWith<$Res> {
+  factory _$ListedCopyWith(_Listed value, $Res Function(_Listed) _then) = __$ListedCopyWithImpl;
+@useResult
+$Res call({
+ List<LimitListItem> items
+});
+
+
+
+
+}
+/// @nodoc
+class __$ListedCopyWithImpl<$Res>
+    implements _$ListedCopyWith<$Res> {
+  __$ListedCopyWithImpl(this._self, this._then);
+
+  final _Listed _self;
+  final $Res Function(_Listed) _then;
+
+/// Create a copy of LimitState
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? items = null,}) {
+  return _then(_Listed(
+null == items ? _self._items : items // ignore: cast_nullable_to_non_nullable
+as List<LimitListItem>,
+  ));
+}
+
+
 }
 
 // dart format on

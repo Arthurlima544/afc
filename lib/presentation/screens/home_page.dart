@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart'
     hide Column, Row, Expanded;
@@ -100,9 +101,7 @@ class StatsWidget extends StatelessWidget {
                     ),
                   ),
                   TextButton(
-                    onPressed: () {
-                      //TODO Navigate to all transactions page
-                    },
+                    onPressed: () => context.push('/lista-transacoes'),
                     child: const Text(
                       'Ver Todas',
                       style: TextStyle(fontSize: 14, color: Colors.blue),
@@ -281,9 +280,7 @@ class MonthLimitWidget extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           TextButton(
-            onPressed: () {
-              //TODO Navigate to all limits page
-            },
+            onPressed: () => context.push('/lista-limites'),
             child: const Text(
               'Ver Todas',
               style: TextStyle(fontSize: 14, color: Colors.blue),
@@ -299,6 +296,7 @@ class MonthLimitWidget extends StatelessWidget {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: Text.new,
               success: (_) => const SizedBox(),
+              listed: (_) => const SizedBox(),
               loaded: (List<LimitProgressItem> items) => items.isEmpty
                   ? const SizedBox()
                   : Column(
@@ -449,9 +447,7 @@ class LastTransactionsWidget extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           TextButton(
-            onPressed: () {
-              //TODO Navigate to all transactions page
-            },
+            onPressed: () => context.push('/lista-transacoes'),
             child: const Text(
               'Ver Todas',
               style: TextStyle(fontSize: 14, color: Colors.blue),

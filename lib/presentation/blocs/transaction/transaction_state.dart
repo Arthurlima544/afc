@@ -8,4 +8,7 @@ class TransactionState with _$TransactionState {
   const factory TransactionState.error(String message) = _Error;
   const factory TransactionState.success(TransactionEntity transaction) =
       _Success;
+  const factory TransactionState.listed(
+    List<TransactionEntity> transactions,
+  ) = _Listed;
 }
