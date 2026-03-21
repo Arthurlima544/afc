@@ -24,9 +24,9 @@ class MockClerkAuthState extends Mock implements ClerkAuthState {}
 
 /// Wraps [LoginScreen] for navigation tests.
 ///
-/// Passes a stub [child] to [LoginScreen] so tests do not need a live
-/// [ClerkAuth] ancestor (which requires a valid publishable key and starts
-/// network timers that prevent [pumpAndSettle] from completing).
+/// Passes a stub child to [LoginScreen] so tests do not need a live
+/// ClerkAuth ancestor (which requires a valid publishable key and starts
+/// network timers that prevent pumpAndSettle from completing).
 Widget _buildApp({
   required MockAuthBloc authBloc,
   required Stream<AuthState> stateStream,
