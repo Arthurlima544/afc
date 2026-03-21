@@ -67,16 +67,22 @@ final GoRouter router = GoRouter(
           signedIn: (ClerkAuthState authState) => authState.user?.id,
         );
 
-        //validate uuid
         if (uuidOrNull == null || uuidOrNull.isEmpty) {
           logger.f('Invalid UUID!!!!!, $uuidOrNull}');
-
           return const Center(child: CircularProgressIndicator());
         }
 
-        return BlocProvider<HomeBloc>(
-          create: (BuildContext context) =>
-              HomeBloc()..add(HomeEvent.loadHome(uuidOrNull)),
+        return MultiBlocProvider(
+          providers: <BlocProvider<dynamic>>[
+            BlocProvider<HomeBloc>(
+              create: (BuildContext context) =>
+                  HomeBloc()..add(HomeEvent.loadHome(uuidOrNull)),
+            ),
+            BlocProvider<LimitCubit>(
+              create: (BuildContext context) =>
+                  LimitCubit()..loadLimitsWithProgress(uuidOrNull),
+            ),
+          ],
           child: const HomePage(),
         );
       },
