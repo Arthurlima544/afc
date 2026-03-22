@@ -72,7 +72,7 @@ void main() {
 
   group('HomeScreen (US-05 — auto-redirect on app launch)', () {
     testWidgets(
-        'shows splash spinner while auth state is initial',
+        'shows branded splash while auth state is initial',
         (WidgetTester tester) async {
       // Arrange — stream never emits, auth stays in initial state
       final StreamController<AuthState> controller =
@@ -85,8 +85,8 @@ void main() {
       // Act — single frame, no state change emitted
       await tester.pump();
 
-      // Assert
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      // Assert — branded splash shows the app name; no navigation yet
+      expect(find.text('AFC'), findsOneWidget);
       expect(find.text('Login Screen'), findsNothing);
       expect(find.text('Home Screen'), findsNothing);
 
@@ -159,8 +159,8 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      // Assert — still on splash
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      // Assert — still on branded splash, no navigation occurred
+      expect(find.text('AFC'), findsOneWidget);
 
       await controller.close();
     });

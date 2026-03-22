@@ -1,5 +1,8 @@
 import 'package:flutter/widgets.dart';
 
+export '../config/theme/app_colors.dart';
+export '../config/theme/app_icons.dart';
+
 abstract final class AppSpacing {
   static const double xs = 4;
   static const double sm = 8;
@@ -17,27 +20,6 @@ abstract final class AppTextStyle {
   static const double sizeXl = 18;
   static const double sizeXxl = 20;
   static const double sizeDisplay = 36;
-}
-
-/// Semantic color palette for the app.
-abstract final class AppColors {
-  /// Green — income, success, active status.
-  static const Color income = Color(0xFF22C55E);
-
-  /// Red — expenses, errors, exceeded limits.
-  static const Color expense = Color(0xFFEF4444);
-
-  /// Amber — warnings, consent-expired status.
-  static const Color warning = Color(0xFFF59E0B);
-
-  /// Warm brown — warning text on light amber backgrounds.
-  static const Color warningText = Color(0xFF92400E);
-
-  /// Light amber — background for warning chips.
-  static const Color warningBackground = Color(0xFFFEF3C7);
-
-  /// Blue — links, navigation text buttons.
-  static const Color link = Color(0xFF60A5FA);
 }
 
 /// Named text styles derived from [AppTextStyle] size constants.
