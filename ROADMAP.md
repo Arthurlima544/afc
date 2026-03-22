@@ -266,15 +266,15 @@ User ──► Connect Widget (Pluggy SDK) ──► Bank consent ──► Plug
 
 > **Goal**: Reduce the remaining manual effort for users who don't use Open Finance or want to supplement it.
 
-### US-19 · Recurring transactions 🔲
+### US-19 · Recurring transactions ✅
 **As a** user, **I want** to mark a transaction as recurring (daily / weekly / monthly),
 **so that** predictable expenses like rent and subscriptions are logged automatically.
 
-- [ ] `RecurringEntity` — `uuid`, `userId`, `templateTransaction`, `frequency` (daily/weekly/monthly), `nextDue`, `active`
-- [ ] `RecurringCubit` — create, list, pause, delete recurring rules
-- [ ] Background function (Cloud Functions) or on-app-open check that materialises due transactions
-- [ ] List screen with toggle to pause/resume each rule
-- [ ] Unit tests for due-date calculation logic
+- [x] `RecurringEntity` — `uuid`, `userId`, `templateTransaction`, `frequency` (daily/weekly/monthly), `nextDue`, `active`
+- [x] `RecurringCubit` — create, list, pause, delete recurring rules
+- [x] Background function (Cloud Functions) or on-app-open check that materialises due transactions
+- [x] List screen with toggle to pause/resume each rule
+- [x] Unit tests for due-date calculation logic
 
 ---
 

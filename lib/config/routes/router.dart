@@ -11,10 +11,12 @@ import '../../presentation/blocs/category/category_cubit.dart';
 import '../../presentation/blocs/home/home_bloc.dart';
 import '../../presentation/blocs/limit/limit_cubit.dart';
 import '../../presentation/blocs/open_finance/open_finance_cubit.dart';
+import '../../presentation/blocs/recurring/recurring_cubit.dart';
 import '../../presentation/blocs/review_queue/review_queue_cubit.dart';
 import '../../presentation/blocs/transaction/transaction_cubit.dart';
 import '../../presentation/screens/cadastrar_categoria.dart';
 import '../../presentation/screens/cadastrar_limites.dart';
+import '../../presentation/screens/cadastrar_recorrente.dart';
 import '../../presentation/screens/cadastrar_transacao.dart';
 import '../../presentation/screens/connect_bank_screen.dart';
 import '../../presentation/screens/connected_accounts_screen.dart';
@@ -23,6 +25,7 @@ import '../../presentation/screens/home_page.dart';
 import '../../presentation/screens/home_screen.dart';
 import '../../presentation/screens/lista_categorias.dart';
 import '../../presentation/screens/lista_limites.dart';
+import '../../presentation/screens/lista_recorrentes.dart';
 import '../../presentation/screens/lista_transacoes.dart';
 import '../../presentation/screens/login_screen.dart';
 import '../../presentation/screens/review_queue_screen.dart';
@@ -77,7 +80,10 @@ final GoRouter router = GoRouter(
         GoRouterState state,
         StatefulNavigationShell navigationShell,
       ) =>
-          ScaffoldShell(navigationShell: navigationShell),
+          BlocProvider<RecurringCubit>(
+            create: (_) => RecurringCubit(),
+            child: ScaffoldShell(navigationShell: navigationShell),
+          ),
       branches: <StatefulShellBranch>[
         // --- Tab 0: Dashboard ---
         StatefulShellBranch(
@@ -164,6 +170,27 @@ final GoRouter router = GoRouter(
             ),
           ],
         ),
+
+        // --- Tab 4: Recorrências ---
+        StatefulShellBranch(
+          routes: <RouteBase>[
+            GoRoute(
+              path: '/lista-recorrentes',
+              builder: (BuildContext context, GoRouterState state) {
+                final String userId =
+                    context.read<AuthBloc>().state.whenOrNull(
+                          signedIn: (ClerkAuthState s) => s.user?.id,
+                        ) ??
+                    '';
+                return BlocProvider<RecurringCubit>.value(
+                  value: context.read<RecurringCubit>()
+                    ..loadRecurring(userId),
+                  child: const ListaRecorrentes(),
+                );
+              },
+            ),
+          ],
+        ),
       ],
     ),
 
@@ -212,6 +239,22 @@ final GoRouter router = GoRouter(
             child: CadastrarLimites(
               initialLimit: state.extra as LimitEntity?,
             ),
+          ),
+    ),
+
+    GoRoute(
+      path: '/cadastro-recorrente',
+      builder: (BuildContext context, GoRouterState state) =>
+          MultiBlocProvider(
+            providers: <BlocProvider<dynamic>>[
+              BlocProvider<TransactionCubit>(
+                create: (_) => TransactionCubit()..getCategories(),
+              ),
+              BlocProvider<RecurringCubit>.value(
+                value: context.read<RecurringCubit>(),
+              ),
+            ],
+            child: const CadastrarRecorrente(),
           ),
     ),
 

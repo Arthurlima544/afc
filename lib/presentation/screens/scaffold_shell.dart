@@ -4,12 +4,36 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../blocs/auth/auth_bloc.dart';
+import '../blocs/recurring/recurring_cubit.dart';
 import 'quick_add_sheet.dart';
 
-class ScaffoldShell extends StatelessWidget {
+class ScaffoldShell extends StatefulWidget {
   const ScaffoldShell({required this.navigationShell, super.key});
 
   final StatefulNavigationShell navigationShell;
+
+  @override
+  State<ScaffoldShell> createState() => _ScaffoldShellState();
+}
+
+class _ScaffoldShellState extends State<ScaffoldShell> {
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.microtask(() {
+      if (!mounted) {
+        return;
+      }
+      final String userId =
+          context.read<AuthBloc>().state.whenOrNull(
+                signedIn: (ClerkAuthState s) => s.user?.id,
+              ) ??
+          '';
+      if (userId.isNotEmpty) {
+        context.read<RecurringCubit>().checkAndMaterialise(userId);
+      }
+    });
+  }
 
   void _showQuickAdd(BuildContext context) {
     final String userId =
@@ -30,16 +54,16 @@ class ScaffoldShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: navigationShell,
+    body: widget.navigationShell,
     floatingActionButton: FloatingActionButton(
       onPressed: () => _showQuickAdd(context),
       child: const Icon(Icons.add),
     ),
     bottomNavigationBar: NavigationBar(
-      selectedIndex: navigationShell.currentIndex,
-      onDestinationSelected: (int index) => navigationShell.goBranch(
+      selectedIndex: widget.navigationShell.currentIndex,
+      onDestinationSelected: (int index) => widget.navigationShell.goBranch(
         index,
-        initialLocation: index == navigationShell.currentIndex,
+        initialLocation: index == widget.navigationShell.currentIndex,
       ),
       destinations: const <NavigationDestination>[
         NavigationDestination(
@@ -61,6 +85,11 @@ class ScaffoldShell extends StatelessWidget {
           icon: Icon(Icons.tune_outlined),
           selectedIcon: Icon(Icons.tune),
           label: 'Limites',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.repeat_outlined),
+          selectedIcon: Icon(Icons.repeat),
+          label: 'Recorrências',
         ),
       ],
     ),
