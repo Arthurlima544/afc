@@ -4,10 +4,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../domain/entity/category_entity.dart';
+import '../../domain/entity/goal_entity.dart';
 import '../../domain/entity/limit_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../presentation/blocs/auth/auth_bloc.dart';
 import '../../presentation/blocs/category/category_cubit.dart';
+import '../../presentation/blocs/goal/goal_cubit.dart';
 import '../../presentation/blocs/home/home_bloc.dart';
 import '../../presentation/blocs/import/import_cubit.dart';
 import '../../presentation/blocs/limit/limit_cubit.dart';
@@ -18,6 +20,7 @@ import '../../presentation/blocs/review_queue/review_queue_cubit.dart';
 import '../../presentation/blocs/transaction/transaction_cubit.dart';
 import '../../presentation/screens/cadastrar_categoria.dart';
 import '../../presentation/screens/cadastrar_limites.dart';
+import '../../presentation/screens/cadastrar_meta.dart';
 import '../../presentation/screens/cadastrar_recorrente.dart';
 import '../../presentation/screens/cadastrar_transacao.dart';
 import '../../presentation/screens/connect_bank_screen.dart';
@@ -28,6 +31,7 @@ import '../../presentation/screens/home_screen.dart';
 import '../../presentation/screens/importar_extrato.dart';
 import '../../presentation/screens/lista_categorias.dart';
 import '../../presentation/screens/lista_limites.dart';
+import '../../presentation/screens/lista_metas.dart';
 import '../../presentation/screens/lista_recorrentes.dart';
 import '../../presentation/screens/lista_transacoes.dart';
 import '../../presentation/screens/login_screen.dart';
@@ -194,6 +198,26 @@ final GoRouter router = GoRouter(
             ),
           ],
         ),
+
+        // --- Tab 5: Metas ---
+        StatefulShellBranch(
+          routes: <RouteBase>[
+            GoRoute(
+              path: '/lista-metas',
+              builder: (BuildContext context, GoRouterState state) {
+                final String userId =
+                    context.read<AuthBloc>().state.whenOrNull(
+                          signedIn: (ClerkAuthState s) => s.user?.id,
+                        ) ??
+                    '';
+                return BlocProvider<GoalCubit>(
+                  create: (_) => GoalCubit()..loadGoals(userId),
+                  child: const ListaMetas(),
+                );
+              },
+            ),
+          ],
+        ),
       ],
     ),
 
@@ -242,6 +266,24 @@ final GoRouter router = GoRouter(
             child: CadastrarLimites(
               initialLimit: state.extra as LimitEntity?,
             ),
+          ),
+    ),
+
+    GoRoute(
+      path: '/cadastro-meta',
+      builder: (BuildContext context, GoRouterState state) =>
+          BlocProvider<GoalCubit>(
+            create: (_) => GoalCubit(),
+            child: const CadastrarMeta(),
+          ),
+    ),
+
+    GoRoute(
+      path: '/editar-meta',
+      builder: (BuildContext context, GoRouterState state) =>
+          BlocProvider<GoalCubit>(
+            create: (_) => GoalCubit(),
+            child: CadastrarMeta(initialGoal: state.extra as GoalEntity?),
           ),
     ),
 

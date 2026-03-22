@@ -94,6 +94,11 @@ class _ScaffoldShellState extends State<ScaffoldShell> {
           selectedIcon: Icon(Icons.repeat),
           label: 'Recorrências',
         ),
+        NavigationDestination(
+          icon: Icon(Icons.savings_outlined),
+          selectedIcon: Icon(Icons.savings),
+          label: 'Metas',
+        ),
       ],
     ),
   );
