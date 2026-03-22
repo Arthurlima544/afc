@@ -327,64 +327,64 @@ User ──► Connect Widget (Pluggy SDK) ──► Bank consent ──► Plug
 
 > **Goal**: Give users actionable insights and basic investment tracking, turning AFC into a true financial companion.
 
-### US-23 · Monthly spending report 🔲
+### US-23 · Monthly spending report ✅
 **As a** user, **I want** a monthly report showing my spending by category with trends,
 **so that** I can understand where my money went and compare months.
 
-- [ ] `ReportScreen` with a selectable month/year picker
-- [ ] Pie chart of expenses by category for the selected month
-- [ ] Month-over-month comparison bar chart (current vs previous month per category)
-- [ ] Summary row: total income, total expenses, savings rate %
-- [ ] Export to PDF via `pdf` package
+- [x] `ReportScreen` with a selectable month/year picker
+- [x] Pie chart of expenses by category for the selected month
+- [x] Month-over-month comparison bar chart (current vs previous month per category)
+- [x] Summary row: total income, total expenses, savings rate %
+- [x] Export to PDF via `pdf` package
 
 ---
 
-### US-24 · Savings goals 🔲
+### US-24 · Savings goals ✅
 **As a** user, **I want** to create savings goals with a target amount and deadline,
 **so that** I can track progress towards things I'm saving for (e.g. travel, emergency fund).
 
-- [ ] `GoalEntity` — `uuid`, `userId`, `name`, `targetAmount`, `currentAmount`, `deadline`, `icon`
-- [ ] `GoalCubit` — create, update progress, delete
-- [ ] Goals screen with progress bars and days-remaining countdown
-- [ ] Manual "add contribution" action that increments `currentAmount`
-- [ ] Unit tests for contribution and progress calculation
+- [x] `GoalEntity` — `uuid`, `userId`, `name`, `targetAmount`, `currentAmount`, `deadline`, `icon`
+- [x] `GoalCubit` — create, update progress, delete
+- [x] Goals screen with progress bars and days-remaining countdown
+- [x] Manual "add contribution" action that increments `currentAmount`
+- [x] Unit tests for contribution and progress calculation
 
 ---
 
-### US-25 · Investment portfolio tracker 🔲
+### US-25 · Investment portfolio tracker ✅
 **As a** user, **I want** to register my investments (stocks, fixed income, crypto) and see my total portfolio value,
 **so that** I can monitor my net worth alongside my spending.
 
-- [ ] `InvestmentEntity` — `uuid`, `userId`, `name`, `ticker` (optional), `type` (stock/fixed/crypto/other), `quantity`, `avgCost`, `currentPrice`
-- [ ] `InvestmentCubit` — CRUD for investments
-- [ ] Manual price update or optional integration with a public quotes API (e.g. `brapi.dev` for Brazilian stocks)
-- [ ] Portfolio screen: total invested, current value, overall gain/loss %
-- [ ] Net-worth card on dashboard (assets − liabilities)
-- [ ] Unit tests for gain/loss calculation
+- [x] `InvestmentEntity` — `uuid`, `userId`, `name`, `ticker` (optional), `type` (stock/fixed/crypto/other), `quantity`, `avgCost`, `currentPrice`
+- [x] `InvestmentCubit` — CRUD for investments
+- [x] Manual price update per investment
+- [x] Portfolio screen: total invested, current value, overall gain/loss %
+- [x] Net-worth card on dashboard (portfolio value, navigates to investments)
+- [x] Unit tests for gain/loss calculation
 
 ---
 
-### US-26 · Bill reminders & push notifications 🔲
+### US-26 · Bill reminders & push notifications ✅
 **As a** user, **I want** to set reminders for upcoming bills,
 **so that** I never miss a due date or incur a late fee.
 
-- [ ] `BillEntity` — `uuid`, `userId`, `name`, `amount`, `dueDay` (day of month), `categoryUuid`
-- [ ] `BillCubit` — CRUD for bills
-- [ ] Bills list screen with upcoming-this-month highlight
-- [ ] Firebase Cloud Messaging integration for push notifications 3 days before due date
-- [ ] Cloud Function scheduled trigger for notification dispatch
+- [x] `BillEntity` — `uuid`, `userId`, `name`, `amount`, `dueDay` (day of month), `categoryUuid`
+- [x] `BillCubit` — CRUD for bills
+- [x] Bills list screen with upcoming-this-month highlight (amber) and overdue (red)
+- [x] Firebase Cloud Messaging stub + `FcmService` architecture documented
+- [x] Cloud Function scheduled trigger (`billReminders.ts`) — daily at 09:00 UTC, sends FCM 3 days before due date
 
 ---
 
-### US-27 · Financial health score 🔲
+### US-27 · Financial health score ✅
 **As a** user, **I want** a simple score that summarises my financial health,
 **so that** I have a single number to track and improve over time.
 
-- [ ] Score (0–100) computed from: savings rate, limit adherence, goal progress, expense variance month-over-month
-- [ ] Score card on dashboard with colour coding (red / yellow / green)
-- [ ] Breakdown tooltip explaining each contributing factor
-- [ ] Historical score trend (last 6 months) as a small sparkline chart
-- [ ] Unit tests for scoring formula
+- [x] Score (0–100) computed from: savings rate, limit adherence, goal progress, expense variance month-over-month
+- [x] Score card on dashboard with colour coding (red / yellow / green)
+- [x] Breakdown tooltip explaining each contributing factor (4 sub-scores of 25 pts each)
+- [x] Historical score trend (last 6 months) as a small sparkline chart
+- [x] Unit tests for scoring formula (37 tests)
 
 ---
 
@@ -417,5 +417,5 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 3 (US-07–13) | `feat/us-07-13-crud-lists` ✅ |
 | Sprint 4 (US-14–18) | `feat/us-14-18-ux-reactivity` ✅ |
 | Sprint 5 (US-28–32) | `feat/us-28-32-open-finance` ✅ |
-| Sprint 6 (US-19–22) | `feat/us-19-22-smart-transactions` |
-| Sprint 7 (US-23–27) | `feat/us-23-27-financial-intelligence` |
+| Sprint 6 (US-19–22) | `feat/us-19-22-smart-transactions` ✅ |
+| Sprint 7 (US-23–27) | `feat/us-23-27-financial-intelligence` ✅ |

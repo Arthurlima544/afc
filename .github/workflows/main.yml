@@ -15,27 +15,26 @@ concurrency: # only the last commit will run
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# ─────────────────────────── shared setup ───────────────────────────────────
+
 jobs:
-  build_and_release:
+
+  # ──────────────────────────── lint ──────────────────────────────────────────
+
+  lint:
+    name: ✅ Lint (flutter analyze)
     runs-on: ubuntu-latest
 
     steps:
       - name: 📂 Checkout code
         uses: actions/checkout@v4
 
-      - name: 🚀 Cache pub deps  # optimize dependencies
+      - name: 🚀 Cache pub deps
         uses: actions/cache@v4
         with:
           path: ~/.pub-cache
           key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.yaml') }}
           restore-keys: ${{ runner.os }}-pub-
-
-      - name: ☕️ Setup Java (Temurin 17) # android apps require JAVA
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: gradle # caches ~/.gradle/caches and ~/.gradle/wrapper
 
       - name: 🦋 Setup Flutter (v3.41.5)
         uses: subosito/flutter-action@v2
@@ -44,7 +43,83 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: 📦 Cache Android CMake 3.22.1 # avoids re-download during Gradle build
+      - name: 📥 Get dependencies
+        run: flutter pub get
+
+      - name: ✅ Run Analyzer
+        run: flutter analyze
+
+  # ──────────────────────────── test ──────────────────────────────────────────
+
+  test:
+    name: 🧪 Tests (flutter test --coverage)
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: 📂 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Cache pub deps
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.yaml') }}
+          restore-keys: ${{ runner.os }}-pub-
+
+      - name: 🦋 Setup Flutter (v3.41.5)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.5'
+          channel: 'stable'
+          cache: true
+
+      - name: 📥 Get dependencies
+        run: flutter pub get
+
+      - name: 🧪 Run tests
+        run: flutter test --coverage
+
+      - name: 📊 Upload coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-lcov
+          path: coverage/lcov.info
+
+  # ──────────────────────────── build ─────────────────────────────────────────
+
+  build:
+    name: 🏗️ Build APK (dev)
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: 📂 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Cache pub deps
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.yaml') }}
+          restore-keys: ${{ runner.os }}-pub-
+
+      - name: ☕️ Setup Java (Temurin 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: 🦋 Setup Flutter (v3.41.5)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.5'
+          channel: 'stable'
+          cache: true
+
+      - name: 📦 Cache Android CMake 3.22.1
         uses: actions/cache@v4
         with:
           path: /usr/local/lib/android/sdk/cmake/3.22.1
@@ -57,12 +132,6 @@ jobs:
       - name: 📥 Get dependencies
         run: flutter pub get
 
-      - name: ✅ Run Analyzer
-        run: flutter analyze
-
-      - name: ✅ Run tests
-        run: flutter test --coverage
-
       - name: 🏗️ Build APKs (dev)
         run: |
           flutter build apk --release --split-per-abi \
@@ -74,6 +143,12 @@ jobs:
         run: |
           mkdir -p artifacts
           cp build/app/outputs/flutter-apk/*.apk artifacts/
+
+      - name: 💾 Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-dev
+          path: artifacts/
 
       # ─────────────── ONLY ON TAGS ───────────────
       - name: 🏷️ Create or update Release

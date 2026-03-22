@@ -320,6 +320,56 @@ void main() {
     );
 
     blocTest<LimitCubit, LimitState>(
+      'spent exceeds limitAmount when transactions total is over the limit',
+      setUp: () async {
+        await fakeFirestore.collection('limit').add(<String, dynamic>{
+          'uuid': 'limit-over',
+          'categoryUUid': catId,
+          'month': currentMonth,
+          'limitAmount': 300.0,
+          'userId': userId,
+        });
+        await fakeFirestore.collection('category').add(<String, dynamic>{
+          'uuid': catId,
+          'name': 'Transport',
+          'iconType': 2,
+        });
+        final DateTime now = DateTime.now();
+        await fakeFirestore.collection('transaction').add(<String, dynamic>{
+          'uuid': 'tx-over-1',
+          'amount': 200.0,
+          'categoryUUid': catId,
+          'typeUuid': TypeEntity.expense.name,
+          'data': DateTime(now.year, now.month, 5).toIso8601String(),
+          'title': 'Bus pass',
+          'userId': userId,
+        });
+        await fakeFirestore.collection('transaction').add(<String, dynamic>{
+          'uuid': 'tx-over-2',
+          'amount': 150.0,
+          'categoryUUid': catId,
+          'typeUuid': TypeEntity.expense.name,
+          'data': DateTime(now.year, now.month, 12).toIso8601String(),
+          'title': 'Taxi',
+          'userId': userId,
+        });
+      },
+      build: () => LimitCubit(firestore: fakeFirestore),
+      act: (LimitCubit cubit) async =>
+          cubit.loadLimitsWithProgress(userId),
+      verify: (LimitCubit cubit) {
+        cubit.state.whenOrNull(
+          loaded: (List<LimitProgressItem> items) {
+            expect(items, hasLength(1));
+            expect(items.first.spent, 350.0);
+            expect(items.first.limitAmount, 300.0);
+            expect(items.first.spent > items.first.limitAmount, isTrue);
+          },
+        );
+      },
+    );
+
+    blocTest<LimitCubit, LimitState>(
       'uses category name and iconType from category collection',
       setUp: () async {
         await fakeFirestore.collection('limit').add(<String, dynamic>{
