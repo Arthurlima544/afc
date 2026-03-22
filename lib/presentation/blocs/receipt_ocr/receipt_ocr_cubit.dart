@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../domain/usecase/gemini_receipt_ocr_service.dart';
 import '../../../domain/usecase/receipt_ocr_service.dart';
+import '../../../utils/logger.dart';
 
 part 'receipt_ocr_state.dart';
 part 'receipt_ocr_cubit.freezed.dart';
@@ -38,11 +39,13 @@ class ReceiptOcrCubit extends Cubit<ReceiptOcrState> {
     emit(const ReceiptOcrState.loading());
     try {
       final OcrResult result = await _service.scan(image);
+      logger.d('OCR success — amount: ${result.amount}, merchant: ${result.merchant}');
       emit(ReceiptOcrState.success(
         amount: result.amount,
         merchant: result.merchant,
       ));
     } on Exception catch (e) {
+      logger.e('OCR failed: $e');
       emit(ReceiptOcrState.error(e.toString()));
     }
   }

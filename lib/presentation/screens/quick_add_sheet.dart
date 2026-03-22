@@ -326,46 +326,63 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                   ),
                   const Gap(16),
 
-                  // Numpad
-                  _Numpad(onKey: _onKey),
-                  const Gap(16),
-
-                  // OCR scan button + state
+                  // OCR scan — camera / gallery buttons + error feedback
                   BlocBuilder<ReceiptOcrCubit, ReceiptOcrState>(
-                    builder: (BuildContext context, ReceiptOcrState ocrState) =>
-                        ocrState.whenOrNull(loading: () => true) == true
-                            ? const Center(
-                                child: CircularProgressIndicator(size: 24),
-                              )
-                            : Row(
-                                children: <Widget>[
-                                  Expanded(
-                                    child: OutlineButton(
-                                      onPressed: () => context
-                                          .read<ReceiptOcrCubit>()
-                                          .pickAndScan(),
-                                      leading: const Icon(
-                                        Icons.camera_alt_outlined,
-                                        size: 18,
-                                      ),
-                                      child: const Text('Câmera'),
+                    builder: (BuildContext context, ReceiptOcrState ocrState) {
+                      final bool isLoading =
+                          ocrState.whenOrNull(loading: () => true) == true;
+                      final String? errorMsg =
+                          ocrState.whenOrNull(error: (String m) => m);
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          if (isLoading)
+                            const Center(
+                              child: CircularProgressIndicator(size: 24),
+                            )
+                          else
+                            Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: OutlineButton(
+                                    onPressed: () => context
+                                        .read<ReceiptOcrCubit>()
+                                        .pickAndScan(),
+                                    leading: const Icon(
+                                      Icons.camera_alt_outlined,
+                                      size: 18,
                                     ),
+                                    child: const Text('Câmera'),
                                   ),
-                                  const Gap(8),
-                                  Expanded(
-                                    child: OutlineButton(
-                                      onPressed: () => context
-                                          .read<ReceiptOcrCubit>()
-                                          .pickAndScan(fromCamera: false),
-                                      leading: const Icon(
-                                        Icons.photo_library_outlined,
-                                        size: 18,
-                                      ),
-                                      child: const Text('Galeria'),
+                                ),
+                                const Gap(8),
+                                Expanded(
+                                  child: OutlineButton(
+                                    onPressed: () => context
+                                        .read<ReceiptOcrCubit>()
+                                        .pickAndScan(fromCamera: false),
+                                    leading: const Icon(
+                                      Icons.photo_library_outlined,
+                                      size: 18,
                                     ),
+                                    child: const Text('Galeria'),
                                   ),
-                                ],
+                                ),
+                              ],
+                            ),
+                          if (errorMsg != null) ...<Widget>[
+                            const Gap(6),
+                            Text(
+                              'Falha ao ler o comprovante. Tente novamente.',
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.expense,
                               ),
+                            ),
+                          ],
+                        ],
+                      );
+                    },
                   ),
                   const Gap(16),
 
