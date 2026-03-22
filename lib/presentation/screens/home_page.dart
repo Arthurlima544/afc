@@ -14,9 +14,11 @@ import '../../domain/entity/investment_entity.dart';
 import '../../domain/entity/stats_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
+import '../../domain/usecase/health_score.dart';
 import '../../utils/app_spacing.dart';
 import '../../utils/flavors.dart';
 import '../blocs/auth/auth_bloc.dart';
+import '../blocs/health_score/health_score_cubit.dart';
 import '../blocs/home/home_bloc.dart';
 import '../blocs/home/stats_state.dart';
 import '../blocs/home/transaction_state.dart';
@@ -56,6 +58,8 @@ class _HomeContent extends StatelessWidget {
       const _NetWorthCard(),
       const Gap(12),
       const _BillsCard(),
+      const Gap(12),
+      const _HealthScoreCard(),
       const Gap(20),
       const LastTransactionsWidget(),
       const MonthLimitWidget(),
@@ -816,6 +820,270 @@ String convertToCurrencyFormated(double amount) {
   );
   return format.format(amount);
 }
+
+// ---------------------------------------------------------------------------
+// Health Score Card (US-27)
+// ---------------------------------------------------------------------------
+
+Color _scoreColor(int score) {
+  if (score >= 70) {
+    return AppColors.income;
+  }
+  if (score >= 40) {
+    return AppColors.warning;
+  }
+  return AppColors.expense;
+}
+
+String _scoreLabel(int score) {
+  if (score >= 70) {
+    return 'Excelente';
+  }
+  if (score >= 40) {
+    return 'Regular';
+  }
+  return 'Atenção';
+}
+
+class _HealthScoreCard extends StatefulWidget {
+  const _HealthScoreCard();
+
+  @override
+  State<_HealthScoreCard> createState() => _HealthScoreCardState();
+}
+
+class _HealthScoreCardState extends State<_HealthScoreCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) =>
+      BlocBuilder<HealthScoreCubit, HealthScoreState>(
+        builder: (BuildContext context, HealthScoreState state) => state.when(
+          initial: () => const SizedBox(),
+          loading: () => const Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ),
+          error: (String msg) => Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Erro ao carregar score: $msg',
+                style: const TextStyle(
+                  fontSize: AppTextStyle.sizeSm,
+                  color: AppColors.expense,
+                ),
+              ),
+            ),
+          ),
+          success: (HealthScoreData data) => Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  // Header row
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            const Text(
+                              'Saúde Financeira',
+                              style: AppTextStyles.sectionTitle,
+                            ),
+                            const Gap(2),
+                            Text(
+                              _scoreLabel(data.score),
+                              style: TextStyle(
+                                fontSize: AppTextStyle.sizeSm,
+                                color: _scoreColor(data.score),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        '${data.score}',
+                        style: TextStyle(
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                          color: _scoreColor(data.score),
+                        ),
+                      ),
+                      const Gap(4),
+                      const Text(
+                        '/100',
+                        style: TextStyle(
+                          fontSize: AppTextStyle.sizeSm,
+                          color: Color(0xFF9CA3AF),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const Gap(12),
+
+                  // Sparkline — last 6 months
+                  _HealthSparkline(scores: data.last6MonthScores),
+
+                  const Gap(12),
+
+                  // Expand/collapse toggle
+                  GestureDetector(
+                    onTap: () => setState(() => _expanded = !_expanded),
+                    child: Row(
+                      children: <Widget>[
+                        const Text(
+                          'Detalhes',
+                          style: TextStyle(
+                            fontSize: AppTextStyle.sizeSm,
+                            color: AppColors.link,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const Gap(4),
+                        Icon(
+                          _expanded
+                              ? Icons.keyboard_arrow_up
+                              : Icons.keyboard_arrow_down,
+                          size: 16,
+                          color: AppColors.link,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  if (_expanded) ...<Widget>[
+                    const Gap(10),
+                    _ScoreRow(
+                      label: 'Poupança',
+                      points: data.savingsPoints,
+                      tooltip: 'Taxa de poupança (renda − despesas) / renda',
+                    ),
+                    const Gap(6),
+                    _ScoreRow(
+                      label: 'Limites',
+                      points: data.limitPoints,
+                      tooltip: 'Média de gasto/limite por categoria',
+                    ),
+                    const Gap(6),
+                    _ScoreRow(
+                      label: 'Metas',
+                      points: data.goalPoints,
+                      tooltip: 'Progresso médio das metas ativas',
+                    ),
+                    const Gap(6),
+                    _ScoreRow(
+                      label: 'Variação',
+                      points: data.variancePoints,
+                      tooltip: 'Variação de gastos em relação ao mês anterior',
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+}
+
+class _ScoreRow extends StatelessWidget {
+  const _ScoreRow({
+    required this.label,
+    required this.points,
+    required this.tooltip,
+  });
+
+  final String label;
+  final int points;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    tooltip: (BuildContext _) => TooltipContainer(
+      child: Text(tooltip, style: AppTextStyles.label),
+    ),
+    child: Row(
+      children: <Widget>[
+        Expanded(
+          child: Text(label, style: AppTextStyles.bodyBold),
+        ),
+        Text(
+          '$points / 25',
+          style: TextStyle(
+            fontSize: AppTextStyle.sizeSm,
+            fontWeight: FontWeight.w600,
+            color: _scoreColor(points * 4),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _HealthSparkline extends StatelessWidget {
+  const _HealthSparkline({required this.scores});
+
+  final List<int> scores;
+
+  @override
+  Widget build(BuildContext context) {
+    if (scores.isEmpty) {
+      return const SizedBox();
+    }
+
+    final List<FlSpot> spots = <FlSpot>[
+      for (int i = 0; i < scores.length; i++)
+        FlSpot(i.toDouble(), scores[i].toDouble()),
+    ];
+
+    return SizedBox(
+      height: 48,
+      child: LineChart(
+        LineChartData(
+          lineTouchData: const LineTouchData(enabled: false),
+          borderData: FlBorderData(show: false),
+          gridData: const FlGridData(show: false),
+          titlesData: const FlTitlesData(
+            bottomTitles: AxisTitles(),
+            leftTitles: AxisTitles(),
+            topTitles: AxisTitles(),
+            rightTitles: AxisTitles(),
+          ),
+          minY: 0,
+          maxY: 100,
+          lineBarsData: <LineChartBarData>[
+            LineChartBarData(
+              spots: spots,
+              isCurved: true,
+              color: AppColors.income,
+              dotData: FlDotData(
+                getDotPainter: (
+                  FlSpot spot,
+                  double xPercentage,
+                  LineChartBarData bar,
+                  int index,
+                ) =>
+                    FlDotCirclePainter(
+                  radius: 3,
+                  color: _scoreColor(spot.y.toInt()),
+                  strokeColor: _scoreColor(spot.y.toInt()),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _BillsCard extends StatefulWidget {
   const _BillsCard();

@@ -13,6 +13,7 @@ import '../../presentation/blocs/auth/auth_bloc.dart';
 import '../../presentation/blocs/bill/bill_cubit.dart';
 import '../../presentation/blocs/category/category_cubit.dart';
 import '../../presentation/blocs/goal/goal_cubit.dart';
+import '../../presentation/blocs/health_score/health_score_cubit.dart';
 import '../../presentation/blocs/home/home_bloc.dart';
 import '../../presentation/blocs/import/import_cubit.dart';
 import '../../presentation/blocs/investment/investment_cubit.dart';
@@ -124,6 +125,10 @@ final GoRouter router = GoRouter(
                     BlocProvider<LimitCubit>(
                       create: (_) =>
                           LimitCubit()..loadLimitsWithProgress(uuidOrNull),
+                    ),
+                    BlocProvider<HealthScoreCubit>(
+                      create: (_) =>
+                          HealthScoreCubit()..loadScore(uuidOrNull),
                     ),
                   ],
                   child: const HomePage(),
