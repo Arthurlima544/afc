@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
@@ -12,6 +13,11 @@ void main() async {
   await startupLogger(Flavor.flavorType);
 
   await Firebase.initializeApp(options: Flavor.firebaseConfigOptions);
+
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+  );
 
   runApp(const MyApp());
 }
