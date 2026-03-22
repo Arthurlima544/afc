@@ -48,8 +48,7 @@ class AppIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark =
-        MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     final OutlinedBorder shape = _circle
         ? const CircleBorder()

@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -150,18 +151,24 @@ class _RelatorioState extends State<Relatorio> {
   }
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          // Header
-          Row(
-            children: <Widget>[
-              const Expanded(
-                child: Text('Relatório', style: AppTextStyles.heading),
-              ),
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            // Header
+            Row(
+              children: <Widget>[
+                AppIconButton(
+                  onPressed: () => context.pop(),
+                  icon: const Icon(Icons.arrow_back),
+                ),
+                const Gap(8),
+                const Expanded(
+                  child: Text('Relatório', style: AppTextStyles.heading),
+                ),
               BlocBuilder<ReportCubit, ReportState>(
                 builder: (BuildContext context, ReportState state) {
                   final ReportData? data = state.whenOrNull(
@@ -210,7 +217,8 @@ class _RelatorioState extends State<Relatorio> {
         ],
       ),
     ),
-  );
+  ),
+);
 }
 
 class _ReportContent extends StatelessWidget {

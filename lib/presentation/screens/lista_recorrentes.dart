@@ -13,35 +13,48 @@ import '../widgets/design_system.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_state.dart';
 import '../widgets/skeleton_list.dart';
+import 'cadastrar_recorrente.dart';
 
 class ListaRecorrentes extends StatelessWidget {
   const ListaRecorrentes({super.key});
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: RefreshIndicator(
-      color: AppColors.primary,
-      onRefresh: () async {
-        final String userId =
-            context.read<AuthBloc>().state.whenOrNull(
-              signedIn: (ClerkAuthState s) => s.user?.id,
-            ) ??
-            '';
-        unawaited(context.read<RecurringCubit>().loadRecurring(userId));
-      },
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                const Expanded(
-                  child: Text('Recorrências', style: AppTextStyles.heading),
-                ),
-                AppIconButton(
-                  onPressed: () => context.push('/cadastro-recorrente'),
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      child: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () async {
+          final String userId =
+              context.read<AuthBloc>().state.whenOrNull(
+                signedIn: (ClerkAuthState s) => s.user?.id,
+              ) ??
+              '';
+          unawaited(context.read<RecurringCubit>().loadRecurring(userId));
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  AppIconButton(
+                    onPressed: () => context.pop(),
+                    icon: const Icon(Icons.arrow_back),
+                  ),
+                  const Gap(8),
+                  const Expanded(
+                    child: Text('Recorrências', style: AppTextStyles.heading),
+                  ),
+                  AppIconButton(
+                    onPressed: () => showFormSheet<void>(
+                      context,
+                      builder: (BuildContext ctx) => BlocProvider<RecurringCubit>(
+                        create: (_) => RecurringCubit(),
+                        child: const CadastrarRecorrente(),
+                      ),
+                    ),
                   icon: const Icon(Icons.add),
                 ),
               ],
@@ -84,7 +97,8 @@ class ListaRecorrentes extends StatelessWidget {
         ),
       ),
     ),
-  );
+  ),
+);
 }
 
 class _RecorrenteItem extends StatelessWidget {

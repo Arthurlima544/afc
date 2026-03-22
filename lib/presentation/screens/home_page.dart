@@ -707,6 +707,7 @@ class HomeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.all(16),
     child: LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         final double cardWidth = constraints.maxWidth;

@@ -2,6 +2,7 @@ import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/entity/category_entity.dart';
@@ -47,7 +48,9 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
       _titleController.text = tx.title;
       _amountController.text = tx.amount.toString();
       _selectedDate = tx.data;
-      _typeValue = tx.typeUuid;
+      _typeValue = TypeEntity.values.any((TypeEntity t) => t.name == tx.typeUuid)
+          ? tx.typeUuid
+          : null;
       _categoryUuid = tx.categoryUUid;
     }
   }
@@ -86,10 +89,12 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
   }
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: BlocConsumer<TransactionCubit, TransactionState>(
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(leading: BackButton(onPressed: () => context.pop())),
+    body: SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: BlocConsumer<TransactionCubit, TransactionState>(
         listener: (BuildContext context, TransactionState state) {
           state.whenOrNull(
             initial: (List<CategoryEntity> categories) {
@@ -300,5 +305,6 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
         ),
       ),
     ),
-  );
+  ),
+);
 }

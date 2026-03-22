@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/entity/category_entity.dart';
@@ -49,8 +50,10 @@ class _CadastrarCategoriaState extends State<CadastrarCategoria> {
   }
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: SingleChildScrollView(
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(leading: BackButton(onPressed: () => context.pop())),
+    body: SafeArea(
+      child: SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: BlocBuilder<CategoryCubit, CategoryState>(
         builder: (BuildContext context, CategoryState state) => state.when(
@@ -147,5 +150,6 @@ class _CadastrarCategoriaState extends State<CadastrarCategoria> {
         ),
       ),
     ),
+  ),
   );
 }

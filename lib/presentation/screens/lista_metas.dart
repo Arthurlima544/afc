@@ -3,23 +3,24 @@ import 'dart:async';
 import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../domain/entity/goal_entity.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/goal/goal_cubit.dart';
-import '../screens/cadastrar_categoria.dart';
 import '../widgets/design_system.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_state.dart';
 import '../widgets/skeleton_list.dart';
+import 'cadastrar_categoria.dart';
+import 'cadastrar_meta.dart';
 
 class ListaMetas extends StatelessWidget {
   const ListaMetas({super.key});
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: RefreshIndicator(
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      child: RefreshIndicator(
       color: AppColors.primary,
       onRefresh: () async {
         final String userId =
@@ -41,7 +42,13 @@ class ListaMetas extends StatelessWidget {
                   child: Text('Metas', style: AppTextStyles.heading),
                 ),
                 AppIconButton(
-                  onPressed: () => context.push('/cadastro-meta'),
+                  onPressed: () => showFormSheet<void>(
+                    context,
+                    builder: (BuildContext ctx) => BlocProvider<GoalCubit>(
+                      create: (_) => GoalCubit(),
+                      child: const CadastrarMeta(),
+                    ),
+                  ),
                   icon: const Icon(Icons.add),
                 ),
               ],
@@ -83,6 +90,7 @@ class ListaMetas extends StatelessWidget {
         ),
       ),
     ),
+  ),
   );
 }
 
@@ -134,7 +142,13 @@ class _MetaItem extends StatelessWidget {
               const Gap(12),
               Expanded(child: Text(goal.name, style: AppTextStyles.title)),
               AppIconButton(
-                onPressed: () => context.push('/editar-meta', extra: goal),
+                onPressed: () => showFormSheet<void>(
+                  context,
+                  builder: (BuildContext ctx) => BlocProvider<GoalCubit>(
+                    create: (_) => GoalCubit(),
+                    child: CadastrarMeta(initialGoal: goal),
+                  ),
+                ),
                 icon: const Icon(Icons.edit, size: 18),
               ),
               AppIconButton(

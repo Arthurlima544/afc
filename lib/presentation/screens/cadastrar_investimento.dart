@@ -107,7 +107,9 @@ class _CadastrarInvestimentoState extends State<CadastrarInvestimento> {
   @override
   Widget build(
     BuildContext context,
-  ) => BlocListener<InvestmentCubit, InvestmentState>(
+  ) => Scaffold(
+    appBar: AppBar(leading: BackButton(onPressed: () => context.pop())),
+    body: BlocListener<InvestmentCubit, InvestmentState>(
     listener: (BuildContext context, InvestmentState state) {
       state.whenOrNull(success: (_) => context.pop());
     },
@@ -261,6 +263,7 @@ class _CadastrarInvestimentoState extends State<CadastrarInvestimento> {
         ),
       ),
     ),
+  ),
   );
 
   void _save() {
