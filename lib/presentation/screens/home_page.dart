@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart'
     hide Column, Row, Expanded;
 
+import '../../domain/entity/bill_entity.dart';
 import '../../domain/entity/investment_entity.dart';
 
 import '../../domain/entity/stats_entity.dart';
@@ -53,6 +54,8 @@ class _HomeContent extends StatelessWidget {
       const SummaryWidget(),
       const Gap(12),
       const _NetWorthCard(),
+      const Gap(12),
+      const _BillsCard(),
       const Gap(20),
       const LastTransactionsWidget(),
       const MonthLimitWidget(),
@@ -812,6 +815,103 @@ String convertToCurrencyFormated(double amount) {
     symbol: 'R\$',
   );
   return format.format(amount);
+}
+
+class _BillsCard extends StatefulWidget {
+  const _BillsCard();
+
+  @override
+  State<_BillsCard> createState() => _BillsCardState();
+}
+
+class _BillsCardState extends State<_BillsCard> {
+  int _dueThisMonth = 0;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.microtask(_loadBills);
+  }
+
+  Future<void> _loadBills() async {
+    final String userId =
+        context.read<AuthBloc>().state.whenOrNull(
+              signedIn: (ClerkAuthState s) => s.user?.id,
+            ) ??
+        '';
+    if (userId.isEmpty) {
+      return;
+    }
+    try {
+      final QuerySnapshot<Map<String, dynamic>> snap = await FirebaseFirestore
+          .instance
+          .collection('bill')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      final DateTime now = DateTime.now();
+      final int today = now.day;
+
+      final List<BillEntity> bills = snap.docs
+          .map(
+            (QueryDocumentSnapshot<Map<String, dynamic>> doc) =>
+                BillEntity.fromJson(doc.data()),
+          )
+          .toList();
+
+      final int dueThisMonth = bills
+          .where((BillEntity b) => b.dueDay >= today)
+          .length;
+
+      if (mounted) {
+        setState(() {
+          _dueThisMonth = dueThisMonth;
+          _loaded = true;
+        });
+      }
+    } on Exception {
+      if (mounted) {
+        setState(() => _loaded = true);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded) {
+      return const SizedBox();
+    }
+    return GestureDetector(
+      onTap: () => context.push('/lista-contas'),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: <Widget>[
+              const Icon(Icons.receipt_long_outlined, size: 28),
+              const Gap(12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const Text('Contas a pagar', style: AppTextStyles.label),
+                    Text(
+                      _dueThisMonth == 0
+                          ? 'Nenhuma conta pendente'
+                          : '$_dueThisMonth conta(s) este mês',
+                      style: AppTextStyles.title,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class SyncStatusWidget extends StatelessWidget {

@@ -3,12 +3,14 @@ import 'package:flutter/material.dart' hide Colors;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../domain/entity/bill_entity.dart';
 import '../../domain/entity/category_entity.dart';
 import '../../domain/entity/goal_entity.dart';
 import '../../domain/entity/investment_entity.dart';
 import '../../domain/entity/limit_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../presentation/blocs/auth/auth_bloc.dart';
+import '../../presentation/blocs/bill/bill_cubit.dart';
 import '../../presentation/blocs/category/category_cubit.dart';
 import '../../presentation/blocs/goal/goal_cubit.dart';
 import '../../presentation/blocs/home/home_bloc.dart';
@@ -21,6 +23,7 @@ import '../../presentation/blocs/report/report_cubit.dart';
 import '../../presentation/blocs/review_queue/review_queue_cubit.dart';
 import '../../presentation/blocs/transaction/transaction_cubit.dart';
 import '../../presentation/screens/cadastrar_categoria.dart';
+import '../../presentation/screens/cadastrar_conta.dart';
 import '../../presentation/screens/cadastrar_investimento.dart';
 import '../../presentation/screens/cadastrar_limites.dart';
 import '../../presentation/screens/cadastrar_meta.dart';
@@ -33,6 +36,7 @@ import '../../presentation/screens/home_page.dart';
 import '../../presentation/screens/home_screen.dart';
 import '../../presentation/screens/importar_extrato.dart';
 import '../../presentation/screens/lista_categorias.dart';
+import '../../presentation/screens/lista_contas.dart';
 import '../../presentation/screens/lista_investimentos.dart';
 import '../../presentation/screens/lista_limites.dart';
 import '../../presentation/screens/lista_metas.dart';
@@ -412,6 +416,57 @@ final GoRouter router = GoRouter(
             create: (_) => InvestmentCubit(),
             child: CadastrarInvestimento(
               initialInvestment: state.extra as InvestmentEntity?,
+            ),
+          ),
+    ),
+
+    // --- Bill routes ---
+
+    GoRoute(
+      path: '/lista-contas',
+      builder: (BuildContext context, GoRouterState state) {
+        final String userId =
+            context.read<AuthBloc>().state.whenOrNull(
+                  signedIn: (ClerkAuthState s) => s.user?.id,
+                ) ??
+            '';
+        return BlocProvider<BillCubit>(
+          create: (_) => BillCubit()..loadBills(userId),
+          child: const ListaContas(),
+        );
+      },
+    ),
+
+    GoRoute(
+      path: '/cadastro-conta',
+      builder: (BuildContext context, GoRouterState state) =>
+          MultiBlocProvider(
+            providers: <BlocProvider<dynamic>>[
+              BlocProvider<BillCubit>(
+                create: (_) => BillCubit(),
+              ),
+              BlocProvider<CategoryCubit>(
+                create: (_) => CategoryCubit()..loadCategories(),
+              ),
+            ],
+            child: const CadastrarConta(),
+          ),
+    ),
+
+    GoRoute(
+      path: '/editar-conta',
+      builder: (BuildContext context, GoRouterState state) =>
+          MultiBlocProvider(
+            providers: <BlocProvider<dynamic>>[
+              BlocProvider<BillCubit>(
+                create: (_) => BillCubit(),
+              ),
+              BlocProvider<CategoryCubit>(
+                create: (_) => CategoryCubit()..loadCategories(),
+              ),
+            ],
+            child: CadastrarConta(
+              initialBill: state.extra as BillEntity?,
             ),
           ),
     ),
