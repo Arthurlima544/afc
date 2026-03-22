@@ -25,10 +25,11 @@ class _ImportarExtratoState extends State<ImportarExtrato> {
   StatementType? _type;
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: Padding(
-      padding: const EdgeInsets.all(20),
-      child: BlocListener<ImportCubit, ImportState>(
+  Widget build(BuildContext context) => DrawerOverlay(
+    child: SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: BlocListener<ImportCubit, ImportState>(
         listener: (BuildContext context, ImportState state) {
           state.whenOrNull(
             done: (int _) => context.pop(),
@@ -61,7 +62,8 @@ class _ImportarExtratoState extends State<ImportarExtrato> {
         ),
       ),
     ),
-  );
+  ),
+);
 }
 
 // ---------------------------------------------------------------------------
