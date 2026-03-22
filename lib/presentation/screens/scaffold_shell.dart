@@ -3,6 +3,7 @@ import 'package:flutter/material.dart' hide Colors;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../config/theme/app_icons.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/recurring/recurring_cubit.dart';
 import 'quick_add_sheet.dart';
@@ -70,33 +71,33 @@ class _ScaffoldShellState extends State<ScaffoldShell> {
       ),
       destinations: const <NavigationDestination>[
         NavigationDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home),
+          icon: Icon(AppIcons.home),
+          selectedIcon: Icon(AppIcons.homeSelected),
           label: 'Início',
         ),
         NavigationDestination(
-          icon: Icon(Icons.receipt_long_outlined),
-          selectedIcon: Icon(Icons.receipt_long),
+          icon: Icon(AppIcons.transactions),
+          selectedIcon: Icon(AppIcons.transactionsSelected),
           label: 'Transações',
         ),
         NavigationDestination(
-          icon: Icon(Icons.category_outlined),
-          selectedIcon: Icon(Icons.category),
+          icon: Icon(AppIcons.categories),
+          selectedIcon: Icon(AppIcons.categoriesSelected),
           label: 'Categorias',
         ),
         NavigationDestination(
-          icon: Icon(Icons.tune_outlined),
-          selectedIcon: Icon(Icons.tune),
+          icon: Icon(AppIcons.limits),
+          selectedIcon: Icon(AppIcons.limitsSelected),
           label: 'Limites',
         ),
         NavigationDestination(
-          icon: Icon(Icons.repeat_outlined),
-          selectedIcon: Icon(Icons.repeat),
+          icon: Icon(AppIcons.recurring),
+          selectedIcon: Icon(AppIcons.recurringSelected),
           label: 'Recorrências',
         ),
         NavigationDestination(
-          icon: Icon(Icons.savings_outlined),
-          selectedIcon: Icon(Icons.savings),
+          icon: Icon(AppIcons.goals),
+          selectedIcon: Icon(AppIcons.goalsSelected),
           label: 'Metas',
         ),
       ],
