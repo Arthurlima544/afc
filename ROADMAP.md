@@ -278,14 +278,14 @@ User ──► Connect Widget (Pluggy SDK) ──► Bank consent ──► Plug
 
 ---
 
-### US-20 · Transaction templates (quick-fill) 🔲
+### US-20 · Transaction templates (quick-fill) ✅
 **As a** user, **I want** to save frequently used transactions as templates,
 **so that** I can log a repeat expense (e.g. "Coffee R$8") in two taps.
 
-- [ ] "Save as template" option on the transaction form
-- [ ] Templates shelf in the quick-add FAB modal (horizontal scroll)
-- [ ] Tapping a template pre-fills the form; user only confirms amount if needed
-- [ ] Unit tests for template storage and retrieval
+- [x] "Save as template" option on the transaction form
+- [x] Templates shelf in the quick-add FAB modal (horizontal scroll)
+- [x] Tapping a template pre-fills the form; user only confirms amount if needed
+- [x] Unit tests for template storage and retrieval
 
 ---
 

@@ -5,11 +5,13 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/entity/category_entity.dart';
+import '../../domain/entity/template_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
 import '../../utils/app_spacing.dart';
 import '../../utils/logger.dart';
 import '../blocs/auth/auth_bloc.dart';
+import '../blocs/template/template_cubit.dart';
 import '../blocs/transaction/transaction_cubit.dart';
 
 class CadastrarTransacao extends StatefulWidget {
@@ -28,10 +30,19 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
   String? categoryValue;
 
   double money = 0;
+  bool _saveAsTemplate = false;
+
+  final TemplateCubit _templateCubit = TemplateCubit();
 
   String? _dateError;
   String? _typeError;
   String? _categoryError;
+
+  @override
+  void dispose() {
+    _templateCubit.close();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -232,6 +243,28 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
                     ],
                     const Gap(20),
 
+                    // Save as template toggle (only for new transactions)
+                    if (widget.initialTransaction == null) ...<Widget>[
+                      Row(
+                        children: <Widget>[
+                          Checkbox(
+                            state: _saveAsTemplate
+                                ? CheckboxState.checked
+                                : CheckboxState.unchecked,
+                            onChanged: (_) => setState(
+                              () => _saveAsTemplate = !_saveAsTemplate,
+                            ),
+                          ),
+                          const Gap(8),
+                          const Text(
+                            'Salvar como modelo',
+                            style: AppTextStyles.label,
+                          ),
+                        ],
+                      ),
+                      const Gap(16),
+                    ],
+
                     PrimaryButton(
                       onPressed: () {
                         if (!_validate(categories)) {
@@ -266,6 +299,7 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
                                     ),
                                   );
                             } else {
+                              final String title = titleOrNull ?? '';
                               context
                                   .read<TransactionCubit>()
                                   .saveTransaction(
@@ -275,10 +309,24 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
                                       categoryUUid: selectedCategory.uuid,
                                       typeUuid: typeValue ?? '',
                                       data: _value ?? DateTime.now(),
-                                      title: titleOrNull ?? '',
+                                      title: title,
                                       userId: userId,
                                     ),
                                   );
+                              if (_saveAsTemplate) {
+                                _templateCubit.save(
+                                  TemplateEntity(
+                                    uuid: const Uuid().v1(),
+                                    userId: userId,
+                                    title: title.isEmpty
+                                        ? selectedCategory.name
+                                        : title,
+                                    amount: money,
+                                    categoryUUid: selectedCategory.uuid,
+                                    typeUuid: typeValue ?? '',
+                                  ),
+                                );
+                              }
                             }
                           },
                         );

@@ -5,9 +5,11 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' hide Column, Row, Expanded;
 import 'package:uuid/uuid.dart';
 
 import '../../domain/entity/category_entity.dart';
+import '../../domain/entity/template_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
 import '../../utils/app_spacing.dart';
+import '../blocs/template/template_cubit.dart';
 import '../blocs/transaction/transaction_cubit.dart';
 
 class QuickAddSheet extends StatefulWidget {
@@ -21,6 +23,8 @@ class QuickAddSheet extends StatefulWidget {
 
 class _QuickAddSheetState extends State<QuickAddSheet> {
   final TransactionCubit _cubit = TransactionCubit()..getCategories();
+  late final TemplateCubit _templateCubit =
+      TemplateCubit()..loadTemplates(widget.userId);
 
   String _amountBuffer = '';
   String _type = TypeEntity.expense.name;
@@ -30,8 +34,18 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
   @override
   void dispose() {
     _cubit.close();
+    _templateCubit.close();
     _titleController.dispose();
     super.dispose();
+  }
+
+  void _applyTemplate(TemplateEntity template) {
+    setState(() {
+      _amountBuffer = template.amount.toString();
+      _type = template.typeUuid;
+      _categoryUuid = template.categoryUUid;
+      _titleController.text = template.title;
+    });
   }
 
   double get _amount => double.tryParse(_amountBuffer) ?? 0.0;
@@ -93,8 +107,11 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
   }
 
   @override
-  Widget build(BuildContext context) => BlocProvider<TransactionCubit>.value(
-    value: _cubit,
+  Widget build(BuildContext context) => MultiBlocProvider(
+    providers: <BlocProvider<dynamic>>[
+      BlocProvider<TransactionCubit>.value(value: _cubit),
+      BlocProvider<TemplateCubit>.value(value: _templateCubit),
+    ],
     child: BlocBuilder<TransactionCubit, TransactionState>(
       builder: (BuildContext ctx, TransactionState state) {
         final List<CategoryEntity> categories =
@@ -123,6 +140,69 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
+                  ),
+
+                  // Templates shelf
+                  BlocBuilder<TemplateCubit, TemplateState>(
+                    builder:
+                        (BuildContext context, TemplateState templateState) {
+                      final List<TemplateEntity> templates =
+                          templateState.whenOrNull(
+                            listed: (List<TemplateEntity> t) => t,
+                          ) ??
+                          <TemplateEntity>[];
+                      if (templates.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          const Text('Modelos', style: AppTextStyles.labelBold),
+                          const Gap(8),
+                          SizedBox(
+                            height: 36,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: templates.length,
+                              separatorBuilder:
+                                  (BuildContext context, int index) =>
+                                      const Gap(8),
+                              itemBuilder:
+                                  (BuildContext context, int index) {
+                                final TemplateEntity t = templates[index];
+                                return GestureDetector(
+                                  onTap: () => _applyTemplate(t),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .muted
+                                          .withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .muted
+                                            .withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      t.title,
+                                      style: AppTextStyles.label,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const Gap(16),
+                        ],
+                      );
+                    },
                   ),
 
                   // Amount display
