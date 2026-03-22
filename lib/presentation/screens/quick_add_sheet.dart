@@ -1,18 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart' hide Colors, TextField, Theme, CircularProgressIndicator;
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' hide AlertDialog, Column, Expanded, Row, TextButton, showDialog;
 import 'package:uuid/uuid.dart';
 
 import '../../domain/entity/category_entity.dart';
 import '../../domain/entity/template_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
-import '../../utils/app_spacing.dart';
 import '../blocs/receipt_ocr/receipt_ocr_cubit.dart';
 import '../blocs/template/template_cubit.dart';
 import '../blocs/transaction/transaction_cubit.dart';
+import '../widgets/design_system.dart';
 
 class QuickAddSheet extends StatefulWidget {
   const QuickAddSheet({required this.userId, required this.onClose, super.key});
@@ -26,8 +25,8 @@ class QuickAddSheet extends StatefulWidget {
 
 class _QuickAddSheetState extends State<QuickAddSheet> {
   final TransactionCubit _cubit = TransactionCubit()..getCategories();
-  late final TemplateCubit _templateCubit =
-      TemplateCubit()..loadTemplates(widget.userId);
+  late final TemplateCubit _templateCubit = TemplateCubit()
+    ..loadTemplates(widget.userId);
   final ReceiptOcrCubit _ocrCubit = ReceiptOcrCubit();
 
   String _amountBuffer = '';
@@ -85,34 +84,11 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
   }
 
   Future<void> _showAddCategoryDialog() async {
-    final TextEditingController controller = TextEditingController();
-    final String? name = await showDialog<String>(
+    final String? name = await showInputDialog(
       context: context,
-      builder: (BuildContext dialogContext) => AlertDialog(
-        title: const Text('Nova categoria'),
-        content: TextField(
-          controller: controller,
-          placeholder: const Text('Nome da categoria'),
-          autofocus: true,
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () {
-              final String n = controller.text.trim();
-              if (n.isNotEmpty) {
-                Navigator.of(dialogContext).pop(n);
-              }
-            },
-            child: const Text('Criar'),
-          ),
-        ],
-      ),
+      title: 'Nova categoria',
+      hintText: 'Nome da categoria',
     );
-    controller.dispose();
     if (name == null || !mounted) {
       return;
     }
@@ -121,7 +97,9 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
       name: name,
       iconType: 0,
     );
-    await FirebaseFirestore.instance.collection('category').add(newCat.toJson());
+    await FirebaseFirestore.instance
+        .collection('category')
+        .add(newCat.toJson());
     await _cubit.getCategories();
     if (mounted) {
       setState(() => _categoryUuid = newCat.uuid);
@@ -130,9 +108,9 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
 
   Future<void> _save(List<CategoryEntity> categories) async {
     if (_categoryUuid == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecione uma categoria')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Selecione uma categoria')));
       return;
     }
     if (_amount <= 0) {
@@ -186,320 +164,324 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
         );
       },
       child: BlocBuilder<TransactionCubit, TransactionState>(
-      builder: (BuildContext ctx, TransactionState state) {
-        final List<CategoryEntity> categories =
-            state.whenOrNull(initial: (List<CategoryEntity> cats) => cats) ??
-            <CategoryEntity>[];
+        builder: (BuildContext ctx, TransactionState state) {
+          final List<CategoryEntity> categories =
+              state.whenOrNull(initial: (List<CategoryEntity> cats) => cats) ??
+              <CategoryEntity>[];
 
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  // Handle bar
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.muted.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(2),
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    // Handle bar
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: AppColors.muted.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
                     ),
-                  ),
 
-                  // Templates shelf
-                  BlocBuilder<TemplateCubit, TemplateState>(
-                    builder:
-                        (BuildContext context, TemplateState templateState) {
-                      final List<TemplateEntity> templates =
-                          templateState.whenOrNull(
-                            listed: (List<TemplateEntity> t) => t,
-                          ) ??
-                          <TemplateEntity>[];
-                      if (templates.isEmpty) {
-                        return const SizedBox.shrink();
-                      }
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          const Text('Modelos', style: AppTextStyles.labelBold),
-                          const Gap(8),
-                          SizedBox(
-                            height: 36,
-                            child: ListView.separated(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: templates.length,
-                              separatorBuilder:
-                                  (BuildContext context, int index) =>
-                                      const Gap(8),
-                              itemBuilder:
-                                  (BuildContext context, int index) {
-                                final TemplateEntity t = templates[index];
-                                return GestureDetector(
-                                  onTap: () => _applyTemplate(t),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .muted
-                                          .withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .muted
-                                            .withValues(alpha: 0.3),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      t.title,
-                                      style: AppTextStyles.label,
-                                    ),
+                    // Templates shelf
+                    BlocBuilder<TemplateCubit, TemplateState>(
+                      builder:
+                          (BuildContext context, TemplateState templateState) {
+                            final List<TemplateEntity> templates =
+                                templateState.whenOrNull(
+                                  listed: (List<TemplateEntity> t) => t,
+                                ) ??
+                                <TemplateEntity>[];
+                            if (templates.isEmpty) {
+                              return const SizedBox.shrink();
+                            }
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                const Text(
+                                  'Modelos',
+                                  style: AppTextStyles.labelBold,
+                                ),
+                                const Gap(8),
+                                SizedBox(
+                                  height: 36,
+                                  child: ListView.separated(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: templates.length,
+                                    separatorBuilder:
+                                        (BuildContext context, int index) =>
+                                            const Gap(8),
+                                    itemBuilder:
+                                        (BuildContext context, int index) {
+                                          final TemplateEntity t =
+                                              templates[index];
+                                          return GestureDetector(
+                                            onTap: () => _applyTemplate(t),
+                                            child: Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 14,
+                                                    vertical: 6,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.muted
+                                                    .withValues(alpha: 0.15),
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                                border: Border.all(
+                                                  color: AppColors.muted
+                                                      .withValues(alpha: 0.3),
+                                                ),
+                                              ),
+                                              child: Text(
+                                                t.title,
+                                                style: AppTextStyles.label,
+                                              ),
+                                            ),
+                                          );
+                                        },
                                   ),
-                                );
-                              },
-                            ),
-                          ),
-                          const Gap(16),
-                        ],
-                      );
-                    },
-                  ),
-
-                  // Amount display
-                  Center(
-                    child: Text(
-                      _displayAmount,
-                      style: AppTextStyles.display,
+                                ),
+                                const Gap(16),
+                              ],
+                            );
+                          },
                     ),
-                  ),
-                  const Gap(16),
 
-                  // Income / Expense toggle
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: _type == TypeEntity.income.name
-                            ? PrimaryButton(
-                                onPressed: () => setState(
-                                  () => _type = TypeEntity.income.name,
-                                ),
-                                child: const Text('Receita'),
-                              )
-                            : OutlineButton(
-                                onPressed: () => setState(
-                                  () => _type = TypeEntity.income.name,
-                                ),
-                                child: const Text('Receita'),
-                              ),
-                      ),
-                      const Gap(8),
-                      Expanded(
-                        child: _type == TypeEntity.expense.name
-                            ? PrimaryButton(
-                                onPressed: () => setState(
-                                  () => _type = TypeEntity.expense.name,
-                                ),
-                                child: const Text('Despesa'),
-                              )
-                            : OutlineButton(
-                                onPressed: () => setState(
-                                  () => _type = TypeEntity.expense.name,
-                                ),
-                                child: const Text('Despesa'),
-                              ),
-                      ),
-                    ],
-                  ),
-                  const Gap(16),
+                    // Amount display
+                    Center(
+                      child: Text(_displayAmount, style: AppTextStyles.display),
+                    ),
+                    const Gap(16),
 
-                  // Category chips
-                  const Text('Categoria', style: AppTextStyles.labelBold),
-                  const Gap(8),
-                  if (state.whenOrNull(loading: () => true) == true)
-                    const Center(child: CircularProgressIndicator())
-                  else
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                    // Income / Expense toggle
+                    Row(
                       children: <Widget>[
-                        for (final CategoryEntity cat in categories)
+                        Expanded(
+                          child: _type == TypeEntity.income.name
+                              ? PrimaryButton(
+                                  onPressed: () => setState(
+                                    () => _type = TypeEntity.income.name,
+                                  ),
+                                  child: const Text('Receita'),
+                                )
+                              : OutlineButton(
+                                  onPressed: () => setState(
+                                    () => _type = TypeEntity.income.name,
+                                  ),
+                                  child: const Text('Receita'),
+                                ),
+                        ),
+                        const Gap(8),
+                        Expanded(
+                          child: _type == TypeEntity.expense.name
+                              ? PrimaryButton(
+                                  onPressed: () => setState(
+                                    () => _type = TypeEntity.expense.name,
+                                  ),
+                                  child: const Text('Despesa'),
+                                )
+                              : OutlineButton(
+                                  onPressed: () => setState(
+                                    () => _type = TypeEntity.expense.name,
+                                  ),
+                                  child: const Text('Despesa'),
+                                ),
+                        ),
+                      ],
+                    ),
+                    const Gap(16),
+
+                    // Category chips
+                    const Text('Categoria', style: AppTextStyles.labelBold),
+                    const Gap(8),
+                    if (state.whenOrNull(loading: () => true) == true)
+                      const Center(child: CircularProgressIndicator())
+                    else
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: <Widget>[
+                          for (final CategoryEntity cat in categories)
+                            GestureDetector(
+                              onTap: () => setState(() {
+                                _categoryUuid = cat.uuid;
+                              }),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _categoryUuid == cat.uuid
+                                      ? AppColors.primary
+                                      : AppColors.muted.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: _categoryUuid == cat.uuid
+                                        ? AppColors.primary
+                                        : AppColors.muted.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                  ),
+                                ),
+                                child: Text(
+                                  cat.name,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: _categoryUuid == cat.uuid
+                                        ? AppColors.onPrimary
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          // "+" chip to create a new category inline
                           GestureDetector(
-                            onTap: () => setState(() {
-                              _categoryUuid = cat.uuid;
-                            }),
+                            onTap: _showAddCategoryDialog,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: _categoryUuid == cat.uuid
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Theme.of(context).colorScheme.muted.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: _categoryUuid == cat.uuid
-                                      ? Theme.of(context).colorScheme.primary
-                                      : Theme.of(context).colorScheme.muted.withValues(alpha: 0.3),
+                                  color: AppColors.muted.withValues(alpha: 0.4),
                                 ),
                               ),
-                              child: Text(
-                                cat.name,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: _categoryUuid == cat.uuid
-                                      ? Theme.of(context).colorScheme.primaryForeground
-                                      : null,
-                                ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  Icon(
+                                    Icons.add,
+                                    size: 14,
+                                    color: AppColors.muted,
+                                  ),
+                                  Gap(4),
+                                  Text(
+                                    'Nova',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: AppColors.muted,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                        // "+" chip to create a new category inline
-                        GestureDetector(
-                          onTap: _showAddCategoryDialog,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .muted
-                                    .withValues(alpha: 0.4),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                Icon(
-                                  Icons.add,
-                                  size: 14,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .muted,
-                                ),
-                                const Gap(4),
-                                Text(
-                                  'Nova',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .muted,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  const Gap(16),
-
-
-                  // Optional title
-                  TextField(
-                    controller: _titleController,
-                    placeholder: const Text('Título (opcional)'),
-                  ),
-                  const Gap(16),
-
-                  // OCR scan — camera / gallery buttons + error feedback
-                  BlocBuilder<ReceiptOcrCubit, ReceiptOcrState>(
-                    builder: (BuildContext context, ReceiptOcrState ocrState) {
-                      final bool isLoading =
-                          ocrState.whenOrNull(loading: () => true) == true;
-                      final String? errorMsg =
-                          ocrState.whenOrNull(error: (String m) => m);
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: <Widget>[
-                          if (isLoading)
-                            const Center(
-                              child: CircularProgressIndicator(size: 24),
-                            )
-                          else
-                            Row(
-                              children: <Widget>[
-                                Expanded(
-                                  child: OutlineButton(
-                                    onPressed: () => context
-                                        .read<ReceiptOcrCubit>()
-                                        .pickAndScan(),
-                                    leading: const Icon(
-                                      Icons.camera_alt_outlined,
-                                      size: 18,
-                                    ),
-                                    child: const Text('Câmera'),
-                                  ),
-                                ),
-                                const Gap(8),
-                                Expanded(
-                                  child: OutlineButton(
-                                    onPressed: () => context
-                                        .read<ReceiptOcrCubit>()
-                                        .pickAndScan(fromCamera: false),
-                                    leading: const Icon(
-                                      Icons.photo_library_outlined,
-                                      size: 18,
-                                    ),
-                                    child: const Text('Galeria'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          if (errorMsg != null) ...<Widget>[
-                            const Gap(6),
-                            Text(
-                              'Falha ao ler o comprovante. Tente novamente.',
-                              style: AppTextStyles.caption.copyWith(
-                                color: AppColors.expense,
-                              ),
-                            ),
-                          ],
                         ],
-                      );
-                    },
-                  ),
-                  const Gap(16),
+                      ),
+                    const Gap(16),
 
-                  // Numpad
-                  _Numpad(onKey: _onKey),
-                  const Gap(16),
+                    // Optional title
+                    AppTextField(
+                      controller: _titleController,
+                      hintText: 'Título (opcional)',
+                    ),
+                    const Gap(16),
 
-                  // Save button
-                  PrimaryButton(
-                    onPressed: _amount > 0
-                        ? () => _save(categories)
-                        : null,
-                    child: const Text('Salvar'),
-                  ),
-                ],
+                    // OCR scan — camera / gallery buttons + error feedback
+                    BlocBuilder<ReceiptOcrCubit, ReceiptOcrState>(
+                      builder: (BuildContext context, ReceiptOcrState ocrState) {
+                        final bool isLoading =
+                            ocrState.whenOrNull(loading: () => true) == true;
+                        final String? errorMsg = ocrState.whenOrNull(
+                          error: (String m) => m,
+                        );
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            if (isLoading)
+                              const Center(child: CircularProgressIndicator())
+                            else
+                              Row(
+                                children: <Widget>[
+                                  Expanded(
+                                    child: OutlineButton(
+                                      onPressed: () => context
+                                          .read<ReceiptOcrCubit>()
+                                          .pickAndScan(),
+                                      child: const Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: <Widget>[
+                                          Icon(
+                                            Icons.camera_alt_outlined,
+                                            size: 18,
+                                          ),
+                                          Gap(6),
+                                          Text('Câmera'),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const Gap(8),
+                                  Expanded(
+                                    child: OutlineButton(
+                                      onPressed: () => context
+                                          .read<ReceiptOcrCubit>()
+                                          .pickAndScan(fromCamera: false),
+                                      child: const Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: <Widget>[
+                                          Icon(
+                                            Icons.photo_library_outlined,
+                                            size: 18,
+                                          ),
+                                          Gap(6),
+                                          Text('Galeria'),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            if (errorMsg != null) ...<Widget>[
+                              const Gap(6),
+                              Text(
+                                'Falha ao ler o comprovante. Tente novamente.',
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.expense,
+                                ),
+                              ),
+                            ],
+                          ],
+                        );
+                      },
+                    ),
+                    const Gap(16),
+
+                    // Numpad
+                    _Numpad(onKey: _onKey),
+                    const Gap(16),
+
+                    // Save button
+                    PrimaryButton(
+                      onPressed: _amount > 0 ? () => _save(categories) : null,
+                      child: const Text('Salvar'),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     ),
-  ),
-);
+  );
 }
 
 class _Numpad extends StatelessWidget {

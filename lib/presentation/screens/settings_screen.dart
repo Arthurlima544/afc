@@ -1,28 +1,15 @@
 import 'dart:async';
 
 import 'package:clerk_flutter/clerk_flutter.dart';
-import 'package:flutter/material.dart'
-    hide
-        Card,
-        Colors,
-        Theme,
-        TextField,
-        IconButton,
-        ButtonStyle,
-        showDialog,
-        AlertDialog,
-        Divider,
-        Switch;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart'
-    hide Column, Row, Expanded, Scaffold, AppBar;
 
-import '../../utils/app_spacing.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/settings/settings_cubit.dart';
 import '../blocs/theme/theme_cubit.dart';
+import '../widgets/design_system.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -133,40 +120,36 @@ class _ProfileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final String firstName = clerkState?.user?.firstName ?? '';
     final String lastName = clerkState?.user?.lastName ?? '';
-    final String fullName =
-        <String>[firstName, lastName]
-            .where((String s) => s.isNotEmpty)
-            .join(' ');
+    final String fullName = <String>[
+      firstName,
+      lastName,
+    ].where((String s) => s.isNotEmpty).join(' ');
     final String displayName = fullName.isNotEmpty ? fullName : 'Usuário';
     final String? email = clerkState?.user?.email;
     final String? imageUrl = clerkState?.user?.imageUrl;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: <Widget>[
-            _Avatar(imageUrl: imageUrl, name: displayName),
-            const Gap(16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(displayName, style: AppTextStyles.title),
-                  if (email != null && email.isNotEmpty) ...<Widget>[
-                    const Gap(4),
-                    Text(
-                      email,
-                      style: AppTextStyles.label.copyWith(
-                        color: AppColors.muted,
-                      ),
-                    ),
-                  ],
+    return AppCard(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: <Widget>[
+          _Avatar(imageUrl: imageUrl, name: displayName),
+          const Gap(16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(displayName, style: AppTextStyles.title),
+                if (email != null && email.isNotEmpty) ...<Widget>[
+                  const Gap(4),
+                  Text(
+                    email,
+                    style: AppTextStyles.label.copyWith(color: AppColors.muted),
+                  ),
                 ],
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -239,48 +222,44 @@ class _AppearanceCard extends StatelessWidget {
   const _AppearanceCard();
 
   @override
-  Widget build(BuildContext context) =>
-      BlocBuilder<ThemeCubit, ThemePreference>(
-        builder: (BuildContext context, ThemePreference preference) => Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                const Text('Tema', style: AppTextStyles.bodyBold),
-                const Gap(12),
-                Row(
-                  children: <Widget>[
-                    _ThemeChip(
-                      label: 'Sistema',
-                      selected: preference == ThemePreference.system,
-                      onTap: () => context
-                          .read<ThemeCubit>()
-                          .setTheme(ThemePreference.system),
-                    ),
-                    const Gap(8),
-                    _ThemeChip(
-                      label: 'Claro',
-                      selected: preference == ThemePreference.light,
-                      onTap: () => context
-                          .read<ThemeCubit>()
-                          .setTheme(ThemePreference.light),
-                    ),
-                    const Gap(8),
-                    _ThemeChip(
-                      label: 'Escuro',
-                      selected: preference == ThemePreference.dark,
-                      onTap: () => context
-                          .read<ThemeCubit>()
-                          .setTheme(ThemePreference.dark),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+  Widget build(
+    BuildContext context,
+  ) => BlocBuilder<ThemeCubit, ThemePreference>(
+    builder: (BuildContext context, ThemePreference preference) => AppCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Text('Tema', style: AppTextStyles.bodyBold),
+          const Gap(12),
+          Row(
+            children: <Widget>[
+              _ThemeChip(
+                label: 'Sistema',
+                selected: preference == ThemePreference.system,
+                onTap: () =>
+                    context.read<ThemeCubit>().setTheme(ThemePreference.system),
+              ),
+              const Gap(8),
+              _ThemeChip(
+                label: 'Claro',
+                selected: preference == ThemePreference.light,
+                onTap: () =>
+                    context.read<ThemeCubit>().setTheme(ThemePreference.light),
+              ),
+              const Gap(8),
+              _ThemeChip(
+                label: 'Escuro',
+                selected: preference == ThemePreference.dark,
+                onTap: () =>
+                    context.read<ThemeCubit>().setTheme(ThemePreference.dark),
+              ),
+            ],
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 }
 
 class _ThemeChip extends StatelessWidget {
@@ -328,38 +307,34 @@ class _NotificationsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       BlocBuilder<SettingsCubit, SettingsState>(
-        builder: (BuildContext context, SettingsState state) => Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: <Widget>[
-                _ToggleRow(
-                  label: 'Lembretes de contas',
-                  subtitle: 'Aviso 3 dias antes do vencimento',
-                  value: state.billReminders,
-                  onChanged: (bool v) => context
-                      .read<SettingsCubit>()
-                      .setBillReminders(value: v),
-                ),
-                const Divider(),
-                _ToggleRow(
-                  label: 'Alertas de overspend',
-                  subtitle: 'Quando ultrapassar um limite de categoria',
-                  value: state.overspendAlerts,
-                  onChanged: (bool v) => context
-                      .read<SettingsCubit>()
-                      .setOverspendAlerts(value: v),
-                ),
-                const Divider(),
-                _ToggleRow(
-                  label: 'Resumo semanal',
-                  subtitle: 'Score de saúde financeira todo domingo',
-                  value: state.weeklyDigest,
-                  onChanged: (bool v) =>
-                      context.read<SettingsCubit>().setWeeklyDigest(value: v),
-                ),
-              ],
-            ),
+        builder: (BuildContext context, SettingsState state) => AppCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: <Widget>[
+              _ToggleRow(
+                label: 'Lembretes de contas',
+                subtitle: 'Aviso 3 dias antes do vencimento',
+                value: state.billReminders,
+                onChanged: (bool v) =>
+                    context.read<SettingsCubit>().setBillReminders(value: v),
+              ),
+              const Divider(),
+              _ToggleRow(
+                label: 'Alertas de overspend',
+                subtitle: 'Quando ultrapassar um limite de categoria',
+                value: state.overspendAlerts,
+                onChanged: (bool v) =>
+                    context.read<SettingsCubit>().setOverspendAlerts(value: v),
+              ),
+              const Divider(),
+              _ToggleRow(
+                label: 'Resumo semanal',
+                subtitle: 'Score de saúde financeira todo domingo',
+                value: state.weeklyDigest,
+                onChanged: (bool v) =>
+                    context.read<SettingsCubit>().setWeeklyDigest(value: v),
+              ),
+            ],
           ),
         ),
       );
@@ -409,34 +384,32 @@ class _DataCard extends StatelessWidget {
   const _DataCard();
 
   @override
-  Widget build(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: <Widget>[
-          _ActionRow(
-            icon: AppIcons.export,
-            label: 'Exportar transações (CSV)',
-            onTap: () {
-              // TODO(sprint10): implement CSV export via share_plus
-            },
-          ),
-          const Divider(),
-          _ActionRow(
-            icon: AppIcons.export,
-            label: 'Exportar backup (JSON)',
-            onTap: () {
-              // TODO(sprint10): implement JSON export via share_plus
-            },
-          ),
-          const Divider(),
-          _ActionRow(
-            icon: AppIcons.bank,
-            label: 'Contas conectadas',
-            onTap: () => context.push('/contas-conectadas'),
-          ),
-        ],
-      ),
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      children: <Widget>[
+        _ActionRow(
+          icon: AppIcons.export,
+          label: 'Exportar transações (CSV)',
+          onTap: () {
+            // TODO(sprint10): implement CSV export via share_plus
+          },
+        ),
+        const Divider(),
+        _ActionRow(
+          icon: AppIcons.export,
+          label: 'Exportar backup (JSON)',
+          onTap: () {
+            // TODO(sprint10): implement JSON export via share_plus
+          },
+        ),
+        const Divider(),
+        _ActionRow(
+          icon: AppIcons.bank,
+          label: 'Contas conectadas',
+          onTap: () => context.push('/contas-conectadas'),
+        ),
+      ],
     ),
   );
 }
@@ -480,33 +453,28 @@ class _AboutCard extends StatelessWidget {
   final String appVersion;
 
   @override
-  Widget build(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: <Widget>[
-          _InfoRow(
-            label: 'Versão',
-            value: appVersion.isEmpty ? '—' : appVersion,
-          ),
-          const Divider(),
-          _ActionRow(
-            icon: AppIcons.info,
-            label: 'Política de privacidade',
-            onTap: () {
-              // TODO(sprint10): open privacy policy URL
-            },
-          ),
-          const Divider(),
-          _ActionRow(
-            icon: AppIcons.info,
-            label: 'Termos de uso',
-            onTap: () {
-              // TODO(sprint10): open terms of use URL
-            },
-          ),
-        ],
-      ),
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      children: <Widget>[
+        _InfoRow(label: 'Versão', value: appVersion.isEmpty ? '—' : appVersion),
+        const Divider(),
+        _ActionRow(
+          icon: AppIcons.info,
+          label: 'Política de privacidade',
+          onTap: () {
+            // TODO(sprint10): open privacy policy URL
+          },
+        ),
+        const Divider(),
+        _ActionRow(
+          icon: AppIcons.info,
+          label: 'Termos de uso',
+          onTap: () {
+            // TODO(sprint10): open terms of use URL
+          },
+        ),
+      ],
     ),
   );
 }
@@ -523,10 +491,7 @@ class _InfoRow extends StatelessWidget {
     child: Row(
       children: <Widget>[
         Expanded(child: Text(label, style: AppTextStyles.body)),
-        Text(
-          value,
-          style: AppTextStyles.body.copyWith(color: AppColors.muted),
-        ),
+        Text(value, style: AppTextStyles.body.copyWith(color: AppColors.muted)),
       ],
     ),
   );

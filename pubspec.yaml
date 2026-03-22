@@ -34,7 +34,6 @@ dependencies:
   pdf: ^3.11.1
   printing: ^5.13.1
   result_dart: ^2.1.1
-  shadcn_flutter: ^0.0.44
   share_plus: ^10.1.4
   shared_preferences: ^2.3.5
   uuid: ^4.5.1

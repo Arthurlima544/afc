@@ -1,10 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/entity/category_entity.dart';
-import '../../utils/app_spacing.dart';
 import '../blocs/category/category_cubit.dart';
+import '../widgets/design_system.dart';
 
 List<IconData> iconList = <IconData>[
   Icons.share_outlined,
@@ -31,87 +31,84 @@ class CadastrarCategoria extends StatefulWidget {
 }
 
 class _CadastrarCategoriaState extends State<CadastrarCategoria> {
-  final FormKey<String> _categoryKey = const TextFieldKey('category');
+  final TextEditingController _nameController = TextEditingController();
   String? _nameError;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: 480,
-    child: Form(
+  void initState() {
+    super.initState();
+    if (widget.initialCategory != null) {
+      _nameController.text = widget.initialCategory!.name;
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
       child: BlocBuilder<CategoryCubit, CategoryState>(
         builder: (BuildContext context, CategoryState state) => state.when(
           initial: (int index) => Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              FormTableLayout(
-                rows: <FormField<String>>[
-                  FormField<String>(
-                    key: _categoryKey,
-                    label: const Text('Categoria'),
-                    child: TextField(
-                      initialValue: widget.initialCategory?.name,
-                      hintText: 'Adicione uma Categoria',
-                      onChanged: (_) => setState(() => _nameError = null),
-                    ),
-                  ),
-                ],
-              ).withPadding(top: 40, left: 20, right: 20, bottom: 4),
-              if (_nameError != null)
-                Padding(
-                  padding: const EdgeInsets.only(left: 20, bottom: 8),
-                  child: Text(
-                    _nameError!,
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.expense,
-                    ),
+              Text(
+                widget.initialCategory != null
+                    ? 'Editar Categoria'
+                    : 'Nova Categoria',
+                style: AppTextStyles.heading,
+              ),
+              const Gap(24),
+
+              AppTextField(
+                controller: _nameController,
+                hintText: 'Nome da categoria',
+                onChanged: (_) => setState(() => _nameError = null),
+              ),
+              if (_nameError != null) ...<Widget>[
+                const Gap(4),
+                Text(
+                  _nameError!,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.expense,
                   ),
                 ),
+              ],
+              const Gap(20),
+
+              const Text('Selecione um ícone', style: AppTextStyles.labelBold),
               const Gap(12),
-              const Text('Selecione um ícone'),
-              Row(
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
                 children: <Widget>[
-                  for (int i = 0; i < 6; i++)
-                    IconButton(
-                      onPressed: () {
-                        context
-                            .read<CategoryCubit>()
-                            .changeSelectedCategory(i);
-                      },
-                      variance: index == i
-                          ? const ButtonStyle.primary()
-                          : const ButtonStyle.outline(),
-
-                      shape: ButtonShape.circle,
-
-                      icon: Icon(iconList[i]),
-                    ),
+                  for (int i = 0; i < iconList.length; i++)
+                    index == i
+                        ? AppIconButton.circle(
+                            onPressed: () => context
+                                .read<CategoryCubit>()
+                                .changeSelectedCategory(i),
+                            icon: Icon(iconList[i], color: AppColors.onPrimary),
+                          )
+                        : AppIconButton(
+                            onPressed: () => context
+                                .read<CategoryCubit>()
+                                .changeSelectedCategory(i),
+                            icon: Icon(iconList[i]),
+                          ),
                 ],
-              ).gap(20).withPadding(left: 10, right: 10),
-              Row(
-                children: <Widget>[
-                  for (int i = 6; i < 12; i++)
-                    IconButton(
-                      onPressed: () {
-                        context
-                            .read<CategoryCubit>()
-                            .changeSelectedCategory(i);
-                      },
-                      variance: index == i
-                          ? const ButtonStyle.primary()
-                          : const ButtonStyle.outline(),
-                      shape: ButtonShape.circle,
-                      icon: Icon(iconList[i]),
-                    ),
-                ],
-              ).gap(20).withPadding(left: 10, right: 10),
+              ),
+              const Gap(24),
 
               PrimaryButton(
                 onPressed: () {
-                  final String? categoryOrNull = Form.of(
-                    context,
-                  ).getValue(_categoryKey);
-                  if (categoryOrNull == null || categoryOrNull.trim().isEmpty) {
+                  final String name = _nameController.text.trim();
+                  if (name.isEmpty) {
                     setState(() => _nameError = 'Informe o nome da categoria');
                     return;
                   }
@@ -119,7 +116,7 @@ class _CadastrarCategoriaState extends State<CadastrarCategoria> {
                     context.read<CategoryCubit>().updateCategory(
                       CategoryEntity(
                         uuid: widget.initialCategory!.uuid,
-                        name: categoryOrNull,
+                        name: name,
                         iconType: index,
                       ),
                     );
@@ -127,19 +124,18 @@ class _CadastrarCategoriaState extends State<CadastrarCategoria> {
                     context.read<CategoryCubit>().saveCategory(
                       CategoryEntity(
                         uuid: const Uuid().v1(),
-                        name: categoryOrNull,
+                        name: name,
                         iconType: index,
                       ),
                     );
                   }
                 },
-                trailing: const Icon(Icons.add),
                 child: Text(
-                  widget.initialCategory != null ? 'Salvar' : 'Add',
+                  widget.initialCategory != null ? 'Salvar' : 'Adicionar',
                 ),
               ),
             ],
-          ).gap(20),
+          ),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (String error) => Center(child: Text(error)),
           success: (CategoryEntity category) => Center(
@@ -152,11 +148,4 @@ class _CadastrarCategoriaState extends State<CadastrarCategoria> {
       ),
     ),
   );
-}
-
-bool isEnabled(int currentIndex, int? enabledIndex, CategoryState state) {
-  if (enabledIndex != null) {
-    return currentIndex == enabledIndex;
-  }
-  return false;
 }

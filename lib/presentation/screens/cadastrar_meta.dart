@@ -1,23 +1,14 @@
 import 'package:clerk_flutter/clerk_flutter.dart';
-import 'package:flutter/material.dart'
-    hide
-        Colors,
-        Theme,
-        IconButton,
-        ButtonStyle,
-        TextField,
-        CircularProgressIndicator,
-        Row;
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' hide Column, Expanded;
 import 'package:uuid/uuid.dart';
 
 import '../../domain/entity/goal_entity.dart';
-import '../../utils/app_spacing.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/goal/goal_cubit.dart';
+import '../widgets/design_system.dart';
 import 'cadastrar_categoria.dart';
 
 class CadastrarMeta extends StatefulWidget {
@@ -60,13 +51,15 @@ class _CadastrarMetaState extends State<CadastrarMeta> {
 
   bool _validate() {
     setState(() {
-      _nameError =
-          _nameController.text.trim().isEmpty ? 'Informe o nome da meta' : null;
+      _nameError = _nameController.text.trim().isEmpty
+          ? 'Informe o nome da meta'
+          : null;
       final double? amount = double.tryParse(
         _amountController.text.replaceAll(',', '.'),
       );
-      _amountError =
-          (amount == null || amount <= 0) ? 'Informe um valor válido' : null;
+      _amountError = (amount == null || amount <= 0)
+          ? 'Informe um valor válido'
+          : null;
     });
     return _nameError == null && _amountError == null;
   }
@@ -88,9 +81,7 @@ class _CadastrarMetaState extends State<CadastrarMeta> {
   @override
   Widget build(BuildContext context) => BlocListener<GoalCubit, GoalState>(
     listener: (BuildContext context, GoalState state) {
-      state.whenOrNull(
-        success: (_) => context.pop(),
-      );
+      state.whenOrNull(success: (_) => context.pop());
     },
     child: SafeArea(
       child: SingleChildScrollView(
@@ -103,24 +94,22 @@ class _CadastrarMetaState extends State<CadastrarMeta> {
               style: AppTextStyles.heading,
             ),
             const Gap(20),
-            TextField(
+            AppTextField(
               controller: _nameController,
-              placeholder: const Text('Nome da meta'),
+              hintText: 'Nome da meta',
               onChanged: (_) => setState(() => _nameError = null),
             ),
             if (_nameError != null) ...<Widget>[
               const Gap(4),
               Text(
                 _nameError!,
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.expense,
-                ),
+                style: AppTextStyles.caption.copyWith(color: AppColors.expense),
               ),
             ],
             const Gap(16),
-            TextField(
+            AppTextField(
               controller: _amountController,
-              placeholder: const Text('Valor alvo (ex: 1000.00)'),
+              hintText: 'Valor alvo (ex: 1000.00)',
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -133,9 +122,7 @@ class _CadastrarMetaState extends State<CadastrarMeta> {
               const Gap(4),
               Text(
                 _amountError!,
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.expense,
-                ),
+                style: AppTextStyles.caption.copyWith(color: AppColors.expense),
               ),
             ],
             const Gap(16),
@@ -156,32 +143,22 @@ class _CadastrarMetaState extends State<CadastrarMeta> {
             const Gap(20),
             const Text('Ícone', style: AppTextStyles.bodyBold),
             const Gap(8),
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: <Widget>[
-                for (int i = 0; i < 6; i++)
-                  IconButton(
-                    onPressed: () => setState(() => _selectedIcon = i),
-                    variance: _selectedIcon == i
-                        ? const ButtonStyle.primary()
-                        : const ButtonStyle.outline(),
-                    shape: ButtonShape.circle,
-                    icon: Icon(iconList[i]),
-                  ),
+                for (int i = 0; i < iconList.length; i++)
+                  _selectedIcon == i
+                      ? AppIconButton.circle(
+                          onPressed: () => setState(() => _selectedIcon = i),
+                          icon: Icon(iconList[i], color: AppColors.onPrimary),
+                        )
+                      : AppIconButton(
+                          onPressed: () => setState(() => _selectedIcon = i),
+                          icon: Icon(iconList[i]),
+                        ),
               ],
-            ).gap(8).withPadding(bottom: 4),
-            Row(
-              children: <Widget>[
-                for (int i = 6; i < 12; i++)
-                  IconButton(
-                    onPressed: () => setState(() => _selectedIcon = i),
-                    variance: _selectedIcon == i
-                        ? const ButtonStyle.primary()
-                        : const ButtonStyle.outline(),
-                    shape: ButtonShape.circle,
-                    icon: Icon(iconList[i]),
-                  ),
-              ],
-            ).gap(8).withPadding(bottom: 4),
+            ),
             const Gap(24),
             BlocBuilder<GoalCubit, GoalState>(
               builder: (BuildContext context, GoalState state) {
@@ -189,12 +166,16 @@ class _CadastrarMetaState extends State<CadastrarMeta> {
                     state.whenOrNull(loading: () => true) ?? false;
                 return PrimaryButton(
                   onPressed: isLoading ? null : _save,
-                  trailing: isLoading
-                      ? const CircularProgressIndicator(size: 16)
-                      : const Icon(Icons.check),
-                  child: Text(
-                    widget.initialGoal != null ? 'Salvar' : 'Criar',
-                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.onPrimary,
+                          ),
+                        )
+                      : Text(widget.initialGoal != null ? 'Salvar' : 'Criar'),
                 );
               },
             ),

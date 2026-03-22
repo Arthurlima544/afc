@@ -1,15 +1,13 @@
 import 'package:clerk_flutter/clerk_flutter.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart'
-    hide Column, Row, Expanded;
 
 import '../../domain/entity/connected_account_entity.dart';
-import '../../utils/app_spacing.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/open_finance/open_finance_cubit.dart';
+import '../widgets/design_system.dart';
 
 class ConnectedAccountsScreen extends StatelessWidget {
   const ConnectedAccountsScreen({super.key});
@@ -18,38 +16,29 @@ class ConnectedAccountsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final String userId =
         context.read<AuthBloc>().state.whenOrNull(
-              signedIn: (ClerkAuthState s) => s.user?.id,
-            ) ??
+          signedIn: (ClerkAuthState s) => s.user?.id,
+        ) ??
         '';
 
     return BlocConsumer<OpenFinanceCubit, OpenFinanceState>(
       listener: (BuildContext ctx, OpenFinanceState state) async {
         await state.whenOrNull(
           tokenReady: (String connectToken) async {
-            final String? itemId =
-                await ctx.push<String?>('/connect-bank', extra: connectToken);
+            final String? itemId = await ctx.push<String?>(
+              '/connect-bank',
+              extra: connectToken,
+            );
             if (itemId != null && ctx.mounted) {
               await ctx.read<OpenFinanceCubit>().saveConnectedAccount(
-                    itemId,
-                    userId,
-                  );
+                itemId,
+                userId,
+              );
             }
           },
           error: (String message) async {
-            showToast(
-              context: ctx,
-              builder: (BuildContext toastCtx, ToastOverlay overlay) =>
-                  SurfaceCard(
-                child: Basic(
-                  title: const Text('Erro'),
-                  subtitle: Text(message),
-                  trailing: PrimaryButton(
-                    onPressed: overlay.close,
-                    child: const Text('OK'),
-                  ),
-                ),
-              ),
-            );
+            ScaffoldMessenger.of(
+              ctx,
+            ).showSnackBar(SnackBar(content: Text(message)));
           },
         );
       },
@@ -61,8 +50,7 @@ class ConnectedAccountsScreen extends StatelessWidget {
             children: <Widget>[
               Row(
                 children: <Widget>[
-                  IconButton(
-                    variance: const ButtonStyle.outline(),
+                  AppIconButton(
                     onPressed: () => context.pop(),
                     icon: const Icon(Icons.arrow_back),
                   ),
@@ -73,12 +61,10 @@ class ConnectedAccountsScreen extends StatelessWidget {
                       style: AppTextStyles.heading,
                     ),
                   ),
-                  IconButton(
-                    variance: const ButtonStyle.outline(),
-                    onPressed: () =>
-                        context.read<OpenFinanceCubit>().createConnectToken(
-                              userId,
-                            ),
+                  AppIconButton(
+                    onPressed: () => context
+                        .read<OpenFinanceCubit>()
+                        .createConnectToken(userId),
                     icon: const Icon(Icons.add_circle_outline),
                   ),
                 ],
@@ -86,35 +72,33 @@ class ConnectedAccountsScreen extends StatelessWidget {
               const Gap(16),
               state.when(
                 initial: SizedBox.new,
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
+                loading: () => const Center(child: CircularProgressIndicator()),
                 tokenReady: (_) =>
                     const Center(child: CircularProgressIndicator()),
                 error: Text.new,
                 listed: (List<ConnectedAccountEntity> accounts) =>
                     accounts.isEmpty
-                        ? const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(32),
-                              child: Text(
-                                'Nenhuma conta conectada. Toque em + para conectar seu banco.',
-                                textAlign: TextAlign.center,
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(32),
+                          child: Text(
+                            'Nenhuma conta conectada. Toque em + para conectar seu banco.',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      )
+                    : Column(
+                        children: <Widget>[
+                          for (final ConnectedAccountEntity account in accounts)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _AccountCard(
+                                account: account,
+                                userId: userId,
                               ),
                             ),
-                          )
-                        : Column(
-                            children: <Widget>[
-                              for (final ConnectedAccountEntity account
-                                  in accounts)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: _AccountCard(
-                                    account: account,
-                                    userId: userId,
-                                  ),
-                                ),
-                            ],
-                          ),
+                        ],
+                      ),
               ),
             ],
           ),
@@ -125,10 +109,7 @@ class ConnectedAccountsScreen extends StatelessWidget {
 }
 
 class _AccountCard extends StatelessWidget {
-  const _AccountCard({
-    required this.account,
-    required this.userId,
-  });
+  const _AccountCard({required this.account, required this.userId});
 
   final ConnectedAccountEntity account;
   final String userId;
@@ -175,69 +156,58 @@ class _AccountCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      account.institutionName,
-                      style: AppTextStyles.title,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          _statusColor(account.status).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      _statusLabel(account.status),
-                      style: AppTextStyles.captionBold.copyWith(
-                        color: _statusColor(account.status),
-                      ),
-                    ),
-                  ),
-                ],
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.all(12),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(account.institutionName, style: AppTextStyles.title),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _statusColor(account.status).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const Gap(4),
-              Text(
-                _formatSyncTime(account.lastSyncedAt),
-                style: AppTextStyles.caption,
+              child: Text(
+                _statusLabel(account.status),
+                style: AppTextStyles.captionBold.copyWith(
+                  color: _statusColor(account.status),
+                ),
               ),
-              const Gap(8),
-              Row(
-                children: <Widget>[
-                  if (account.status == 'consent_expired')
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: PrimaryButton(
-                        onPressed: () =>
-                            context.read<OpenFinanceCubit>().createConnectToken(
-                                  userId,
-                                  itemId: account.pluggyItemId,
-                                ),
-                        child: const Text('Reconectar'),
-                      ),
-                    ),
-                  DestructiveButton(
-                    onPressed: () => context
-                        .read<OpenFinanceCubit>()
-                        .disconnectAccount(account.uuid, userId),
-                    child: const Text('Desconectar'),
-                  ),
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-      );
+        const Gap(4),
+        Text(
+          _formatSyncTime(account.lastSyncedAt),
+          style: AppTextStyles.caption,
+        ),
+        const Gap(8),
+        Row(
+          children: <Widget>[
+            if (account.status == 'consent_expired')
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: PrimaryButton(
+                  onPressed: () => context
+                      .read<OpenFinanceCubit>()
+                      .createConnectToken(userId, itemId: account.pluggyItemId),
+                  child: const Text('Reconectar'),
+                ),
+              ),
+            DestructiveButton(
+              onPressed: () => context
+                  .read<OpenFinanceCubit>()
+                  .disconnectAccount(account.uuid, userId),
+              child: const Text('Desconectar'),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
 }

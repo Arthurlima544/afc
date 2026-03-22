@@ -1,14 +1,13 @@
 import 'package:clerk_flutter/clerk_flutter.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart'
-    hide Column, Row, Expanded;
 
 import '../../domain/entity/category_entity.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/review_queue/review_queue_cubit.dart';
+import '../widgets/design_system.dart';
 
 class ReviewQueueScreen extends StatelessWidget {
   const ReviewQueueScreen({super.key});
@@ -29,8 +28,7 @@ class ReviewQueueScreen extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                IconButton(
-                  variance: const ButtonStyle.outline(),
+                AppIconButton(
                   onPressed: () => context.pop(),
                   icon: const Icon(Icons.arrow_back),
                 ),
@@ -98,9 +96,9 @@ class _ReviewItemCard extends StatelessWidget {
     final ReviewQueueCubit cubit = context.read<ReviewQueueCubit>();
     final List<CategoryEntity> categories = cubit.categories;
 
-    showDialog(
+    showAppDialog<void>(
       context: context,
-      builder: (BuildContext dialogCtx) => AlertDialog(
+      builder: (BuildContext dialogCtx) => AppAlertDialog(
         title: const Text('Selecionar Categoria'),
         content: SizedBox(
           width: double.maxFinite,
@@ -132,6 +130,7 @@ class _ReviewItemCard extends StatelessWidget {
                 .toList(),
           ),
         ),
+        actions: const <Widget>[],
       ),
     );
   }
@@ -149,10 +148,9 @@ class _ReviewItemCard extends StatelessWidget {
               : item.rawTransaction.amount,
         );
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
+    return AppCard(
+      padding: const EdgeInsets.all(12),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(
@@ -228,7 +226,6 @@ class _ReviewItemCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }
