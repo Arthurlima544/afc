@@ -47,22 +47,12 @@ void main() {
         act: (HomeBloc bloc) =>
             bloc.add(const HomeEvent.loadHome('user-no-data')),
         expect: () => <HomeState>[
-          // _loadStats: loading
-          const HomeState(
-            transactionState: LastTransactionState.initial(),
-            statsState: StatsState.loading(),
-          ),
-          // _loadStats: success([])
-          const HomeState(
-            transactionState: LastTransactionState.initial(),
-            statsState: StatsState.success(<StatsEntity>[]),
-          ),
-          // _loadLastTransactions: loading
+          // stream subscribed — both sub-states set to loading together
           const HomeState(
             transactionState: LastTransactionState.loading(),
-            statsState: StatsState.success(<StatsEntity>[]),
+            statsState: StatsState.loading(),
           ),
-          // _loadLastTransactions: success([])
+          // first snapshot arrives (empty) — both sub-states resolve together
           const HomeState(
             transactionState:
                 LastTransactionState.success(<TransactionEntity>[]),
