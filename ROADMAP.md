@@ -312,14 +312,14 @@ User ──► Connect Widget (Pluggy SDK) ──► Bank consent ──► Plug
 
 ---
 
-### US-22 · Receipt photo & auto-fill 🔲
+### US-22 · Receipt photo & auto-fill ✅
 **As a** user, **I want** to photograph a receipt and have the amount and merchant pre-filled,
 **so that** logging a transaction takes seconds.
 
-- [ ] Camera / gallery picker in the quick-add modal
-- [ ] Image sent to a Cloud Vision (or Gemini) API to extract total amount and merchant name
-- [ ] Extracted values pre-fill the form; user reviews and confirms
-- [ ] Falls back gracefully if extraction fails
+- [x] Camera / gallery picker in the quick-add modal
+- [x] Image sent to Gemini 2.0 Flash API to extract total amount and merchant name
+- [x] Extracted values pre-fill the form; user reviews and confirms
+- [x] Falls back gracefully if extraction fails (error state + null fields)
 
 ---
 

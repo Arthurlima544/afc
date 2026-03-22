@@ -9,6 +9,7 @@ import '../../domain/entity/template_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
 import '../../utils/app_spacing.dart';
+import '../blocs/receipt_ocr/receipt_ocr_cubit.dart';
 import '../blocs/template/template_cubit.dart';
 import '../blocs/transaction/transaction_cubit.dart';
 
@@ -25,6 +26,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
   final TransactionCubit _cubit = TransactionCubit()..getCategories();
   late final TemplateCubit _templateCubit =
       TemplateCubit()..loadTemplates(widget.userId);
+  final ReceiptOcrCubit _ocrCubit = ReceiptOcrCubit();
 
   String _amountBuffer = '';
   String _type = TypeEntity.expense.name;
@@ -35,6 +37,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
   void dispose() {
     _cubit.close();
     _templateCubit.close();
+    _ocrCubit.close();
     _titleController.dispose();
     super.dispose();
   }
@@ -111,8 +114,26 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
     providers: <BlocProvider<dynamic>>[
       BlocProvider<TransactionCubit>.value(value: _cubit),
       BlocProvider<TemplateCubit>.value(value: _templateCubit),
+      BlocProvider<ReceiptOcrCubit>.value(value: _ocrCubit),
     ],
-    child: BlocBuilder<TransactionCubit, TransactionState>(
+    child: BlocListener<ReceiptOcrCubit, ReceiptOcrState>(
+      listener: (BuildContext context, ReceiptOcrState ocrState) {
+        ocrState.whenOrNull(
+          success: (double? amount, String? merchant) {
+            setState(() {
+              if (amount != null && amount > 0) {
+                _amountBuffer = amount
+                    .toStringAsFixed(2)
+                    .replaceAll(RegExp(r'\.?0+$'), '');
+              }
+              if (merchant != null && merchant.isNotEmpty) {
+                _titleController.text = merchant;
+              }
+            });
+          },
+        );
+      },
+      child: BlocBuilder<TransactionCubit, TransactionState>(
       builder: (BuildContext ctx, TransactionState state) {
         final List<CategoryEntity> categories =
             state.whenOrNull(initial: (List<CategoryEntity> cats) => cats) ??
@@ -309,6 +330,49 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                   _Numpad(onKey: _onKey),
                   const Gap(16),
 
+                  // OCR scan button + state
+                  BlocBuilder<ReceiptOcrCubit, ReceiptOcrState>(
+                    builder: (BuildContext context, ReceiptOcrState ocrState) =>
+                        ocrState.whenOrNull(loading: () => true) == true
+                            ? const Center(
+                                child: CircularProgressIndicator(size: 24),
+                              )
+                            : Row(
+                                children: <Widget>[
+                                  Expanded(
+                                    child: OutlineButton(
+                                      onPressed: () => context
+                                          .read<ReceiptOcrCubit>()
+                                          .pickAndScan(),
+                                      leading: const Icon(
+                                        Icons.camera_alt_outlined,
+                                        size: 18,
+                                      ),
+                                      child: const Text('Câmera'),
+                                    ),
+                                  ),
+                                  const Gap(8),
+                                  Expanded(
+                                    child: OutlineButton(
+                                      onPressed: () => context
+                                          .read<ReceiptOcrCubit>()
+                                          .pickAndScan(fromCamera: false),
+                                      leading: const Icon(
+                                        Icons.photo_library_outlined,
+                                        size: 18,
+                                      ),
+                                      child: const Text('Galeria'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                  ),
+                  const Gap(16),
+
+                  // Numpad
+                  _Numpad(onKey: _onKey),
+                  const Gap(16),
+
                   // Save button
                   PrimaryButton(
                     onPressed: _amount > 0 && _categoryUuid != null
@@ -323,7 +387,8 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
         );
       },
     ),
-  );
+  ),
+);
 }
 
 class _Numpad extends StatelessWidget {
