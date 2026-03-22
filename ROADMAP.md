@@ -33,24 +33,24 @@ Build a complete personal finance management app where users can:
 
 ---
 
-### US-01 · Real financial summary on dashboard 🔲
+### US-01 · Real financial summary on dashboard ✅
 **As a** user, **I want** to see my real total income, total expenses, and balance on the home page,
 **so that** I have an accurate snapshot of my finances.
 
-- [ ] `HomeBloc` loads transactions from Firestore for the current user
-- [ ] Computes `totalIncome`, `totalExpenses`, `balance`
-- [ ] `HomePage` displays real values (replacing hardcoded/empty state)
-- [ ] Unit tests for `HomeBloc` summary calculation
+- [x] `HomeBloc` loads transactions from Firestore for the current user
+- [x] Computes `totalIncome`, `totalExpenses`, `balance`
+- [x] `HomePage` displays real values (replacing hardcoded/empty state)
+- [x] Unit tests for `HomeBloc` summary calculation
 
 ---
 
-### US-02 · Real last transactions on dashboard 🔲
+### US-02 · Real last transactions on dashboard ✅
 **As a** user, **I want** to see my most recent transactions on the home page,
 **so that** I can quickly review recent activity without opening the full list.
 
-- [ ] `HomeBloc` loads the last N transactions from Firestore
-- [ ] `HomePage` renders the transaction list (replacing empty state)
-- [ ] Unit tests for `HomeBloc` transaction fetching
+- [x] `HomeBloc` loads the last N transactions from Firestore
+- [x] `HomePage` renders the transaction list (replacing empty state)
+- [x] Unit tests for `HomeBloc` transaction fetching
 
 ---
 
@@ -121,36 +121,36 @@ Build a complete personal finance management app where users can:
 
 > **Goal**: Make the app feel polished, responsive, and snappy. Fix the biggest pain points before adding new features.
 
-### US-14 · Real-time dashboard reactivity 🔲
+### US-14 · Real-time dashboard reactivity ✅
 **As a** user, **I want** the home page to automatically reflect new/edited/deleted data without manual refresh,
 **so that** I always see accurate numbers after any change.
 
-- [ ] Replace one-shot `.get()` with Firestore `.snapshots()` streams in `HomeBloc` and `LimitCubit`
-- [ ] Dashboard updates live when transactions or limits change
-- [ ] List screens (`lista_transacoes`, `lista_categorias`, `lista_limites`) also use streams
-- [ ] Unit tests updated to use stream-based mocks
+- [x] Replace one-shot `.get()` with Firestore `.snapshots()` streams in `HomeBloc` and `LimitCubit`
+- [x] Dashboard updates live when transactions or limits change
+- [x] List screens (`lista_transacoes`, `lista_categorias`, `lista_limites`) also use streams
+- [x] Unit tests updated to use stream-based mocks
 
 ---
 
-### US-15 · Bottom navigation bar 🔲
+### US-15 · Bottom navigation bar ✅
 **As a** user, **I want** persistent bottom navigation between the main sections of the app,
 **so that** I can switch between Dashboard, Transactions, Categories, and Limits in one tap.
 
-- [ ] `ScaffoldShell` with `StatefulShellRoute` (GoRouter) wrapping the four main screens
-- [ ] Active tab highlighted; GoRouter state preserved per tab
-- [ ] Replace scattered "Ver Todas" buttons with navigation-bar equivalent routes
+- [x] `ScaffoldShell` with `StatefulShellRoute` (GoRouter) wrapping the four main screens
+- [x] Active tab highlighted; GoRouter state preserved per tab
+- [x] Replace scattered "Ver Todas" buttons with navigation-bar equivalent routes
 - [ ] Widget tests for tab switching
 
 ---
 
-### US-16 · Quick-add transaction FAB 🔲
+### US-16 · Quick-add transaction FAB ✅
 **As a** user, **I want** to add a transaction from anywhere in the app with as few taps as possible,
 **so that** I can record spending the moment it happens without navigating through menus.
 
-- [ ] Floating Action Button visible on all main-section screens
-- [ ] Bottom sheet modal with: amount numpad, income/expense toggle, category picker, optional title
-- [ ] Saves transaction and dismisses — no full-screen navigation required
-- [ ] Haptic feedback on save
+- [x] Floating Action Button visible on all main-section screens
+- [x] Bottom sheet modal with: amount numpad, income/expense toggle, category picker, optional title
+- [x] Saves transaction and dismisses — no full-screen navigation required
+- [x] Haptic feedback on save
 
 ---
 
@@ -160,19 +160,19 @@ Build a complete personal finance management app where users can:
 
 - [ ] Define and apply a consistent color palette (primary, surface, error, success) via `ThemeData`
 - [ ] Replace all ad-hoc `TextStyle` calls with named theme text styles
-- [ ] Standardise spacing via a shared constants file (`AppSpacing`)
-- [ ] Add empty-state illustrations for lists with no data
+- [x] Standardise spacing via a shared constants file (`AppSpacing`)
+- [x] Add empty-state illustrations for lists with no data
 - [ ] Improve form screens: inline validation messages, better date/month pickers
-- [ ] Add loading skeletons (shimmer) instead of bare `CircularProgressIndicator`
+- [x] Add loading skeletons (shimmer) instead of bare `CircularProgressIndicator`
 
 ---
 
-### US-18 · Limit overspend alert 🔲
+### US-18 · Limit overspend alert ✅
 **As a** user, **I want** a visual warning when I exceed a spending limit,
 **so that** I can take action before going further over budget.
 
-- [ ] `MonthLimitWidget` displays a red badge and warning text when `spent > limitAmount`
-- [ ] In-app toast/snackbar on home page when any limit is exceeded
+- [x] `MonthLimitWidget` displays a red badge and warning text when `spent > limitAmount`
+- [x] In-app toast/snackbar on home page when any limit is exceeded
 - [ ] Unit tests for overspend detection logic
 
 ---
@@ -199,66 +199,66 @@ User ──► Connect Widget (Pluggy SDK) ──► Bank consent ──► Plug
 
 ---
 
-### US-28 · Connect a bank account via Open Finance 🔲
+### US-28 · Connect a bank account via Open Finance ✅
 **As a** user, **I want** to link my bank account to the app using Open Finance,
 **so that** my transactions are fetched automatically without me typing anything.
 
-- [ ] Cloud Function `createPluggyItem` — calls Pluggy `/items` endpoint and returns a `connectToken`
-- [ ] `ConnectedAccountEntity` — `uuid`, `userId`, `pluggyItemId`, `institutionName`, `institutionLogo`, `lastSyncedAt`, `status` (active / consent_expired / error)
-- [ ] Firestore collection `connected_account` scoped by `userId`
-- [ ] Flutter side embeds Pluggy Connect Widget via `webview_flutter` (or `url_launcher` for the OAuth redirect)
-- [ ] On successful connection, stores `ConnectedAccountEntity` in Firestore
-- [ ] Unit tests for Cloud Function item-creation logic
+- [x] Cloud Function `createPluggyItem` — calls Pluggy `/items` endpoint and returns a `connectToken`
+- [x] `ConnectedAccountEntity` — `uuid`, `userId`, `pluggyItemId`, `institutionName`, `institutionLogo`, `lastSyncedAt`, `status` (active / consent_expired / error)
+- [x] Firestore collection `connected_account` scoped by `userId`
+- [x] Flutter side embeds Pluggy Connect Widget via `webview_flutter` (or `url_launcher` for the OAuth redirect)
+- [x] On successful connection, stores `ConnectedAccountEntity` in Firestore
+- [x] Unit tests for Cloud Function item-creation logic
 
 ---
 
-### US-29 · Automatic transaction sync from connected accounts 🔲
+### US-29 · Automatic transaction sync from connected accounts ✅
 **As a** user, **I want** new transactions from my bank to appear in the app automatically,
 **so that** my balance and spending are always up to date without any manual action.
 
-- [ ] Cloud Function `onPluggyWebhook` — receives Pluggy `TRANSACTION_CREATED` / `UPDATED` events
-- [ ] Fetches full transaction detail from Pluggy `/transactions/{id}` and writes to Firestore `raw_transaction` collection (scoped by `userId`)
-- [ ] `RawTransactionEntity` mirrors Pluggy's payload: `pluggyTransactionId`, `userId`, `accountId`, `amount`, `description`, `date`, `type` (debit/credit), `status` (pending/posted)
-- [ ] Duplicate guard: skip if `pluggyTransactionId` already exists in `raw_transaction`
-- [ ] Scheduled Cloud Function (`syncAllItems`) runs nightly to catch missed webhooks
-- [ ] Unit tests for webhook handler and deduplication logic
+- [x] Cloud Function `onPluggyWebhook` — receives Pluggy `TRANSACTION_CREATED` / `UPDATED` events
+- [x] Fetches full transaction detail from Pluggy `/transactions/{id}` and writes to Firestore `raw_transaction` collection (scoped by `userId`)
+- [x] `RawTransactionEntity` mirrors Pluggy's payload: `pluggyTransactionId`, `userId`, `accountId`, `amount`, `description`, `date`, `type` (debit/credit), `status` (pending/posted)
+- [x] Duplicate guard: skip if `pluggyTransactionId` already exists in `raw_transaction`
+- [x] Scheduled Cloud Function (`syncAllItems`) runs nightly to catch missed webhooks
+- [x] Unit tests for webhook handler and deduplication logic
 
 ---
 
-### US-30 · Transaction review & auto-categorisation queue 🔲
+### US-30 · Transaction review & auto-categorisation queue ✅
 **As a** user, **I want** to review and confirm imported transactions before they're saved,
 **so that** I can correct categories and ignore irrelevant entries (e.g. internal transfers).
 
-- [ ] `ReviewScreen` — lists pending `raw_transaction` documents for the current user
-- [ ] Each row shows: bank description, amount, date, and a suggested category (auto-assigned by rule engine)
-- [ ] Auto-categorisation rule engine: keyword → category mapping (e.g. "UBER" → Transporte, "IFOOD" → Alimentação); user corrections are persisted as learned rules in Firestore `categorisation_rule`
-- [ ] Actions per row: **Confirm** (moves to `transaction` collection), **Edit category**, **Ignore** (marks as dismissed)
-- [ ] Bulk confirm all button for fast review
-- [ ] Badge on bottom nav showing count of pending items
-- [ ] Unit tests for the categorisation rule engine
+- [x] `ReviewScreen` — lists pending `raw_transaction` documents for the current user
+- [x] Each row shows: bank description, amount, date, and a suggested category (auto-assigned by rule engine)
+- [x] Auto-categorisation rule engine: keyword → category mapping (e.g. "UBER" → Transporte, "IFOOD" → Alimentação); user corrections are persisted as learned rules in Firestore `categorisation_rule`
+- [x] Actions per row: **Confirm** (moves to `transaction` collection), **Edit category**, **Ignore** (marks as dismissed)
+- [x] Bulk confirm all button for fast review
+- [x] Badge on bottom nav showing count of pending items
+- [x] Unit tests for the categorisation rule engine
 
 ---
 
-### US-31 · Manage connected accounts 🔲
+### US-31 · Manage connected accounts ✅
 **As a** user, **I want** to see which bank accounts I've connected and be able to disconnect or re-authorise them,
 **so that** I'm in full control of what data the app accesses.
 
-- [ ] `ConnectedAccountsScreen` — lists all `ConnectedAccountEntity` records for the user
-- [ ] Each row shows institution logo, name, last synced time, and connection status badge
-- [ ] **Reconnect** action for items with `status = consent_expired` — re-opens the Connect Widget
-- [ ] **Disconnect** action — calls Cloud Function `deletePluggyItem`, removes document from Firestore
-- [ ] Add new account button — triggers a fresh Connect Widget flow
+- [x] `ConnectedAccountsScreen` — lists all `ConnectedAccountEntity` records for the user
+- [x] Each row shows institution logo, name, last synced time, and connection status badge
+- [x] **Reconnect** action for items with `status = consent_expired` — re-opens the Connect Widget
+- [x] **Disconnect** action — calls Cloud Function `deletePluggyItem`, removes document from Firestore
+- [x] Add new account button — triggers a fresh Connect Widget flow
 
 ---
 
-### US-32 · Sync status indicator on dashboard 🔲
+### US-32 · Sync status indicator on dashboard ✅
 **As a** user, **I want** to see at a glance when my accounts were last synced and whether any need attention,
 **so that** I know my data is fresh without opening the connected accounts screen.
 
-- [ ] Small "Last synced X minutes ago" label on the dashboard header when at least one account is connected
-- [ ] Warning chip (yellow) when any account has `status = consent_expired`
-- [ ] Error chip (red) when sync failed; tapping navigates to `ConnectedAccountsScreen`
-- [ ] Manual "Sync now" pull-to-refresh on the dashboard triggers Cloud Function `syncAllItems` for the user
+- [x] Small "Last synced X minutes ago" label on the dashboard header when at least one account is connected
+- [x] Warning chip (yellow) when any account has `status = consent_expired`
+- [x] Error chip (red) when sync failed; tapping navigates to `ConnectedAccountsScreen`
+- [x] Manual "Sync now" pull-to-refresh on the dashboard triggers Cloud Function `syncAllItems` for the user
 
 ---
 
@@ -401,10 +401,10 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint | Branch |
 |--------|--------|
 | Sprint 1 (US-05, US-06) | `feat/us-05-06-auth-navigation` ✅ |
-| Sprint 1 (US-01, US-02) | `feat/us-01-02-dashboard-data` |
+| Sprint 1 (US-01, US-02) | `feat/us-01-02-dashboard-data` ✅ |
 | Sprint 2 (US-03, US-04) | `feat/us-03-04-limits-charts` ✅ |
 | Sprint 3 (US-07–13) | `feat/us-07-13-crud-lists` ✅ |
-| Sprint 4 (US-14–18) | `feat/us-14-18-ux-reactivity` |
-| Sprint 5 (US-28–32) | `feat/us-28-32-open-finance` |
+| Sprint 4 (US-14–18) | `feat/us-14-18-ux-reactivity` ✅ |
+| Sprint 5 (US-28–32) | `feat/us-28-32-open-finance` ✅ |
 | Sprint 6 (US-19–22) | `feat/us-19-22-smart-transactions` |
 | Sprint 7 (US-23–27) | `feat/us-23-27-financial-intelligence` |
