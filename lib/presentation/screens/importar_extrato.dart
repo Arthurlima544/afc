@@ -5,15 +5,24 @@ import 'package:intl/intl.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart'
     hide Column, Row, Expanded;
 
+import '../../domain/entity/bank_profile_entity.dart';
 import '../../domain/entity/import_candidate_entity.dart';
 import '../../domain/entity/type_entity.dart';
 import '../../utils/app_spacing.dart';
 import '../blocs/import/import_cubit.dart';
 
-class ImportarExtrato extends StatelessWidget {
+class ImportarExtrato extends StatefulWidget {
   const ImportarExtrato({required this.userId, super.key});
 
   final String userId;
+
+  @override
+  State<ImportarExtrato> createState() => _ImportarExtratoState();
+}
+
+class _ImportarExtratoState extends State<ImportarExtrato> {
+  BankProfile? _bank;
+  StatementType? _type;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -27,12 +36,21 @@ class ImportarExtrato extends StatelessWidget {
         },
         child: BlocBuilder<ImportCubit, ImportState>(
           builder: (BuildContext context, ImportState state) => state.when(
-            initial: () => _PickerView(userId: userId),
+            initial: () => _PickerView(
+              userId: widget.userId,
+              bank: _bank,
+              type: _type,
+              onBankChanged: (BankProfile? b) =>
+                  setState(() => _bank = b),
+              onTypeChanged: (StatementType? t) =>
+                  setState(() => _type = t),
+            ),
             loading: () =>
                 const Center(child: CircularProgressIndicator(size: 32)),
             saving: () =>
                 const Center(child: CircularProgressIndicator(size: 32)),
-            error: (String msg) => _ErrorView(userId: userId, message: msg),
+            error: (String msg) =>
+                _ErrorView(message: msg),
             done: (int _) => const SizedBox.shrink(),
             reviewed: (
               List<ImportCandidateEntity> candidates,
@@ -47,36 +65,120 @@ class ImportarExtrato extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Initial view — pick file
+// Initial view — bank/type selection + file picker
 // ---------------------------------------------------------------------------
 
 class _PickerView extends StatelessWidget {
-  const _PickerView({required this.userId});
+  const _PickerView({
+    required this.userId,
+    required this.bank,
+    required this.type,
+    required this.onBankChanged,
+    required this.onTypeChanged,
+  });
 
   final String userId;
+  final BankProfile? bank;
+  final StatementType? type;
+  final ValueChanged<BankProfile?> onBankChanged;
+  final ValueChanged<StatementType?> onTypeChanged;
+
+  bool get _ready => bank != null && type != null;
+
+  String _bankLabel(BankProfile b) {
+    switch (b) {
+      case BankProfile.nubank:
+        return 'Nubank';
+    }
+  }
+
+  String _typeLabel(StatementType t) {
+    switch (t) {
+      case StatementType.extrato:
+        return 'Extrato (histórico de conta)';
+      case StatementType.fatura:
+        return 'Fatura (cartão de crédito)';
+    }
+  }
 
   @override
-  Widget build(BuildContext context) => Center(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        const Icon(Icons.upload_file_outlined, size: 64),
-        const Gap(16),
-        const Text('Importar Extrato', style: AppTextStyles.heading),
-        const Gap(8),
-        const Text(
-          'Selecione um arquivo OFX ou CSV\nexportado pelo seu banco.',
-          style: AppTextStyles.body,
-          textAlign: TextAlign.center,
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: <Widget>[
+      const Text('Importar Extrato', style: AppTextStyles.heading),
+      const Gap(4),
+      const Text(
+        'Selecione seu banco e tipo de arquivo antes de continuar.',
+        style: AppTextStyles.body,
+      ),
+      const Gap(24),
+
+      // Bank selector
+      const Text('Banco', style: AppTextStyles.labelBold),
+      const Gap(8),
+      Select<BankProfile>(
+        itemBuilder: (BuildContext context, BankProfile item) =>
+            Text(_bankLabel(item)),
+        popupConstraints: const BoxConstraints(
+          maxHeight: 200,
+          maxWidth: 220,
         ),
-        const Gap(24),
-        PrimaryButton(
-          onPressed: () => context.read<ImportCubit>().pickFile(userId),
-          leading: const Icon(Icons.folder_open_outlined),
-          child: const Text('Escolher arquivo'),
+        onChanged: onBankChanged,
+        value: bank,
+        placeholder: const Text('Selecione o banco'),
+        popup: SelectPopup<BankProfile>(
+          items: SelectItemList(
+            children: <Widget>[
+              for (final BankProfile b in BankProfile.values)
+                SelectItemButton<BankProfile>(
+                  value: b,
+                  child: Text(_bankLabel(b)),
+                ),
+            ],
+          ),
+        ).call,
+      ),
+      const Gap(20),
+
+      // Statement type selector
+      const Text('Tipo de arquivo', style: AppTextStyles.labelBold),
+      const Gap(8),
+      Select<StatementType>(
+        itemBuilder: (BuildContext context, StatementType item) =>
+            Text(_typeLabel(item)),
+        popupConstraints: const BoxConstraints(
+          maxHeight: 200,
+          maxWidth: 280,
         ),
-      ],
-    ),
+        onChanged: onTypeChanged,
+        value: type,
+        placeholder: const Text('Selecione o tipo'),
+        popup: SelectPopup<StatementType>(
+          items: SelectItemList(
+            children: <Widget>[
+              for (final StatementType t in StatementType.values)
+                SelectItemButton<StatementType>(
+                  value: t,
+                  child: Text(_typeLabel(t)),
+                ),
+            ],
+          ),
+        ).call,
+      ),
+      const Gap(32),
+
+      PrimaryButton(
+        onPressed: _ready
+            ? () => context.read<ImportCubit>().pickFile(
+                userId,
+                bankProfile: bank,
+                statementType: type,
+              )
+            : null,
+        leading: const Icon(Icons.folder_open_outlined),
+        child: const Text('Escolher arquivo'),
+      ),
+    ],
   );
 }
 
@@ -238,9 +340,8 @@ class _CandidateItem extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.userId, required this.message});
+  const _ErrorView({required this.message});
 
-  final String userId;
   final String message;
 
   @override

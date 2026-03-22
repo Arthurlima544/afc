@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import '../entity/bank_profile_entity.dart';
 import '../entity/import_candidate_entity.dart';
 import '../entity/type_entity.dart';
 
@@ -266,6 +267,172 @@ double? _parseCsvAmount(String raw) {
     return null;
   }
   return negative ? -value.abs() : value;
+}
+
+// ---------------------------------------------------------------------------
+// Bank-specific routing
+// ---------------------------------------------------------------------------
+
+/// Routes to the correct parser based on [bank] and [type].
+List<ImportCandidateEntity> parseBankStatement(
+  String content,
+  BankProfile bank,
+  StatementType type,
+) {
+  switch (bank) {
+    case BankProfile.nubank:
+      return type == StatementType.fatura
+          ? parseNubankFatura(content)
+          : parseNubankExtrato(content);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Nubank — Extrato (Transaction History)
+// ---------------------------------------------------------------------------
+//
+// Format: Data,Valor,Identificador,Descrição
+//   Date: DD/MM/YYYY
+//   Amount: negative = expense, positive = income  (standard polarity)
+//   Separator: comma
+
+/// Parses a Nubank extrato (bank statement) CSV.
+List<ImportCandidateEntity> parseNubankExtrato(String content) {
+  final List<String> lines = content
+      .split('\n')
+      .map((String s) => s.trim())
+      .where((String s) => s.isNotEmpty)
+      .toList();
+
+  if (lines.length < 2) {
+    return <ImportCandidateEntity>[];
+  }
+
+  // Validate header
+  final List<String> headers = _splitRow(lines[0], ',')
+      .map((String s) => s.trim().toLowerCase())
+      .toList();
+
+  final int dateIdx = headers.indexOf('data');
+  final int amountIdx = headers.indexOf('valor');
+  // "descrição" may come with or without accent depending on file encoding
+  final int descIdx = headers.indexWhere(
+    (String h) => h.contains('descri'),
+  );
+
+  if (dateIdx < 0 || amountIdx < 0) {
+    return <ImportCandidateEntity>[];
+  }
+
+  final List<ImportCandidateEntity> results = <ImportCandidateEntity>[];
+
+  for (int i = 1; i < lines.length; i++) {
+    final List<String> cols = _splitRow(lines[i], ',');
+    if (cols.length <= max(dateIdx, amountIdx)) {
+      continue;
+    }
+
+    final String rawDate = cols[dateIdx].trim().replaceAll('"', '');
+    final String rawAmount = cols[amountIdx].trim().replaceAll('"', '');
+    final String title = descIdx >= 0 && cols.length > descIdx
+        ? cols[descIdx].trim().replaceAll('"', '')
+        : 'Importado';
+
+    final DateTime? date = _parseCsvDate(rawDate);
+    final double? amount = _parseCsvAmount(rawAmount);
+
+    if (date == null || amount == null) {
+      continue;
+    }
+
+    results.add(
+      ImportCandidateEntity(
+        title: title.isEmpty ? 'Importado' : title,
+        amount: amount.abs(),
+        date: date,
+        typeUuid: amount < 0
+            ? TypeEntity.expense.name
+            : TypeEntity.income.name,
+      ),
+    );
+  }
+
+  return results;
+}
+
+// ---------------------------------------------------------------------------
+// Nubank — Fatura (Credit Card Bill)
+// ---------------------------------------------------------------------------
+//
+// Format: date,title,amount
+//   Date: YYYY-MM-DD
+//   Amount: positive = credit card charge (expense), negative = payment (income)
+//   Separator: comma
+//   Quoted fields with "" escape (e.g. "IOF de ""Merchant""")
+
+/// Parses a Nubank fatura (credit card bill) CSV.
+List<ImportCandidateEntity> parseNubankFatura(String content) {
+  final List<String> lines = content
+      .split('\n')
+      .map((String s) => s.trim())
+      .where((String s) => s.isNotEmpty)
+      .toList();
+
+  if (lines.length < 2) {
+    return <ImportCandidateEntity>[];
+  }
+
+  // Validate header
+  final List<String> headers = _splitRow(lines[0], ',')
+      .map((String s) => s.trim().toLowerCase())
+      .toList();
+
+  final int dateIdx = headers.indexOf('date');
+  final int titleIdx = headers.indexOf('title');
+  final int amountIdx = headers.indexOf('amount');
+
+  if (dateIdx < 0 || amountIdx < 0) {
+    return <ImportCandidateEntity>[];
+  }
+
+  final List<ImportCandidateEntity> results = <ImportCandidateEntity>[];
+
+  for (int i = 1; i < lines.length; i++) {
+    final List<String> cols = _splitRow(lines[i], ',');
+    if (cols.length <= max(dateIdx, amountIdx)) {
+      continue;
+    }
+
+    final String rawDate = cols[dateIdx].trim().replaceAll('"', '');
+    final String rawAmount = cols[amountIdx].trim().replaceAll('"', '');
+    // Unescape doubled quotes inside quoted fields: "" → "
+    final String title = titleIdx >= 0 && cols.length > titleIdx
+        ? cols[titleIdx].trim().replaceAll('"', '').replaceAll("''", "'")
+        : 'Importado';
+
+    final DateTime? date = _parseCsvDate(rawDate);
+    final double? amount = double.tryParse(rawAmount);
+
+    if (date == null || amount == null) {
+      continue;
+    }
+
+    // Nubank fatura polarity is inverted:
+    //   positive amount = purchase (expense)
+    //   negative amount = payment received (income)
+    results.add(
+      ImportCandidateEntity(
+        title: title.isEmpty ? 'Importado' : title,
+        amount: amount.abs(),
+        date: date,
+        typeUuid: amount >= 0
+            ? TypeEntity.expense.name
+            : TypeEntity.income.name,
+      ),
+    );
+  }
+
+  return results;
 }
 
 String _titleCase(String s) {

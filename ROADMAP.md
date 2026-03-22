@@ -301,6 +301,17 @@ User ──► Connect Widget (Pluggy SDK) ──► Bank consent ──► Plug
 
 ---
 
+### US-21b · Bank-specific import profiles ✅
+**As a** user, **I want** to select my bank and statement type before importing,
+**so that** the app parses my file correctly regardless of each bank's proprietary format.
+
+- [x] Bank selector + statement type selector shown before file picker (bank: Nubank; type: Extrato or Fatura)
+- [x] `parseNubankExtrato` — columns `Data/Valor/Descrição`, DD/MM/YYYY, standard polarity
+- [x] `parseNubankFatura` — columns `date/title/amount`, ISO date, inverted polarity (positive = expense), quoted-field support
+- [x] Unit tests for both Nubank parsers with real-format sample data
+
+---
+
 ### US-22 · Receipt photo & auto-fill 🔲
 **As a** user, **I want** to photograph a receipt and have the amount and merchant pre-filled,
 **so that** logging a transaction takes seconds.

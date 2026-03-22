@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../domain/entity/bank_profile_entity.dart';
 import '../../../domain/entity/import_candidate_entity.dart';
 import '../../../domain/entity/transaction_entity.dart';
 import '../../../domain/usecase/statement_parser.dart';
@@ -25,7 +26,11 @@ class ImportCubit extends Cubit<ImportState> {
   // Pick file and parse
   // ---------------------------------------------------------------------------
 
-  Future<void> pickFile(String userId) async {
+  Future<void> pickFile(
+    String userId, {
+    BankProfile? bankProfile,
+    StatementType? statementType,
+  }) async {
     emit(const ImportState.loading());
     try {
       final FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -52,7 +57,13 @@ class ImportCubit extends Cubit<ImportState> {
         return;
       }
 
-      await parseContent(content, extension ?? 'csv', userId);
+      await parseContent(
+        content,
+        extension ?? 'csv',
+        userId,
+        bankProfile: bankProfile,
+        statementType: statementType,
+      );
     } on Exception catch (e) {
       emit(ImportState.error(e.toString()));
     }
@@ -65,13 +76,20 @@ class ImportCubit extends Cubit<ImportState> {
   Future<void> parseContent(
     String content,
     String extension,
-    String userId,
-  ) async {
+    String userId, {
+    BankProfile? bankProfile,
+    StatementType? statementType,
+  }) async {
     emit(const ImportState.loading());
 
-    final List<ImportCandidateEntity> parsed = extension == 'ofx'
-        ? parseOfx(content)
-        : parseCsv(content);
+    List<ImportCandidateEntity> parsed;
+    if (bankProfile != null && statementType != null) {
+      parsed = parseBankStatement(content, bankProfile, statementType);
+    } else if (extension == 'ofx') {
+      parsed = parseOfx(content);
+    } else {
+      parsed = parseCsv(content);
+    }
 
     if (parsed.isEmpty) {
       emit(
