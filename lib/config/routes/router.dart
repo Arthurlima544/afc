@@ -26,6 +26,7 @@ import '../../presentation/screens/lista_limites.dart';
 import '../../presentation/screens/lista_transacoes.dart';
 import '../../presentation/screens/login_screen.dart';
 import '../../presentation/screens/review_queue_screen.dart';
+import '../../presentation/screens/scaffold_shell.dart';
 import '../../utils/logger.dart';
 
 final GoRouter router = GoRouter(
@@ -70,77 +71,100 @@ final GoRouter router = GoRouter(
           ),
     ),
 
-    GoRoute(
-      path: '/home',
-      builder: (BuildContext context, GoRouterState state) {
-        final AuthState authState = context.read<AuthBloc>().state;
-
-        final String? uuidOrNull = authState.whenOrNull(
-          signedIn: (ClerkAuthState authState) => authState.user?.id,
-        );
-
-        if (uuidOrNull == null || uuidOrNull.isEmpty) {
-          logger.f('Invalid UUID!!!!!, $uuidOrNull}');
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        return MultiBlocProvider(
-          providers: <BlocProvider<dynamic>>[
-            BlocProvider<HomeBloc>(
-              create: (BuildContext context) =>
-                  HomeBloc()..add(HomeEvent.loadHome(uuidOrNull)),
-            ),
-            BlocProvider<LimitCubit>(
-              create: (BuildContext context) =>
-                  LimitCubit()..loadLimitsWithProgress(uuidOrNull),
+    StatefulShellRoute.indexedStack(
+      builder: (
+        BuildContext context,
+        GoRouterState state,
+        StatefulNavigationShell navigationShell,
+      ) =>
+          ScaffoldShell(navigationShell: navigationShell),
+      branches: <StatefulShellBranch>[
+        // --- Tab 0: Dashboard ---
+        StatefulShellBranch(
+          routes: <RouteBase>[
+            GoRoute(
+              path: '/home',
+              builder: (BuildContext context, GoRouterState state) {
+                final AuthState authState = context.read<AuthBloc>().state;
+                final String? uuidOrNull = authState.whenOrNull(
+                  signedIn: (ClerkAuthState s) => s.user?.id,
+                );
+                if (uuidOrNull == null || uuidOrNull.isEmpty) {
+                  logger.f('Invalid UUID!!!!!, $uuidOrNull}');
+                  return const Center(child: CircularProgressIndicator());
+                }
+                return MultiBlocProvider(
+                  providers: <BlocProvider<dynamic>>[
+                    BlocProvider<HomeBloc>(
+                      create: (_) =>
+                          HomeBloc()..add(HomeEvent.loadHome(uuidOrNull)),
+                    ),
+                    BlocProvider<LimitCubit>(
+                      create: (_) =>
+                          LimitCubit()..loadLimitsWithProgress(uuidOrNull),
+                    ),
+                  ],
+                  child: const HomePage(),
+                );
+              },
             ),
           ],
-          child: const HomePage(),
-        );
-      },
-    ),
+        ),
 
-    // --- List screens ---
+        // --- Tab 1: Transactions ---
+        StatefulShellBranch(
+          routes: <RouteBase>[
+            GoRoute(
+              path: '/lista-transacoes',
+              builder: (BuildContext context, GoRouterState state) {
+                final String userId =
+                    context.read<AuthBloc>().state.whenOrNull(
+                          signedIn: (ClerkAuthState s) => s.user?.id,
+                        ) ??
+                    '';
+                return BlocProvider<TransactionCubit>(
+                  create: (_) => TransactionCubit()..loadTransactions(userId),
+                  child: const ListaTransacoes(),
+                );
+              },
+            ),
+          ],
+        ),
 
-    GoRoute(
-      path: '/lista-transacoes',
-      builder: (BuildContext context, GoRouterState state) {
-        final AuthState authState = context.read<AuthBloc>().state;
-        final String userId = authState.whenOrNull(
-              signedIn: (ClerkAuthState s) => s.user?.id,
-            ) ??
-            '';
-        return BlocProvider<TransactionCubit>(
-          create: (BuildContext context) =>
-              TransactionCubit()..loadTransactions(userId),
-          child: const ListaTransacoes(),
-        );
-      },
-    ),
+        // --- Tab 2: Categories ---
+        StatefulShellBranch(
+          routes: <RouteBase>[
+            GoRoute(
+              path: '/lista-categorias',
+              builder: (BuildContext context, GoRouterState state) =>
+                  BlocProvider<CategoryCubit>(
+                    create: (_) => CategoryCubit()..loadCategories(),
+                    child: const ListaCategorias(),
+                  ),
+            ),
+          ],
+        ),
 
-    GoRoute(
-      path: '/lista-categorias',
-      builder: (BuildContext context, GoRouterState state) =>
-          BlocProvider<CategoryCubit>(
-            create: (BuildContext context) => CategoryCubit()..loadCategories(),
-            child: const ListaCategorias(),
-          ),
-    ),
-
-    GoRoute(
-      path: '/lista-limites',
-      builder: (BuildContext context, GoRouterState state) {
-        final AuthState authState = context.read<AuthBloc>().state;
-        final String userId = authState.whenOrNull(
-              signedIn: (ClerkAuthState s) => s.user?.id,
-            ) ??
-            '';
-        return BlocProvider<LimitCubit>(
-          create: (BuildContext context) =>
-              LimitCubit()..loadLimits(userId),
-          child: const ListaLimites(),
-        );
-      },
+        // --- Tab 3: Limits ---
+        StatefulShellBranch(
+          routes: <RouteBase>[
+            GoRoute(
+              path: '/lista-limites',
+              builder: (BuildContext context, GoRouterState state) {
+                final String userId =
+                    context.read<AuthBloc>().state.whenOrNull(
+                          signedIn: (ClerkAuthState s) => s.user?.id,
+                        ) ??
+                    '';
+                return BlocProvider<LimitCubit>(
+                  create: (_) => LimitCubit()..loadLimits(userId),
+                  child: const ListaLimites(),
+                );
+              },
+            ),
+          ],
+        ),
+      ],
     ),
 
     // --- Edit screens ---

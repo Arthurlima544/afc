@@ -4,7 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart'
     hide Column, Row, Expanded;
 
+import '../../utils/app_spacing.dart';
+
 import '../blocs/limit/limit_cubit.dart';
+import '../widgets/empty_state.dart';
+import '../widgets/skeleton_list.dart';
 
 class ListaLimites extends StatelessWidget {
   const ListaLimites({super.key});
@@ -18,20 +22,8 @@ class ListaLimites extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              IconButton(
-                variance: const ButtonStyle.outline(),
-                onPressed: () => context.pop(),
-                icon: const Icon(Icons.arrow_back),
-              ),
-              const Gap(8),
               const Expanded(
-                child: Text(
-                  'Limites',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: Text('Limites', style: AppTextStyles.heading),
               ),
               IconButton(
                 variance: const ButtonStyle.outline(),
@@ -44,13 +36,18 @@ class ListaLimites extends StatelessWidget {
           BlocBuilder<LimitCubit, LimitState>(
             builder: (BuildContext context, LimitState state) => state.when(
               initial: (_) => const SizedBox(),
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
-              error: Text.new,
+              loading: () => const SkeletonList(),
+              error: (String msg) => EmptyState(
+                message: msg,
+                icon: Icons.error_outline,
+              ),
               loaded: (_) => const SizedBox(),
               success: (_) => const SizedBox(),
               listed: (List<LimitListItem> items) => items.isEmpty
-                  ? const Center(child: Text('Sem limites'))
+                  ? const EmptyState(
+                      message: 'Nenhum limite ainda.\nToque em + para definir.',
+                      icon: Icons.tune_outlined,
+                    )
                   : Column(
                       children: <Widget>[
                         for (final LimitListItem item in items)
@@ -83,17 +80,11 @@ class _LimiteItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(
-                  item.categoryName,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text(item.categoryName, style: AppTextStyles.title),
                 const Gap(4),
                 Text(
                   '${item.limit.month} · R\$ ${item.limit.limitAmount.toStringAsFixed(2)}',
-                  style: const TextStyle(fontSize: 13),
+                  style: AppTextStyles.label,
                 ),
               ],
             ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -15,7 +17,7 @@ class TransactionCubit extends Cubit<TransactionState> {
       super(const TransactionState.initial(<CategoryEntity>[]));
 
   final FirebaseFirestore _firestore;
-  String _userId = '';
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _txSubscription;
 
   Future<void> getCategories() async {
     final QuerySnapshot<Map<String, dynamic>> res =
@@ -47,43 +49,45 @@ class TransactionCubit extends Cubit<TransactionState> {
   }
 
   Future<void> loadTransactions(String userId) async {
-    try {
-      _userId = userId;
-      emit(const TransactionState.loading());
-      final QuerySnapshot<Map<String, dynamic>> snap = await _firestore
-          .collection('transaction')
-          .where('userId', isEqualTo: userId)
-          .get();
-      final List<TransactionEntity> txs = snap.docs.map(
-        (QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-          final Map<String, dynamic> data = doc.data();
-          final dynamic rawDate = data['data'];
-          final DateTime date;
-          if (rawDate is Timestamp) {
-            date = rawDate.toDate();
-          } else if (rawDate is DateTime) {
-            date = rawDate;
-          } else {
-            date = DateTime.parse(rawDate as String);
-          }
-          return TransactionEntity.fromJson(
-            <String, dynamic>{...data, 'data': date.toIso8601String()},
-          );
-        },
-      ).toList()
-        ..sort(
-          (TransactionEntity a, TransactionEntity b) =>
-              b.data.compareTo(a.data),
+    emit(const TransactionState.loading());
+    await _txSubscription?.cancel();
+    _txSubscription = _firestore
+        .collection('transaction')
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .listen(
+          (QuerySnapshot<Map<String, dynamic>> snap) {
+            final List<TransactionEntity> txs = snap.docs.map(
+              (QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+                final Map<String, dynamic> data =
+                    Map<String, dynamic>.from(doc.data());
+                final dynamic rawDate = data['data'];
+                if (rawDate is Timestamp) {
+                  data['data'] = rawDate.toDate().toIso8601String();
+                } else if (rawDate is DateTime) {
+                  data['data'] = rawDate.toIso8601String();
+                }
+                return TransactionEntity.fromJson(data);
+              },
+            ).toList()
+              ..sort(
+                (TransactionEntity a, TransactionEntity b) =>
+                    b.data.compareTo(a.data),
+              );
+            emit(TransactionState.listed(txs));
+          },
+          onError: (Object e) => emit(TransactionState.error(e.toString())),
         );
-      emit(TransactionState.listed(txs));
-    } on Exception catch (e) {
-      emit(TransactionState.error(e.toString()));
-    }
+  }
+
+  @override
+  Future<void> close() {
+    _txSubscription?.cancel();
+    return super.close();
   }
 
   Future<void> deleteTransaction(String txUuid) async {
     try {
-      emit(const TransactionState.loading());
       final QuerySnapshot<Map<String, dynamic>> snap = await _firestore
           .collection('transaction')
           .where('uuid', isEqualTo: txUuid)
@@ -91,7 +95,6 @@ class TransactionCubit extends Cubit<TransactionState> {
       if (snap.docs.isNotEmpty) {
         await snap.docs.first.reference.delete();
       }
-      await loadTransactions(_userId);
     } on Exception catch (e) {
       emit(TransactionState.error(e.toString()));
     }

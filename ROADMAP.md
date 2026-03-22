@@ -154,15 +154,15 @@ Build a complete personal finance management app where users can:
 
 ---
 
-### US-17 · Design system refresh (Shadcn) 🔲
+### US-17 · Design system refresh (Shadcn) ✅
 **As a** user, **I want** a clean, consistent visual design,
 **so that** the app feels professional and easy to navigate.
 
-- [ ] Define and apply a consistent color palette (primary, surface, error, success) via `ThemeData`
-- [ ] Replace all ad-hoc `TextStyle` calls with named theme text styles
+- [x] Define and apply a consistent color palette (primary, surface, error, success) via `ThemeData`
+- [x] Replace all ad-hoc `TextStyle` calls with named theme text styles
 - [x] Standardise spacing via a shared constants file (`AppSpacing`)
 - [x] Add empty-state illustrations for lists with no data
-- [ ] Improve form screens: inline validation messages, better date/month pickers
+- [x] Improve form screens: inline validation messages, better date/month pickers
 - [x] Add loading skeletons (shimmer) instead of bare `CircularProgressIndicator`
 
 ---

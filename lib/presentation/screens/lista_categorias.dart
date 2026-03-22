@@ -5,7 +5,10 @@ import 'package:shadcn_flutter/shadcn_flutter.dart'
     hide Column, Row, Expanded;
 
 import '../../domain/entity/category_entity.dart';
+import '../../utils/app_spacing.dart';
 import '../blocs/category/category_cubit.dart';
+import '../widgets/empty_state.dart';
+import '../widgets/skeleton_list.dart';
 
 class ListaCategorias extends StatelessWidget {
   const ListaCategorias({super.key});
@@ -19,20 +22,8 @@ class ListaCategorias extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              IconButton(
-                variance: const ButtonStyle.outline(),
-                onPressed: () => context.pop(),
-                icon: const Icon(Icons.arrow_back),
-              ),
-              const Gap(8),
               const Expanded(
-                child: Text(
-                  'Categorias',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: Text('Categorias', style: AppTextStyles.heading),
               ),
               IconButton(
                 variance: const ButtonStyle.outline(),
@@ -46,12 +37,17 @@ class ListaCategorias extends StatelessWidget {
             builder: (BuildContext context, CategoryState state) =>
                 state.when(
                   initial: (_) => const SizedBox(),
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: Text.new,
+                  loading: () => const SkeletonList(),
+                  error: (String msg) => EmptyState(
+                    message: msg,
+                    icon: Icons.error_outline,
+                  ),
                   success: (_) => const SizedBox(),
                   listed: (List<CategoryEntity> cats) => cats.isEmpty
-                      ? const Center(child: Text('Sem categorias'))
+                      ? const EmptyState(
+                          message: 'Nenhuma categoria ainda.\nToque em + para criar.',
+                          icon: Icons.category_outlined,
+                        )
                       : Column(
                           children: <Widget>[
                             for (final CategoryEntity cat in cats)
@@ -92,13 +88,7 @@ class _CategoriaItem extends StatelessWidget {
           ),
           const Gap(12),
           Expanded(
-            child: Text(
-              cat.name,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            child: Text(cat.name, style: AppTextStyles.title),
           ),
           IconButton(
             variance: const ButtonStyle.outline(),

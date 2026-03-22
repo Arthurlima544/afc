@@ -68,3 +68,6 @@ android/local.properties
 
 # Environment files
 .env*
+
+google-services.json
+firebase_options.dart
