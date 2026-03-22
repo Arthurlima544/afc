@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:afc/presentation/blocs/auth/auth_bloc.dart';
 import 'package:afc/presentation/screens/home_screen.dart';
+import 'package:afc/presentation/screens/onboarding_screen.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -66,6 +68,10 @@ void main() {
   setUp(() {
     mockAuthBloc = MockAuthBloc();
     when(() => mockAuthBloc.state).thenReturn(const AuthState.initial());
+    // Mark onboarding as complete so sign-in always routes to /home.
+    SharedPreferences.setMockInitialValues(
+      <String, Object>{OnboardingScreen.keyDone: true},
+    );
   });
 
   tearDown(() => mockAuthBloc.close());

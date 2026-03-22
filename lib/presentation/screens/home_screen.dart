@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../config/theme/app_colors.dart';
 import '../blocs/auth/auth_bloc.dart';
+import 'onboarding_screen.dart';
 
 /// Animated splash / redirect screen shown at `/`.
 ///
@@ -56,11 +60,20 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
+  static Future<void> _navigateAfterSignIn(BuildContext context) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (!context.mounted) {
+      return;
+    }
+    final bool done = prefs.getBool(OnboardingScreen.keyDone) ?? false;
+    context.go(done ? '/home' : '/onboarding');
+  }
+
   @override
   Widget build(BuildContext context) => BlocListener<AuthBloc, AuthState>(
     listener: (BuildContext context, AuthState state) {
       state.whenOrNull(
-        signedIn: (_) => context.go('/home'),
+        signedIn: (_) => unawaited(_navigateAfterSignIn(context)),
         signedOut: () => context.go('/login'),
       );
     },

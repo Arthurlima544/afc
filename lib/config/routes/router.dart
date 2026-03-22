@@ -22,6 +22,7 @@ import '../../presentation/blocs/open_finance/open_finance_cubit.dart';
 import '../../presentation/blocs/recurring/recurring_cubit.dart';
 import '../../presentation/blocs/report/report_cubit.dart';
 import '../../presentation/blocs/review_queue/review_queue_cubit.dart';
+import '../../presentation/blocs/settings/settings_cubit.dart';
 import '../../presentation/blocs/transaction/transaction_cubit.dart';
 import '../../presentation/screens/cadastrar_categoria.dart';
 import '../../presentation/screens/cadastrar_conta.dart';
@@ -44,10 +45,13 @@ import '../../presentation/screens/lista_metas.dart';
 import '../../presentation/screens/lista_recorrentes.dart';
 import '../../presentation/screens/lista_transacoes.dart';
 import '../../presentation/screens/login_screen.dart';
+import '../../presentation/screens/onboarding_screen.dart';
 import '../../presentation/screens/relatorio.dart';
 import '../../presentation/screens/review_queue_screen.dart';
 import '../../presentation/screens/scaffold_shell.dart';
+import '../../presentation/screens/settings_screen.dart';
 import '../../utils/logger.dart';
+import 'transitions.dart';
 
 final GoRouter router = GoRouter(
   routes: <RouteBase>[
@@ -64,6 +68,29 @@ final GoRouter router = GoRouter(
     ),
 
     GoRoute(
+      path: '/onboarding',
+      pageBuilder: (BuildContext context, GoRouterState state) =>
+          fadeScaleTransition(
+            context: context,
+            state: state,
+            child: const OnboardingScreen(),
+          ),
+    ),
+
+    GoRoute(
+      path: '/settings',
+      pageBuilder: (BuildContext context, GoRouterState state) =>
+          slideUpTransition(
+            context: context,
+            state: state,
+            child: BlocProvider<SettingsCubit>(
+              create: (_) => SettingsCubit(),
+              child: const SettingsScreen(),
+            ),
+          ),
+    ),
+
+    GoRoute(
       path: '/cadastro-categoria',
       builder: (BuildContext context, GoRouterState state) =>
           BlocProvider<CategoryCubit>(
@@ -74,11 +101,15 @@ final GoRouter router = GoRouter(
 
     GoRoute(
       path: '/cadastro-transacao',
-      builder: (BuildContext context, GoRouterState state) =>
-          BlocProvider<TransactionCubit>(
-            create: (BuildContext context) =>
-                TransactionCubit()..getCategories(),
-            child: const CadastrarTransacao(),
+      pageBuilder: (BuildContext context, GoRouterState state) =>
+          slideUpTransition(
+            context: context,
+            state: state,
+            child: BlocProvider<TransactionCubit>(
+              create: (BuildContext context) =>
+                  TransactionCubit()..getCategories(),
+              child: const CadastrarTransacao(),
+            ),
           ),
     ),
 

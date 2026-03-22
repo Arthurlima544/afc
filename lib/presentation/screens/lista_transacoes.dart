@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:clerk_flutter/clerk_flutter.dart';
+import 'package:flutter/material.dart' show RefreshIndicator;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -8,8 +12,10 @@ import 'package:shadcn_flutter/shadcn_flutter.dart'
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
 import '../../utils/app_spacing.dart';
+import '../blocs/auth/auth_bloc.dart';
 import '../blocs/transaction/transaction_cubit.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/error_state.dart';
 import '../widgets/skeleton_list.dart';
 
 class ListaTransacoes extends StatelessWidget {
@@ -17,9 +23,22 @@ class ListaTransacoes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SafeArea(
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
+    child: RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: () async {
+        final String userId =
+            context.read<AuthBloc>().state.whenOrNull(
+                  signedIn: (ClerkAuthState s) => s.user?.id,
+                ) ??
+            '';
+        unawaited(
+          context.read<TransactionCubit>().loadTransactions(userId),
+        );
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
@@ -55,9 +74,20 @@ class ListaTransacoes extends StatelessWidget {
                 state.when(
                   initial: (_) => const SizedBox(),
                   loading: () => const SkeletonList(),
-                  error: (String msg) => EmptyState(
+                  error: (String msg) => ErrorState(
                     message: msg,
-                    icon: Icons.error_outline,
+                    onRetry: () {
+                      final String userId = context
+                              .read<AuthBloc>()
+                              .state
+                              .whenOrNull(
+                                signedIn: (ClerkAuthState s) => s.user?.id,
+                              ) ??
+                          '';
+                      context
+                          .read<TransactionCubit>()
+                          .loadTransactions(userId);
+                    },
                   ),
                   success: (_) => const SizedBox(),
                   listed: (List<TransactionEntity> txs) => txs.isEmpty
@@ -77,6 +107,7 @@ class ListaTransacoes extends StatelessWidget {
                 ),
           ),
         ],
+      ),
       ),
     ),
   );

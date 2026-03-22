@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:clerk_flutter/clerk_flutter.dart';
+import 'package:flutter/material.dart' show RefreshIndicator;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -5,9 +9,10 @@ import 'package:shadcn_flutter/shadcn_flutter.dart'
     hide Column, Row, Expanded;
 
 import '../../utils/app_spacing.dart';
-
+import '../blocs/auth/auth_bloc.dart';
 import '../blocs/limit/limit_cubit.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/error_state.dart';
 import '../widgets/skeleton_list.dart';
 
 class ListaLimites extends StatelessWidget {
@@ -15,51 +20,74 @@ class ListaLimites extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SafeArea(
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              const Expanded(
-                child: Text('Limites', style: AppTextStyles.heading),
-              ),
-              IconButton(
-                variance: const ButtonStyle.outline(),
-                onPressed: () => context.push('/cadastro-limite'),
-                icon: const Icon(Icons.add),
-              ),
-            ],
-          ),
-          const Gap(16),
-          BlocBuilder<LimitCubit, LimitState>(
-            builder: (BuildContext context, LimitState state) => state.when(
-              initial: (_) => const SizedBox(),
-              loading: () => const SkeletonList(),
-              error: (String msg) => EmptyState(
-                message: msg,
-                icon: Icons.error_outline,
-              ),
-              loaded: (_) => const SizedBox(),
-              success: (_) => const SizedBox(),
-              listed: (List<LimitListItem> items) => items.isEmpty
-                  ? const EmptyState(
-                      message: 'Nenhum limite ainda.\nToque em + para definir.',
-                      icon: Icons.tune_outlined,
-                    )
-                  : Column(
-                      children: <Widget>[
-                        for (final LimitListItem item in items)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _LimiteItem(item: item),
-                          ),
-                      ],
-                    ),
+    child: RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: () async {
+        final String userId =
+            context.read<AuthBloc>().state.whenOrNull(
+                  signedIn: (ClerkAuthState s) => s.user?.id,
+                ) ??
+            '';
+        unawaited(context.read<LimitCubit>().loadLimits(userId));
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                const Expanded(
+                  child: Text('Limites', style: AppTextStyles.heading),
+                ),
+                IconButton(
+                  variance: const ButtonStyle.outline(),
+                  onPressed: () => context.push('/cadastro-limite'),
+                  icon: const Icon(Icons.add),
+                ),
+              ],
             ),
-          ),
-        ],
+            const Gap(16),
+            BlocBuilder<LimitCubit, LimitState>(
+              builder: (BuildContext context, LimitState state) =>
+                  state.when(
+                    initial: (_) => const SizedBox(),
+                    loading: () => const SkeletonList(),
+                    error: (String msg) => ErrorState(
+                      message: msg,
+                      onRetry: () {
+                        final String userId = context
+                                .read<AuthBloc>()
+                                .state
+                                .whenOrNull(
+                                  signedIn: (ClerkAuthState s) => s.user?.id,
+                                ) ??
+                            '';
+                        context.read<LimitCubit>().loadLimits(userId);
+                      },
+                    ),
+                    loaded: (_) => const SizedBox(),
+                    success: (_) => const SizedBox(),
+                    listed: (List<LimitListItem> items) => items.isEmpty
+                        ? const EmptyState(
+                            message:
+                                'Nenhum limite ainda.\nToque em + para definir.',
+                            icon: Icons.tune_outlined,
+                          )
+                        : Column(
+                            children: <Widget>[
+                              for (final LimitListItem item in items)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: _LimiteItem(item: item),
+                                ),
+                            ],
+                          ),
+                  ),
+            ),
+          ],
+        ),
       ),
     ),
   );

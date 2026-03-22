@@ -43,15 +43,25 @@ class _HomeContent extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     children: <Widget>[
       const Gap(20),
-      if (Flavor.isDevelopment())
-        Align(
-          alignment: Alignment.centerRight,
-          child: IconButton(
-            variance: const ButtonStyle.outline(),
-            onPressed: () => context.push('/seed'),
-            icon: const Icon(Icons.data_object, size: 20),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          if (Flavor.isDevelopment())
+            IconButton(
+              variance: const ButtonStyle.outline(),
+              onPressed: () => context.push('/seed'),
+              icon: const Icon(Icons.data_object, size: 20),
+            ),
+          Semantics(
+            label: 'Configurações',
+            child: IconButton(
+              variance: const ButtonStyle.outline(),
+              onPressed: () => context.push('/settings'),
+              icon: const Icon(AppIcons.settings, size: 20),
+            ),
           ),
-        ),
+        ],
+      ),
       const SyncStatusWidget(),
       const SummaryWidget(),
       const Gap(12),
