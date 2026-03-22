@@ -7,7 +7,10 @@ import 'package:shadcn_flutter/shadcn_flutter.dart'
 
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
+import '../../utils/app_spacing.dart';
 import '../blocs/transaction/transaction_cubit.dart';
+import '../widgets/empty_state.dart';
+import '../widgets/skeleton_list.dart';
 
 class ListaTransacoes extends StatelessWidget {
   const ListaTransacoes({super.key});
@@ -21,19 +24,10 @@ class ListaTransacoes extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              IconButton(
-                variance: const ButtonStyle.outline(),
-                onPressed: () => context.pop(),
-                icon: const Icon(Icons.arrow_back),
-              ),
-              const Gap(8),
               const Expanded(
                 child: Text(
                   'Transações',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AppTextStyles.heading,
                 ),
               ),
               IconButton(
@@ -48,12 +42,17 @@ class ListaTransacoes extends StatelessWidget {
             builder: (BuildContext context, TransactionState state) =>
                 state.when(
                   initial: (_) => const SizedBox(),
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: Text.new,
+                  loading: () => const SkeletonList(),
+                  error: (String msg) => EmptyState(
+                    message: msg,
+                    icon: Icons.error_outline,
+                  ),
                   success: (_) => const SizedBox(),
                   listed: (List<TransactionEntity> txs) => txs.isEmpty
-                      ? const Center(child: Text('Sem transações'))
+                      ? const EmptyState(
+                          message: 'Nenhuma transação ainda.\nToque em + para adicionar.',
+                          icon: Icons.receipt_long_outlined,
+                        )
                       : Column(
                           children: <Widget>[
                             for (final TransactionEntity tx in txs)
@@ -90,20 +89,13 @@ class _TransacaoItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(
-                    tx.title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Text(tx.title, style: AppTextStyles.title),
                   const Gap(4),
                   Text(
                     '${_formatCurrency(displayAmount)} · '
                     '${DateFormat('dd/MM/yyyy').format(tx.data)}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: isIncome ? Colors.green : Colors.red,
+                    style: AppTextStyles.label.copyWith(
+                      color: isIncome ? AppColors.income : AppColors.expense,
                     ),
                   ),
                 ],

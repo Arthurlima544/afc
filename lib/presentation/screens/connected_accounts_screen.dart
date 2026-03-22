@@ -7,6 +7,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart'
     hide Column, Row, Expanded;
 
 import '../../domain/entity/connected_account_entity.dart';
+import '../../utils/app_spacing.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/open_finance/open_finance_cubit.dart';
 
@@ -69,10 +70,7 @@ class ConnectedAccountsScreen extends StatelessWidget {
                   const Expanded(
                     child: Text(
                       'Contas Conectadas',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppTextStyles.heading,
                     ),
                   ),
                   IconButton(
@@ -155,11 +153,11 @@ class _AccountCard extends StatelessWidget {
   Color _statusColor(String status) {
     switch (status) {
       case 'active':
-        return const Color(0xFF22C55E);
+        return AppColors.income;
       case 'consent_expired':
-        return const Color(0xFFF59E0B);
+        return AppColors.warning;
       default:
-        return const Color(0xFFEF4444);
+        return AppColors.expense;
     }
   }
 
@@ -188,10 +186,7 @@ class _AccountCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       account.institutionName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppTextStyles.title,
                     ),
                   ),
                   Container(
@@ -206,10 +201,8 @@ class _AccountCard extends StatelessWidget {
                     ),
                     child: Text(
                       _statusLabel(account.status),
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: AppTextStyles.captionBold.copyWith(
                         color: _statusColor(account.status),
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -218,7 +211,7 @@ class _AccountCard extends StatelessWidget {
               const Gap(4),
               Text(
                 _formatSyncTime(account.lastSyncedAt),
-                style: const TextStyle(fontSize: 12),
+                style: AppTextStyles.caption,
               ),
               const Gap(8),
               Row(

@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../../domain/entity/category_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
+import '../../utils/app_spacing.dart';
 import '../../utils/logger.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/transaction/transaction_cubit.dart';
@@ -28,6 +29,10 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
 
   double money = 0;
 
+  String? _dateError;
+  String? _typeError;
+  String? _categoryError;
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +42,19 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
       _value = tx.data;
       typeValue = tx.typeUuid;
     }
+  }
+
+  bool _validate(List<CategoryEntity> categories) {
+    bool valid = true;
+    setState(() {
+      _dateError = _value == null ? 'Selecione uma data' : null;
+      _typeError = typeValue == null ? 'Selecione o tipo' : null;
+      _categoryError = categoryValue == null ? 'Selecione uma categoria' : null;
+    });
+    if (_dateError != null || _typeError != null || _categoryError != null) {
+      valid = false;
+    }
+    return valid;
   }
 
   @override
@@ -88,10 +106,20 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
                       onChanged: (DateTime? value) {
                         setState(() {
                           _value = value;
+                          _dateError = null;
                         });
                         logger.d('Date picked $_value');
                       },
                     ),
+                    if (_dateError != null) ...<Widget>[
+                      const Gap(4),
+                      Text(
+                        _dateError!,
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.expense,
+                        ),
+                      ),
+                    ],
                     const Gap(20),
                     FormTableLayout(
                       rows: <FormField<String>>[
@@ -133,6 +161,7 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
                       onChanged: (String? value) {
                         setState(() {
                           typeValue = value;
+                          _typeError = null;
                         });
                       },
                       value: typeValue,
@@ -149,6 +178,18 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
                         ),
                       ).call,
                     ),
+                    if (_typeError != null) ...<Widget>[
+                      const Gap(4),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          _typeError!,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.expense,
+                          ),
+                        ),
+                      ),
+                    ],
                     const Gap(20),
                     Select<String>(
                       itemBuilder: (BuildContext context, String item) =>
@@ -160,6 +201,7 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
                       onChanged: (String? value) {
                         setState(() {
                           categoryValue = value;
+                          _categoryError = null;
                         });
                       },
                       value: categoryValue,
@@ -176,10 +218,26 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
                         ),
                       ).call,
                     ),
+                    if (_categoryError != null) ...<Widget>[
+                      const Gap(4),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          _categoryError!,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.expense,
+                          ),
+                        ),
+                      ),
+                    ],
                     const Gap(20),
 
                     PrimaryButton(
                       onPressed: () {
+                        if (!_validate(categories)) {
+                          return;
+                        }
+
                         final String? titleOrNull = Form.of(
                           context,
                         ).getValue(_titleKey);

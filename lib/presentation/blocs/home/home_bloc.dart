@@ -20,132 +20,98 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       super(HomeState.initial()) {
     on<HomeEvent>((HomeEvent event, Emitter<HomeState> emit) async {
       await event.when(
-        loadHome: (String userUuid) async {
-          await _loadStats(userUuid, emit);
-          await _loadLastTransactions(userUuid, emit);
-        },
+        loadHome: (String userUuid) => _subscribeToTransactions(userUuid, emit),
       );
     });
   }
 
   final FirebaseFirestore _firestore;
 
-  Future<void> _loadStats(
+  Future<void> _subscribeToTransactions(
     String userUuid,
     Emitter<HomeState> emit,
   ) async {
-    try {
-      emit(state.copyWith(statsState: const StatsState.loading()));
+    emit(
+      HomeState.initial().copyWith(
+        statsState: const StatsState.loading(),
+        transactionState: const LastTransactionState.loading(),
+      ),
+    );
 
-      final QuerySnapshot<Map<String, dynamic>> snapshot =
-          await _firestore
-              .collection('transaction')
-              .where('userId', isEqualTo: userUuid)
-              .get();
-
-      // Group amounts by (typeUuid, month)
-      final Map<String, Map<CalendarEntity, double>> grouped =
-          <String, Map<CalendarEntity, double>>{};
-
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc
-          in snapshot.docs) {
-        final Map<String, dynamic> data = doc.data();
-        final String typeUuid = data['typeUuid'] as String? ?? '';
-        final double amount = (data['amount'] as num).toDouble();
-
-        final dynamic rawDate = data['data'];
-        final DateTime date;
-        if (rawDate is Timestamp) {
-          date = rawDate.toDate();
-        } else if (rawDate is DateTime) {
-          date = rawDate;
-        } else if (rawDate is String) {
-          date = DateTime.parse(rawDate);
-        } else {
-          date = DateTime.now();
-        }
-
-        final CalendarEntity month = CalendarEntity.values[date.month - 1];
-        grouped[typeUuid] ??= <CalendarEntity, double>{};
-        grouped[typeUuid]![month] =
-            (grouped[typeUuid]![month] ?? 0.0) + amount;
-      }
-
-      final List<StatsEntity> stats = <StatsEntity>[];
-      for (final MapEntry<String, Map<CalendarEntity, double>> typeEntry
-          in grouped.entries) {
-        final TypeEntity? typeOrNull = TypeEntity.values.where(
-          (TypeEntity t) => t.name == typeEntry.key,
-        ).firstOrNull;
-        if (typeOrNull == null) {
-          logger.d('Unknown typeUuid: ${typeEntry.key}');
-          continue;
-        }
-        final TypeEntity type = typeOrNull;
-        for (final MapEntry<CalendarEntity, double> monthEntry
-            in typeEntry.value.entries) {
-          stats.add(
-            StatsEntity(
-              type: type,
-              total: monthEntry.value,
-              date: monthEntry.key,
-            ),
+    await emit.forEach<QuerySnapshot<Map<String, dynamic>>>(
+      _firestore
+          .collection('transaction')
+          .where('userId', isEqualTo: userUuid)
+          .snapshots(),
+      onData: (QuerySnapshot<Map<String, dynamic>> snapshot) {
+        final List<TransactionEntity> allTxs = _parseDocs(snapshot.docs);
+        final List<TransactionEntity> sorted = allTxs
+          ..sort(
+            (TransactionEntity a, TransactionEntity b) =>
+                b.data.compareTo(a.data),
           );
-        }
-      }
-
-      emit(state.copyWith(statsState: StatsState.success(stats)));
-    } on Exception catch (e) {
-      emit(state.copyWith(statsState: StatsState.error(e.toString())));
-    }
+        return state.copyWith(
+          statsState: StatsState.success(_computeStats(allTxs)),
+          transactionState:
+              LastTransactionState.success(sorted.take(5).toList()),
+        );
+      },
+      onError: (Object error, StackTrace _) {
+        logger.e('HomeBloc stream error: $error');
+        return state.copyWith(
+          statsState: StatsState.error(error.toString()),
+          transactionState: LastTransactionState.error(error.toString()),
+        );
+      },
+    );
   }
 
-  Future<void> _loadLastTransactions(
-    String userUuid,
-    Emitter<HomeState> emit,
-  ) async {
-    try {
-      emit(
-        state.copyWith(transactionState: const LastTransactionState.loading()),
-      );
+  List<TransactionEntity> _parseDocs(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) =>
+      docs.map((QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+        final Map<String, dynamic> data = Map<String, dynamic>.from(doc.data());
+        final dynamic rawDate = data['data'];
+        if (rawDate is Timestamp) {
+          data['data'] = rawDate.toDate().toIso8601String();
+        } else if (rawDate is DateTime) {
+          data['data'] = rawDate.toIso8601String();
+        }
+        return TransactionEntity.fromJson(data);
+      }).toList();
 
-      final QuerySnapshot<Map<String, dynamic>> snapshot =
-          await _firestore
-              .collection('transaction')
-              .where('userId', isEqualTo: userUuid)
-              .get();
+  List<StatsEntity> _computeStats(List<TransactionEntity> txs) {
+    final Map<String, Map<CalendarEntity, double>> grouped =
+        <String, Map<CalendarEntity, double>>{};
 
-      final List<TransactionEntity> transactions = snapshot.docs.map(
-        (QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-          final Map<String, dynamic> data =
-              Map<String, dynamic>.from(doc.data());
-          final dynamic rawDate = data['data'];
-          if (rawDate is Timestamp) {
-            data['data'] = rawDate.toDate().toIso8601String();
-          } else if (rawDate is DateTime) {
-            data['data'] = rawDate.toIso8601String();
-          }
-          return TransactionEntity.fromJson(data);
-        },
-      ).toList()
-        ..sort(
-          (TransactionEntity a, TransactionEntity b) =>
-              b.data.compareTo(a.data),
-        );
-
-      emit(
-        state.copyWith(
-          transactionState: LastTransactionState.success(
-            transactions.take(5).toList(),
-          ),
-        ),
-      );
-    } on Exception catch (e) {
-      emit(
-        state.copyWith(
-          transactionState: LastTransactionState.error(e.toString()),
-        ),
-      );
+    for (final TransactionEntity tx in txs) {
+      final CalendarEntity month = CalendarEntity.values[tx.data.month - 1];
+      grouped[tx.typeUuid] ??= <CalendarEntity, double>{};
+      grouped[tx.typeUuid]![month] =
+          (grouped[tx.typeUuid]![month] ?? 0.0) + tx.amount;
     }
+
+    final List<StatsEntity> stats = <StatsEntity>[];
+    for (final MapEntry<String, Map<CalendarEntity, double>> typeEntry
+        in grouped.entries) {
+      final TypeEntity? type = TypeEntity.values
+          .where((TypeEntity t) => t.name == typeEntry.key)
+          .firstOrNull;
+      if (type == null) {
+        logger.d('HomeBloc — unknown typeUuid: ${typeEntry.key}');
+        continue;
+      }
+      for (final MapEntry<CalendarEntity, double> monthEntry
+          in typeEntry.value.entries) {
+        stats.add(
+          StatsEntity(
+            type: type,
+            total: monthEntry.value,
+            date: monthEntry.key,
+          ),
+        );
+      }
+    }
+    return stats;
   }
 }

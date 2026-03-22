@@ -8,6 +8,7 @@ import '../../domain/entity/calendar_entity.dart';
 import '../../domain/entity/category_entity.dart';
 import '../../domain/entity/limit_entity.dart';
 import '../../domain/entity/type_entity.dart';
+import '../../utils/app_spacing.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/limit/limit_cubit.dart';
 
@@ -26,6 +27,9 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
 
   double money = 0;
 
+  String? _monthError;
+  String? _categoryError;
+
   @override
   void initState() {
     super.initState();
@@ -34,6 +38,14 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
       money = limit.limitAmount;
       monthValue = limit.month;
     }
+  }
+
+  bool _validate() {
+    setState(() {
+      _monthError = monthValue == null ? 'Selecione o mês' : null;
+      _categoryError = categoryValue == null ? 'Selecione uma categoria' : null;
+    });
+    return _monthError == null && _categoryError == null;
   }
 
   @override
@@ -96,6 +108,7 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
                   onChanged: (String? value) {
                     setState(() {
                       monthValue = value;
+                      _monthError = null;
                     });
                   },
                   value: monthValue,
@@ -112,6 +125,18 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
                     ),
                   ).call,
                 ),
+                if (_monthError != null) ...<Widget>[
+                  const Gap(4),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      _monthError!,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.expense,
+                      ),
+                    ),
+                  ),
+                ],
                 const Gap(20),
                 Select<String>(
                   itemBuilder: (BuildContext context, String item) =>
@@ -123,6 +148,7 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
                   onChanged: (String? value) {
                     setState(() {
                       categoryValue = value;
+                      _categoryError = null;
                     });
                   },
                   value: categoryValue,
@@ -139,10 +165,26 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
                     ),
                   ).call,
                 ),
+                if (_categoryError != null) ...<Widget>[
+                  const Gap(4),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      _categoryError!,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.expense,
+                      ),
+                    ),
+                  ),
+                ],
                 const Gap(20),
 
                 PrimaryButton(
                   onPressed: () {
+                    if (!_validate()) {
+                      return;
+                    }
+
                     final CategoryEntity selectedCategory = categories
                         .firstWhere(
                           (CategoryEntity e) => e.name == categoryValue,

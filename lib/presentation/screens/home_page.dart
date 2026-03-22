@@ -11,13 +11,14 @@ import 'package:shadcn_flutter/shadcn_flutter.dart'
 import '../../domain/entity/stats_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
+import '../../utils/app_spacing.dart';
 import '../../utils/flavors.dart';
-import '../../utils/logger.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/home/home_bloc.dart';
 import '../blocs/home/stats_state.dart';
 import '../blocs/home/transaction_state.dart';
 import '../blocs/limit/limit_cubit.dart';
+import '../widgets/skeleton_list.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -107,26 +108,23 @@ class StatsWidget extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-                  const Text(
-                    'Estatísticas',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  const Text('Estatísticas', style: AppTextStyles.sectionTitle),
                   TextButton(
-                    onPressed: () => context.push('/lista-transacoes'),
+                    onPressed: () => context.go('/lista-transacoes'),
                     child: const Text(
                       'Ver Todas',
-                      style: TextStyle(fontSize: 14, color: Colors.blue),
+                      style: TextStyle(
+                        fontSize: AppTextStyle.sizeMd,
+                        color: AppColors.link,
+                      ),
                     ),
                   ),
                 ],
               ),
               const Gap(10),
               LineChartSample7(
-                line1Color: Colors.red,
-                line2Color: Colors.green,
+                line1Color: AppColors.expense,
+                line2Color: AppColors.income,
                 expenseSpots: expenseSpots,
                 incomeSpots: incomeSpots,
                 yInterval: yInterval,
@@ -154,10 +152,7 @@ class LineChartSample7 extends StatelessWidget {
   final double yInterval;
 
   Widget bottomTitleWidgets(double value, TitleMeta meta) {
-    const TextStyle style = TextStyle(
-      fontSize: 10,
-      fontWeight: FontWeight.bold,
-    );
+    const TextStyle style = AppTextStyles.chartLabelBold;
     String text;
     switch (value.toInt()) {
       case 0:
@@ -208,7 +203,7 @@ class LineChartSample7 extends StatelessWidget {
   }
 
   Widget leftTitleWidgets(double value, TitleMeta meta) {
-    const TextStyle style = TextStyle(fontSize: 10);
+    const TextStyle style = AppTextStyles.chartLabel;
 
     String text;
     if (value >= 1000) {
@@ -280,8 +275,15 @@ class LineChartSample7 extends StatelessWidget {
   );
 }
 
-class MonthLimitWidget extends StatelessWidget {
+class MonthLimitWidget extends StatefulWidget {
   const MonthLimitWidget({super.key});
+
+  @override
+  State<MonthLimitWidget> createState() => _MonthLimitWidgetState();
+}
+
+class _MonthLimitWidgetState extends State<MonthLimitWidget> {
+  bool _overspendAlerted = false;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -289,25 +291,54 @@ class MonthLimitWidget extends StatelessWidget {
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          const Text(
-            'Limites do mês',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
+          const Text('Limites do mês', style: AppTextStyles.sectionTitle),
           TextButton(
-            onPressed: () => context.push('/lista-limites'),
+            onPressed: () => context.go('/lista-limites'),
             child: const Text(
               'Ver Todas',
-              style: TextStyle(fontSize: 14, color: Colors.blue),
+              style: TextStyle(
+                fontSize: AppTextStyle.sizeMd,
+                color: AppColors.link,
+              ),
             ),
           ),
         ],
       ),
       const Gap(10),
-      BlocBuilder<LimitCubit, LimitState>(
+      BlocConsumer<LimitCubit, LimitState>(
+        listenWhen: (LimitState _, LimitState next) =>
+            next.whenOrNull(loaded: (_) => true) == true,
+        listener: (BuildContext context, LimitState state) {
+          state.whenOrNull(
+            loaded: (List<LimitProgressItem> items) {
+              final bool hasOverspend =
+                  items.any((LimitProgressItem i) => i.spent > i.limitAmount);
+              if (hasOverspend && !_overspendAlerted) {
+                _overspendAlerted = true;
+                showToast(
+                  context: context,
+                  builder: (BuildContext toastCtx, ToastOverlay overlay) =>
+                      SurfaceCard(
+                        child: Basic(
+                          title: const Text('Limite excedido!'),
+                          subtitle: const Text(
+                            'Você ultrapassou o limite em uma ou mais categorias.',
+                          ),
+                          trailing: PrimaryButton(
+                            onPressed: overlay.close,
+                            child: const Text('OK'),
+                          ),
+                        ),
+                      ),
+                );
+              }
+            },
+          );
+        },
         builder: (BuildContext context, LimitState state) =>
             state.when(
               initial: (_) => const SizedBox(),
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const SkeletonList(itemCount: 2),
               error: Text.new,
               success: (_) => const SizedBox(),
               listed: (_) => const SizedBox(),
@@ -347,37 +378,59 @@ class MonthLimit extends StatelessWidget {
   final double totalLimit;
   final IconData icon;
 
-  double get percent => amount / totalLimit;
+  bool get isExceeded => amount > totalLimit;
+  double get percent => (amount / totalLimit).clamp(0.0, 1.0);
 
   @override
   Widget build(BuildContext context) => Row(
     children: <Widget>[
       IconButton(
-        variance: const ButtonStyle.primary(),
-        onPressed: () => logger.d('percent: $percent'),
+        variance: const ButtonStyle.primary().withBackgroundColor(
+          color: isExceeded ? AppColors.expense : null,
+        ),
         enabled: true,
         shape: ButtonShape.circle,
-        icon: Icon(icon, size: 24, color: Colors.white),
+        icon: Icon(
+          isExceeded ? Icons.warning_amber_rounded : icon,
+          size: 24,
+        ),
       ),
       const Gap(15),
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(category, style: const TextStyle(fontSize: 18)),
+          Text(category, style: AppTextStyles.sectionTitle),
           const Gap(5),
           Text(
             '${convertToCurrencyFormated(amount)} de ${convertToCurrencyFormated(totalLimit)}',
-            style: const TextStyle(fontSize: 14),
+            style: AppTextStyles.body.copyWith(
+              color: isExceeded ? AppColors.expense : null,
+            ),
           ),
           const Gap(5),
           SizedBox(
             width: 200,
             child: LinearProgressIndicator(
-              color: percent > 0.5 ? Colors.red : Colors.green,
+              color: isExceeded
+                  ? AppColors.expense
+                  : percent > 0.5
+                      ? AppColors.warning
+                      : AppColors.income,
               value: percent,
               minHeight: 3,
             ),
           ),
+          if (isExceeded) ...<Widget>[
+            const Gap(4),
+            const Text(
+              'Limite excedido!',
+              style: TextStyle(
+                fontSize: AppTextStyle.sizeXs,
+                color: AppColors.expense,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ],
       ),
       const Gap(5),
@@ -456,15 +509,15 @@ class LastTransactionsWidget extends StatelessWidget {
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          const Text(
-            'Transações Recentes',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
+          const Text('Transações Recentes', style: AppTextStyles.sectionTitle),
           TextButton(
-            onPressed: () => context.push('/lista-transacoes'),
+            onPressed: () => context.go('/lista-transacoes'),
             child: const Text(
               'Ver Todas',
-              style: TextStyle(fontSize: 14, color: Colors.blue),
+              style: TextStyle(
+                fontSize: AppTextStyle.sizeMd,
+                color: AppColors.link,
+              ),
             ),
           ),
         ],
@@ -474,7 +527,7 @@ class LastTransactionsWidget extends StatelessWidget {
         builder: (BuildContext context, HomeState state) =>
             state.transactionState.when(
               initial: () => const SizedBox(),
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const SkeletonList(itemCount: 3),
               error: Text.new,
               success: (List<TransactionEntity> transactions) => Column(
                 children: <Widget>[
@@ -516,19 +569,18 @@ class LastTransactions extends StatelessWidget {
         variance: const ButtonStyle.primary(),
         enabled: true,
         shape: ButtonShape.circle,
-        icon: Icon(icon, size: 24, color: Colors.white),
+        icon: Icon(icon, size: 24),
       ),
       const Gap(15),
       Expanded(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(category, style: const TextStyle(fontSize: 18)),
+            Text(category, style: AppTextStyles.sectionTitle),
             Text(
               convertToCurrencyFormated(amount),
-              style: TextStyle(
-                fontSize: 14,
-                color: amount < 0 ? Colors.red : Colors.green,
+              style: AppTextStyles.body.copyWith(
+                color: amount < 0 ? AppColors.expense : AppColors.income,
               ),
             ),
           ],
@@ -714,14 +766,17 @@ class SyncStatusWidget extends StatelessWidget {
                     const Expanded(
                       child: Text(
                         'Nenhum banco conectado',
-                        style: TextStyle(fontSize: 13),
+                        style: AppTextStyles.label,
                       ),
                     ),
                     TextButton(
                       onPressed: () => context.push('/contas-conectadas'),
                       child: const Text(
                         'Conectar banco',
-                        style: TextStyle(fontSize: 13, color: Colors.blue),
+                        style: TextStyle(
+                          fontSize: AppTextStyle.sizeSm,
+                          color: AppColors.link,
+                        ),
                       ),
                     ),
                   ],
@@ -779,7 +834,7 @@ class SyncStatusWidget extends StatelessWidget {
                           Expanded(
                             child: Text(
                               'Última sincronização: ${_formatSyncTime(mostRecent)}',
-                              style: const TextStyle(fontSize: 13),
+                              style: AppTextStyles.label,
                             ),
                           ),
                           TextButton(
@@ -788,8 +843,8 @@ class SyncStatusWidget extends StatelessWidget {
                             child: const Text(
                               'Open Finance',
                               style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.blue,
+                                fontSize: AppTextStyle.sizeSm,
+                                color: AppColors.link,
                               ),
                             ),
                           ),
@@ -805,7 +860,7 @@ class SyncStatusWidget extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFEF3C7),
+                              color: AppColors.warningBackground,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Row(
@@ -814,14 +869,14 @@ class SyncStatusWidget extends StatelessWidget {
                                 Icon(
                                   Icons.warning_amber,
                                   size: 14,
-                                  color: Color(0xFFF59E0B),
+                                  color: AppColors.warning,
                                 ),
                                 Gap(4),
                                 Text(
                                   'Consentimento expirado — reconecte',
                                   style: TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF92400E),
+                                    fontSize: AppTextStyle.sizeXs,
+                                    color: AppColors.warningText,
                                   ),
                                 ),
                               ],
@@ -837,8 +892,8 @@ class SyncStatusWidget extends StatelessWidget {
                           child: Text(
                             'Revisar $pendingCount importação(ões) pendente(s)',
                             style: const TextStyle(
-                              fontSize: 13,
-                              color: Colors.blue,
+                              fontSize: AppTextStyle.sizeSm,
+                              color: AppColors.link,
                             ),
                           ),
                         ),

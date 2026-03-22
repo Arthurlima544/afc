@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -17,7 +19,7 @@ class LimitCubit extends Cubit<LimitState> {
       super(const LimitState.initial(<CategoryEntity>[]));
 
   final FirebaseFirestore _firestore;
-  String _userId = '';
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _subscription;
 
   Future<void> getCategories() async {
     final QuerySnapshot<Map<String, dynamic>> res =
@@ -49,144 +51,140 @@ class LimitCubit extends Cubit<LimitState> {
   }
 
   Future<void> loadLimitsWithProgress(String userId) async {
-    try {
-      emit(const LimitState.loading());
+    emit(const LimitState.loading());
 
-      final String currentMonth =
-          CalendarEntity.values[DateTime.now().month - 1].name;
+    final String currentMonth =
+        CalendarEntity.values[DateTime.now().month - 1].name;
 
-      // Load limits for this user in the current month
-      final QuerySnapshot<Map<String, dynamic>> limitsSnap =
-          await _firestore
-              .collection('limit')
-              .where('userId', isEqualTo: userId)
-              .where('month', isEqualTo: currentMonth)
-              .get();
+    final List<QuerySnapshot<Map<String, dynamic>>> staticSnaps =
+        await Future.wait(<Future<QuerySnapshot<Map<String, dynamic>>>>[
+      _firestore
+          .collection('limit')
+          .where('userId', isEqualTo: userId)
+          .where('month', isEqualTo: currentMonth)
+          .get(),
+      _firestore.collection('category').get(),
+    ]);
 
-      final List<LimitEntity> limits = limitsSnap.docs
-          .map(
-            (QueryDocumentSnapshot<Map<String, dynamic>> doc) =>
-                LimitEntity.fromJson(doc.data()),
-          )
-          .toList();
+    final List<LimitEntity> limits = staticSnaps[0].docs
+        .map(
+          (QueryDocumentSnapshot<Map<String, dynamic>> doc) =>
+              LimitEntity.fromJson(doc.data()),
+        )
+        .toList();
 
-      if (limits.isEmpty) {
-        emit(const LimitState.loaded(<LimitProgressItem>[]));
-        return;
-      }
-
-      // Load all categories (for names and icons)
-      final QuerySnapshot<Map<String, dynamic>> catsSnap =
-          await _firestore.collection('category').get();
-      final Map<String, CategoryEntity> categoryMap =
-          <String, CategoryEntity>{
-            for (final QueryDocumentSnapshot<Map<String, dynamic>> doc
-                in catsSnap.docs)
-              doc.data()['uuid'] as String:
-                  CategoryEntity.fromJson(doc.data()),
-          };
-
-      // Load all transactions for user and compute spending per category
-      // for the current month (expense type only)
-      final QuerySnapshot<Map<String, dynamic>> txSnap =
-          await _firestore
-              .collection('transaction')
-              .where('userId', isEqualTo: userId)
-              .get();
-
-      final int nowMonth = DateTime.now().month;
-      final int nowYear = DateTime.now().year;
-      final Map<String, double> spentByCategory = <String, double>{};
-
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc
-          in txSnap.docs) {
-        final Map<String, dynamic> data = doc.data();
-        if (data['typeUuid'] != TypeEntity.expense.name) {
-          continue;
-        }
-
-        final dynamic rawDate = data['data'];
-        final DateTime date;
-        if (rawDate is Timestamp) {
-          date = rawDate.toDate();
-        } else if (rawDate is DateTime) {
-          date = rawDate;
-        } else if (rawDate is String) {
-          date = DateTime.parse(rawDate);
-        } else {
-          continue;
-        }
-
-        if (date.month != nowMonth || date.year != nowYear) {
-          continue;
-        }
-
-        final String catId = data['categoryUUid'] as String? ?? '';
-        final double amount = (data['amount'] as num).toDouble();
-        spentByCategory[catId] = (spentByCategory[catId] ?? 0.0) + amount;
-      }
-
-      // Build progress items
-      final List<LimitProgressItem> items = <LimitProgressItem>[
-        for (final LimitEntity limit in limits)
-          LimitProgressItem(
-            categoryName:
-                categoryMap[limit.categoryUUid]?.name ?? limit.categoryUUid,
-            iconType: categoryMap[limit.categoryUUid]?.iconType ?? 0,
-            spent: spentByCategory[limit.categoryUUid] ?? 0.0,
-            limitAmount: limit.limitAmount,
-          ),
-      ];
-
-      emit(LimitState.loaded(items));
-    } on Exception catch (e) {
-      emit(LimitState.error(e.toString()));
+    if (limits.isEmpty) {
+      emit(const LimitState.loaded(<LimitProgressItem>[]));
+      return;
     }
+
+    final Map<String, CategoryEntity> categoryMap = <String, CategoryEntity>{
+      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc
+          in staticSnaps[1].docs)
+        doc.data()['uuid'] as String: CategoryEntity.fromJson(doc.data()),
+    };
+
+    final int nowMonth = DateTime.now().month;
+    final int nowYear = DateTime.now().year;
+
+    await _subscription?.cancel();
+    _subscription = _firestore
+        .collection('transaction')
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .listen(
+          (QuerySnapshot<Map<String, dynamic>> snap) {
+            final Map<String, double> spentByCategory = <String, double>{};
+
+            for (final QueryDocumentSnapshot<Map<String, dynamic>> doc
+                in snap.docs) {
+              final Map<String, dynamic> data = doc.data();
+              if (data['typeUuid'] != TypeEntity.expense.name) {
+                continue;
+              }
+
+              final dynamic rawDate = data['data'];
+              final DateTime date;
+              if (rawDate is Timestamp) {
+                date = rawDate.toDate();
+              } else if (rawDate is DateTime) {
+                date = rawDate;
+              } else if (rawDate is String) {
+                date = DateTime.parse(rawDate);
+              } else {
+                continue;
+              }
+
+              if (date.month != nowMonth || date.year != nowYear) {
+                continue;
+              }
+
+              final String catId = data['categoryUUid'] as String? ?? '';
+              final double amount = (data['amount'] as num).toDouble();
+              spentByCategory[catId] = (spentByCategory[catId] ?? 0.0) + amount;
+            }
+
+            final List<LimitProgressItem> items = <LimitProgressItem>[
+              for (final LimitEntity limit in limits)
+                LimitProgressItem(
+                  categoryName:
+                      categoryMap[limit.categoryUUid]?.name ??
+                      limit.categoryUUid,
+                  iconType: categoryMap[limit.categoryUUid]?.iconType ?? 0,
+                  spent: spentByCategory[limit.categoryUUid] ?? 0.0,
+                  limitAmount: limit.limitAmount,
+                ),
+            ];
+
+            emit(LimitState.loaded(items));
+          },
+          onError: (Object e) => emit(LimitState.error(e.toString())),
+        );
   }
 
   Future<void> loadLimits(String userId) async {
-    try {
-      _userId = userId;
-      emit(const LimitState.loading());
-      final QuerySnapshot<Map<String, dynamic>> limitsSnap = await _firestore
-          .collection('limit')
-          .where('userId', isEqualTo: userId)
-          .get();
-      final List<LimitEntity> limits = limitsSnap.docs
-          .map(
-            (QueryDocumentSnapshot<Map<String, dynamic>> doc) =>
-                LimitEntity.fromJson(doc.data()),
-          )
-          .toList();
-      if (limits.isEmpty) {
-        emit(const LimitState.listed(<LimitListItem>[]));
-        return;
-      }
-      final QuerySnapshot<Map<String, dynamic>> catsSnap =
-          await _firestore.collection('category').get();
-      final Map<String, String> catNames = <String, String>{
-        for (final QueryDocumentSnapshot<Map<String, dynamic>> doc
-            in catsSnap.docs)
-          doc.data()['uuid'] as String:
-              doc.data()['name'] as String? ?? '',
-      };
-      final List<LimitListItem> items = limits
-          .map(
-            (LimitEntity l) => LimitListItem(
-              limit: l,
-              categoryName: catNames[l.categoryUUid] ?? l.categoryUUid,
-            ),
-          )
-          .toList();
-      emit(LimitState.listed(items));
-    } on Exception catch (e) {
-      emit(LimitState.error(e.toString()));
-    }
+    emit(const LimitState.loading());
+
+    final QuerySnapshot<Map<String, dynamic>> catsSnap =
+        await _firestore.collection('category').get();
+    final Map<String, String> catNames = <String, String>{
+      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc
+          in catsSnap.docs)
+        doc.data()['uuid'] as String: doc.data()['name'] as String? ?? '',
+    };
+
+    await _subscription?.cancel();
+    _subscription = _firestore
+        .collection('limit')
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .listen(
+          (QuerySnapshot<Map<String, dynamic>> snap) {
+            final List<LimitListItem> items = snap.docs
+                .map(
+                  (QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+                    final LimitEntity l = LimitEntity.fromJson(doc.data());
+                    return LimitListItem(
+                      limit: l,
+                      categoryName: catNames[l.categoryUUid] ?? l.categoryUUid,
+                    );
+                  },
+                )
+                .toList();
+            emit(LimitState.listed(items));
+          },
+          onError: (Object e) => emit(LimitState.error(e.toString())),
+        );
+  }
+
+  @override
+  Future<void> close() {
+    _subscription?.cancel();
+    return super.close();
   }
 
   Future<void> deleteLimit(String limitUuid) async {
     try {
-      emit(const LimitState.loading());
       final QuerySnapshot<Map<String, dynamic>> snap = await _firestore
           .collection('limit')
           .where('uuid', isEqualTo: limitUuid)
@@ -194,7 +192,6 @@ class LimitCubit extends Cubit<LimitState> {
       if (snap.docs.isNotEmpty) {
         await snap.docs.first.reference.delete();
       }
-      await loadLimits(_userId);
     } on Exception catch (e) {
       emit(LimitState.error(e.toString()));
     }
