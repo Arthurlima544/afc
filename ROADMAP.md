@@ -266,49 +266,60 @@ User ──► Connect Widget (Pluggy SDK) ──► Bank consent ──► Plug
 
 > **Goal**: Reduce the remaining manual effort for users who don't use Open Finance or want to supplement it.
 
-### US-19 · Recurring transactions 🔲
+### US-19 · Recurring transactions ✅
 **As a** user, **I want** to mark a transaction as recurring (daily / weekly / monthly),
 **so that** predictable expenses like rent and subscriptions are logged automatically.
 
-- [ ] `RecurringEntity` — `uuid`, `userId`, `templateTransaction`, `frequency` (daily/weekly/monthly), `nextDue`, `active`
-- [ ] `RecurringCubit` — create, list, pause, delete recurring rules
-- [ ] Background function (Cloud Functions) or on-app-open check that materialises due transactions
-- [ ] List screen with toggle to pause/resume each rule
-- [ ] Unit tests for due-date calculation logic
+- [x] `RecurringEntity` — `uuid`, `userId`, `templateTransaction`, `frequency` (daily/weekly/monthly), `nextDue`, `active`
+- [x] `RecurringCubit` — create, list, pause, delete recurring rules
+- [x] Background function (Cloud Functions) or on-app-open check that materialises due transactions
+- [x] List screen with toggle to pause/resume each rule
+- [x] Unit tests for due-date calculation logic
 
 ---
 
-### US-20 · Transaction templates (quick-fill) 🔲
+### US-20 · Transaction templates (quick-fill) ✅
 **As a** user, **I want** to save frequently used transactions as templates,
 **so that** I can log a repeat expense (e.g. "Coffee R$8") in two taps.
 
-- [ ] "Save as template" option on the transaction form
-- [ ] Templates shelf in the quick-add FAB modal (horizontal scroll)
-- [ ] Tapping a template pre-fills the form; user only confirms amount if needed
-- [ ] Unit tests for template storage and retrieval
+- [x] "Save as template" option on the transaction form
+- [x] Templates shelf in the quick-add FAB modal (horizontal scroll)
+- [x] Tapping a template pre-fills the form; user only confirms amount if needed
+- [x] Unit tests for template storage and retrieval
 
 ---
 
-### US-21 · Bank statement import (OFX / CSV) 🔲
+### US-21 · Bank statement import (OFX / CSV) ✅
 **As a** user, **I want** to import my bank statement file,
 **so that** I don't have to manually enter transactions I've already made.
 
-- [ ] File picker accepting `.ofx` and `.csv` formats
-- [ ] Parser maps statement rows → `TransactionEntity` candidates
-- [ ] Review screen: user confirms, rejects, or re-categorises each import row before saving
-- [ ] Duplicate detection (same date + amount + description → skip or warn)
-- [ ] Unit tests for OFX and CSV parsing logic
+- [x] File picker accepting `.ofx` and `.csv` formats
+- [x] Parser maps statement rows → `TransactionEntity` candidates
+- [x] Review screen: user confirms, rejects, or re-categorises each import row before saving
+- [x] Duplicate detection (same date + amount + description → skip or warn)
+- [x] Unit tests for OFX and CSV parsing logic
 
 ---
 
-### US-22 · Receipt photo & auto-fill 🔲
+### US-21b · Bank-specific import profiles ✅
+**As a** user, **I want** to select my bank and statement type before importing,
+**so that** the app parses my file correctly regardless of each bank's proprietary format.
+
+- [x] Bank selector + statement type selector shown before file picker (bank: Nubank; type: Extrato or Fatura)
+- [x] `parseNubankExtrato` — columns `Data/Valor/Descrição`, DD/MM/YYYY, standard polarity
+- [x] `parseNubankFatura` — columns `date/title/amount`, ISO date, inverted polarity (positive = expense), quoted-field support
+- [x] Unit tests for both Nubank parsers with real-format sample data
+
+---
+
+### US-22 · Receipt photo & auto-fill ✅
 **As a** user, **I want** to photograph a receipt and have the amount and merchant pre-filled,
 **so that** logging a transaction takes seconds.
 
-- [ ] Camera / gallery picker in the quick-add modal
-- [ ] Image sent to a Cloud Vision (or Gemini) API to extract total amount and merchant name
-- [ ] Extracted values pre-fill the form; user reviews and confirms
-- [ ] Falls back gracefully if extraction fails
+- [x] Camera / gallery picker in the quick-add modal
+- [x] Image sent to Gemini 2.0 Flash API to extract total amount and merchant name
+- [x] Extracted values pre-fill the form; user reviews and confirms
+- [x] Falls back gracefully if extraction fails (error state + null fields)
 
 ---
 

@@ -32,6 +32,12 @@ class ListaTransacoes extends StatelessWidget {
               ),
               IconButton(
                 variance: const ButtonStyle.outline(),
+                onPressed: () => context.push('/importar-extrato'),
+                icon: const Icon(Icons.upload_file_outlined),
+              ),
+              const Gap(8),
+              IconButton(
+                variance: const ButtonStyle.outline(),
                 onPressed: () => context.push('/cadastro-transacao'),
                 icon: const Icon(Icons.add),
               ),

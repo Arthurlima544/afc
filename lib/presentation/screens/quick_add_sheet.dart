@@ -1,19 +1,24 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart' hide Colors, TextField, Theme, CircularProgressIndicator;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' hide Column, Row, Expanded;
+import 'package:shadcn_flutter/shadcn_flutter.dart' hide AlertDialog, Column, Expanded, Row, TextButton, showDialog;
 import 'package:uuid/uuid.dart';
 
 import '../../domain/entity/category_entity.dart';
+import '../../domain/entity/template_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
 import '../../utils/app_spacing.dart';
+import '../blocs/receipt_ocr/receipt_ocr_cubit.dart';
+import '../blocs/template/template_cubit.dart';
 import '../blocs/transaction/transaction_cubit.dart';
 
 class QuickAddSheet extends StatefulWidget {
-  const QuickAddSheet({required this.userId, super.key});
+  const QuickAddSheet({required this.userId, required this.onClose, super.key});
 
   final String userId;
+  final VoidCallback onClose;
 
   @override
   State<QuickAddSheet> createState() => _QuickAddSheetState();
@@ -21,6 +26,9 @@ class QuickAddSheet extends StatefulWidget {
 
 class _QuickAddSheetState extends State<QuickAddSheet> {
   final TransactionCubit _cubit = TransactionCubit()..getCategories();
+  late final TemplateCubit _templateCubit =
+      TemplateCubit()..loadTemplates(widget.userId);
+  final ReceiptOcrCubit _ocrCubit = ReceiptOcrCubit();
 
   String _amountBuffer = '';
   String _type = TypeEntity.expense.name;
@@ -30,8 +38,19 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
   @override
   void dispose() {
     _cubit.close();
+    _templateCubit.close();
+    _ocrCubit.close();
     _titleController.dispose();
     super.dispose();
+  }
+
+  void _applyTemplate(TemplateEntity template) {
+    setState(() {
+      _amountBuffer = template.amount.toString();
+      _type = template.typeUuid;
+      _categoryUuid = template.categoryUUid;
+      _titleController.text = template.title;
+    });
   }
 
   double get _amount => double.tryParse(_amountBuffer) ?? 0.0;
@@ -65,8 +84,58 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
     });
   }
 
-  void _save(List<CategoryEntity> categories) {
-    if (_amount <= 0 || _categoryUuid == null) {
+  Future<void> _showAddCategoryDialog() async {
+    final TextEditingController controller = TextEditingController();
+    final String? name = await showDialog<String>(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: const Text('Nova categoria'),
+        content: TextField(
+          controller: controller,
+          placeholder: const Text('Nome da categoria'),
+          autofocus: true,
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              final String n = controller.text.trim();
+              if (n.isNotEmpty) {
+                Navigator.of(dialogContext).pop(n);
+              }
+            },
+            child: const Text('Criar'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name == null || !mounted) {
+      return;
+    }
+    final CategoryEntity newCat = CategoryEntity(
+      uuid: const Uuid().v1(),
+      name: name,
+      iconType: 0,
+    );
+    await FirebaseFirestore.instance.collection('category').add(newCat.toJson());
+    await _cubit.getCategories();
+    if (mounted) {
+      setState(() => _categoryUuid = newCat.uuid);
+    }
+  }
+
+  Future<void> _save(List<CategoryEntity> categories) async {
+    if (_categoryUuid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecione uma categoria')),
+      );
+      return;
+    }
+    if (_amount <= 0) {
       return;
     }
     final String title = _titleController.text.trim().isEmpty
@@ -77,7 +146,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
               '')
         : _titleController.text.trim();
 
-    _cubit.saveTransaction(
+    await _cubit.saveTransaction(
       TransactionEntity(
         uuid: const Uuid().v1(),
         amount: _amount,
@@ -88,14 +157,35 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
         userId: widget.userId,
       ),
     );
-    HapticFeedback.mediumImpact();
-    Navigator.of(context).pop();
+    await HapticFeedback.mediumImpact();
+    widget.onClose();
   }
 
   @override
-  Widget build(BuildContext context) => BlocProvider<TransactionCubit>.value(
-    value: _cubit,
-    child: BlocBuilder<TransactionCubit, TransactionState>(
+  Widget build(BuildContext context) => MultiBlocProvider(
+    providers: <BlocProvider<dynamic>>[
+      BlocProvider<TransactionCubit>.value(value: _cubit),
+      BlocProvider<TemplateCubit>.value(value: _templateCubit),
+      BlocProvider<ReceiptOcrCubit>.value(value: _ocrCubit),
+    ],
+    child: BlocListener<ReceiptOcrCubit, ReceiptOcrState>(
+      listener: (BuildContext context, ReceiptOcrState ocrState) {
+        ocrState.whenOrNull(
+          success: (double? amount, String? merchant) {
+            setState(() {
+              if (amount != null && amount > 0) {
+                _amountBuffer = amount
+                    .toStringAsFixed(2)
+                    .replaceAll(RegExp(r'\.?0+$'), '');
+              }
+              if (merchant != null && merchant.isNotEmpty) {
+                _titleController.text = merchant;
+              }
+            });
+          },
+        );
+      },
+      child: BlocBuilder<TransactionCubit, TransactionState>(
       builder: (BuildContext ctx, TransactionState state) {
         final List<CategoryEntity> categories =
             state.whenOrNull(initial: (List<CategoryEntity> cats) => cats) ??
@@ -123,6 +213,69 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
+                  ),
+
+                  // Templates shelf
+                  BlocBuilder<TemplateCubit, TemplateState>(
+                    builder:
+                        (BuildContext context, TemplateState templateState) {
+                      final List<TemplateEntity> templates =
+                          templateState.whenOrNull(
+                            listed: (List<TemplateEntity> t) => t,
+                          ) ??
+                          <TemplateEntity>[];
+                      if (templates.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          const Text('Modelos', style: AppTextStyles.labelBold),
+                          const Gap(8),
+                          SizedBox(
+                            height: 36,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: templates.length,
+                              separatorBuilder:
+                                  (BuildContext context, int index) =>
+                                      const Gap(8),
+                              itemBuilder:
+                                  (BuildContext context, int index) {
+                                final TemplateEntity t = templates[index];
+                                return GestureDetector(
+                                  onTap: () => _applyTemplate(t),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .muted
+                                          .withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .muted
+                                            .withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      t.title,
+                                      style: AppTextStyles.label,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const Gap(16),
+                        ],
+                      );
+                    },
                   ),
 
                   // Amount display
@@ -173,17 +326,20 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                   const Gap(16),
 
                   // Category chips
-                  if (categories.isNotEmpty) ...<Widget>[
-                    const Text('Categoria', style: AppTextStyles.labelBold),
-                    const Gap(8),
+                  const Text('Categoria', style: AppTextStyles.labelBold),
+                  const Gap(8),
+                  if (state.whenOrNull(loading: () => true) == true)
+                    const Center(child: CircularProgressIndicator())
+                  else
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: <Widget>[
                         for (final CategoryEntity cat in categories)
                           GestureDetector(
-                            onTap: () =>
-                                setState(() => _categoryUuid = cat.uuid),
+                            onTap: () => setState(() {
+                              _categoryUuid = cat.uuid;
+                            }),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -211,11 +367,50 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                               ),
                             ),
                           ),
+                        // "+" chip to create a new category inline
+                        GestureDetector(
+                          onTap: _showAddCategoryDialog,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .muted
+                                    .withValues(alpha: 0.4),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                Icon(
+                                  Icons.add,
+                                  size: 14,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .muted,
+                                ),
+                                const Gap(4),
+                                Text(
+                                  'Nova',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ],
                     ),
-                    const Gap(16),
-                  ] else if (state.whenOrNull(loading: () => true) == true)
-                    const Center(child: CircularProgressIndicator()),
+                  const Gap(16),
 
 
                   // Optional title
@@ -225,13 +420,73 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                   ),
                   const Gap(16),
 
+                  // OCR scan — camera / gallery buttons + error feedback
+                  BlocBuilder<ReceiptOcrCubit, ReceiptOcrState>(
+                    builder: (BuildContext context, ReceiptOcrState ocrState) {
+                      final bool isLoading =
+                          ocrState.whenOrNull(loading: () => true) == true;
+                      final String? errorMsg =
+                          ocrState.whenOrNull(error: (String m) => m);
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          if (isLoading)
+                            const Center(
+                              child: CircularProgressIndicator(size: 24),
+                            )
+                          else
+                            Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: OutlineButton(
+                                    onPressed: () => context
+                                        .read<ReceiptOcrCubit>()
+                                        .pickAndScan(),
+                                    leading: const Icon(
+                                      Icons.camera_alt_outlined,
+                                      size: 18,
+                                    ),
+                                    child: const Text('Câmera'),
+                                  ),
+                                ),
+                                const Gap(8),
+                                Expanded(
+                                  child: OutlineButton(
+                                    onPressed: () => context
+                                        .read<ReceiptOcrCubit>()
+                                        .pickAndScan(fromCamera: false),
+                                    leading: const Icon(
+                                      Icons.photo_library_outlined,
+                                      size: 18,
+                                    ),
+                                    child: const Text('Galeria'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          if (errorMsg != null) ...<Widget>[
+                            const Gap(6),
+                            Text(
+                              'Falha ao ler o comprovante. Tente novamente.',
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.expense,
+                              ),
+                            ),
+                          ],
+                        ],
+                      );
+                    },
+                  ),
+                  const Gap(16),
+
                   // Numpad
                   _Numpad(onKey: _onKey),
                   const Gap(16),
 
                   // Save button
                   PrimaryButton(
-                    onPressed: _amount > 0 && _categoryUuid != null
+                    onPressed: _amount > 0
                         ? () => _save(categories)
                         : null,
                     child: const Text('Salvar'),
@@ -243,7 +498,8 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
         );
       },
     ),
-  );
+  ),
+);
 }
 
 class _Numpad extends StatelessWidget {
