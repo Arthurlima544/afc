@@ -41,6 +41,38 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.13.2"
+  app_links:
+    dependency: transitive
+    description:
+      name: app_links
+      sha256: "5f88447519add627fe1cbcab4fd1da3d4fed15b9baf29f28b22535c95ecee3e8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.4.1"
+  app_links_linux:
+    dependency: transitive
+    description:
+      name: app_links_linux
+      sha256: f5f7173a78609f3dfd4c2ff2c95bd559ab43c80a87dc6a095921d96c05688c81
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.3"
+  app_links_platform_interface:
+    dependency: transitive
+    description:
+      name: app_links_platform_interface
+      sha256: "05f5379577c513b534a29ddea68176a4d4802c46180ee8e2e966257158772a3f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.2"
+  app_links_web:
+    dependency: transitive
+    description:
+      name: app_links_web
+      sha256: af060ed76183f9e2b87510a9480e56a5352b6c249778d07bd2c95fc35632a555
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.4"
   archive:
     dependency: transitive
     description:
@@ -230,6 +262,30 @@ packages:
     description:
       name: cloud_firestore_web
       sha256: "85b7b071c23eecbbbb47a9fbd2cfdb1b6af20f2323663fd90234d91a064f0584"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.2"
+  cloud_functions:
+    dependency: "direct main"
+    description:
+      name: cloud_functions
+      sha256: bf3b5b18b794123d452196e407e5952b4fe002043a373f0acac0f8fc6998567f
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.0.2"
+  cloud_functions_platform_interface:
+    dependency: transitive
+    description:
+      name: cloud_functions_platform_interface
+      sha256: d3a24cb9bf0a0fe8abe71db47d703d368a175d956c40730f7a216211ccbc5d8d
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.8.5"
+  cloud_functions_web:
+    dependency: transitive
+    description:
+      name: cloud_functions_web
+      sha256: dbcde017570afd7186addf8ba7b985a89ddcaf689e76741540d41e7cd0ce5bbe
       url: "https://pub.dev"
     source: hosted
     version: "5.0.2"
@@ -544,6 +600,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_pluggy_connect:
+    dependency: "direct main"
+    description:
+      name: flutter_pluggy_connect
+      sha256: "582321d303a62db6cd29ecb5003ceb9116f286f4006b806f5495a385de13c147"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.1"
   flutter_plugin_android_lifecycle:
     dependency: transitive
     description:
@@ -687,6 +751,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.2"
+  gtk:
+    dependency: transitive
+    description:
+      name: gtk
+      sha256: e8ce9ca4b1df106e4d72dad201d345ea1a036cc12c360f1a7d5a758f78ffa42c
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.0"
   http:
     dependency: transitive
     description:
@@ -1514,7 +1586,7 @@ packages:
     source: hosted
     version: "1.2.1"
   webview_flutter:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: webview_flutter
       sha256: c3e4fe614b1c814950ad07186007eff2f2e5dd2935eba7b9a9a1af8e5885f1ba

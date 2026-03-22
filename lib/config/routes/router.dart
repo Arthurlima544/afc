@@ -10,10 +10,14 @@ import '../../presentation/blocs/auth/auth_bloc.dart';
 import '../../presentation/blocs/category/category_cubit.dart';
 import '../../presentation/blocs/home/home_bloc.dart';
 import '../../presentation/blocs/limit/limit_cubit.dart';
+import '../../presentation/blocs/open_finance/open_finance_cubit.dart';
+import '../../presentation/blocs/review_queue/review_queue_cubit.dart';
 import '../../presentation/blocs/transaction/transaction_cubit.dart';
 import '../../presentation/screens/cadastrar_categoria.dart';
 import '../../presentation/screens/cadastrar_limites.dart';
 import '../../presentation/screens/cadastrar_transacao.dart';
+import '../../presentation/screens/connect_bank_screen.dart';
+import '../../presentation/screens/connected_accounts_screen.dart';
 import '../../presentation/screens/dev_seed_screen.dart';
 import '../../presentation/screens/home_page.dart';
 import '../../presentation/screens/home_screen.dart';
@@ -21,6 +25,7 @@ import '../../presentation/screens/lista_categorias.dart';
 import '../../presentation/screens/lista_limites.dart';
 import '../../presentation/screens/lista_transacoes.dart';
 import '../../presentation/screens/login_screen.dart';
+import '../../presentation/screens/review_queue_screen.dart';
 import '../../utils/logger.dart';
 
 final GoRouter router = GoRouter(
@@ -184,6 +189,48 @@ final GoRouter router = GoRouter(
               initialLimit: state.extra as LimitEntity?,
             ),
           ),
+    ),
+
+    // --- Open Finance routes ---
+
+    GoRoute(
+      path: '/contas-conectadas',
+      builder: (BuildContext context, GoRouterState state) {
+        final AuthState authState = context.read<AuthBloc>().state;
+        final String userId =
+            authState.whenOrNull(
+              signedIn: (ClerkAuthState s) => s.user?.id,
+            ) ??
+            '';
+        return BlocProvider<OpenFinanceCubit>(
+          create: (BuildContext context) =>
+              OpenFinanceCubit()..loadAccounts(userId),
+          child: const ConnectedAccountsScreen(),
+        );
+      },
+    ),
+
+    GoRoute(
+      path: '/connect-bank',
+      builder: (BuildContext context, GoRouterState state) =>
+          ConnectBankScreen(connectToken: state.extra as String),
+    ),
+
+    GoRoute(
+      path: '/revisar-transacoes',
+      builder: (BuildContext context, GoRouterState state) {
+        final AuthState authState = context.read<AuthBloc>().state;
+        final String userId =
+            authState.whenOrNull(
+              signedIn: (ClerkAuthState s) => s.user?.id,
+            ) ??
+            '';
+        return BlocProvider<ReviewQueueCubit>(
+          create: (BuildContext context) =>
+              ReviewQueueCubit()..loadQueue(userId),
+          child: const ReviewQueueScreen(),
+        );
+      },
     ),
   ],
 );
