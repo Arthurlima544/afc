@@ -2,17 +2,26 @@
 
 ## Project Overview
 
-**AFC** is a personal finance management mobile application built with Flutter. It allows users to:
-- Track financial transactions (income and expenses)
-- Manage spending categories with custom icons
-- Set and monitor monthly spending limits per category
-- View financial statistics and trends via charts
-- Authenticate via Clerk OAuth
-- Sync data with Firebase Firestore
+**AFC** is a complete personal finance management mobile application built with Flutter. It allows users to:
+- Authenticate securely via Clerk OAuth
+- Track income and expenses with custom categories
+- Set and monitor monthly spending limits per category with overspend alerts
+- View real-time financial stats and trends via charts
+- Import bank statements (OFX/CSV) with bank-specific parsers (Nubank)
+- Connect bank accounts via Open Finance (Pluggy) for automatic transaction sync
+- Review and confirm imported transactions with auto-categorisation
+- Log recurring transactions (daily/weekly/monthly) automatically
+- Use quick-fill templates and receipt OCR (Gemini 2.0 Flash) for fast entry
+- Generate monthly spending reports with PDF export
+- Track savings goals with progress bars and deadlines
+- Monitor an investment portfolio (stocks, fixed income, crypto)
+- Receive bill reminders via FCM push notifications
+- View a financial health score (0–100) with sub-factor breakdown and trend sparkline
+- Sync data in real-time with Firebase Firestore (offline-capable)
 
 **Platforms**: Android, iOS, macOS, Web
 **Version**: v1.0.0+1
-**Dart SDK**: >=3.9.0
+**Dart SDK**: >=3.9.0, **Flutter**: 3.41.5 (CI)
 
 ---
 
@@ -22,25 +31,33 @@
 
 ```
 lib/
-├── config/routes/         # GoRouter navigation
-├── domain/entity/         # Immutable data models (Freezed)
+├── config/routes/         # GoRouter navigation (31 routes)
+├── domain/
+│   ├── entity/            # Immutable data models (Freezed, 16 entities)
+│   └── usecase/           # Pure business logic (parsers, health score)
 ├── presentation/
-│   ├── blocs/             # BLoC (events) and Cubit (simple state)
-│   └── screens/           # UI screens
-└── utils/                 # Logger, flavors, exceptions, root widget
+│   ├── blocs/             # 1 BLoC (Auth) + 1 BLoC (Home) + 14 Cubits
+│   └── screens/           # 25 UI screens
+└── utils/
+    ├── exception/         # Custom exceptions
+    ├── flavors.dart       # Flavor detection (dev/prod)
+    ├── fcm_service.dart   # FCM stub / architecture
+    ├── logger.dart        # Flavored logger
+    └── my_app.dart        # Root widget
 ```
 
 **Layers**:
-1. **Presentation** — Screens + BLoCs/Cubits (Shadcn Flutter UI components)
-2. **Domain** — Entities only (immutable, Freezed-generated)
+1. **Presentation** — Screens + BLoCs/Cubits (Shadcn Flutter UI)
+2. **Domain** — Entities + use cases (pure Dart, no Flutter dependencies)
 3. **Config** — GoRouter routing, flavor configuration
-4. **Utils** — Logging, exception definitions, flavor detection
+4. **Utils** — Logging, exception definitions, flavor detection, FCM service
 
 **Key architectural decisions**:
 - Cubits/BLoCs access Firestore directly (no repository layer)
-- No service/repository abstraction — keep it simple
+- All list screens use Firestore `.snapshots()` streams (real-time updates)
 - Provider injection happens at the route level via `BlocProvider` in `router.dart`
-- `GetIt` is the DI service locator
+- `GetIt` is the DI service locator (for shared singletons)
+- Offline persistence enabled: `persistenceEnabled: true` + `CACHE_SIZE_UNLIMITED`
 
 ---
 
@@ -66,14 +83,25 @@ App icons: `flutter_launcher_icons-dev.yaml`, `flutter_launcher_icons-prod.yaml`
 
 ## State Management
 
-**BLoC** (event-based, for complex logic):
-- `AuthBloc` — authentication state
-- `HomeBloc` — dashboard/stats
+**BLoC** (event-based, for complex auth/home logic):
+- `AuthBloc` — authentication state (Clerk OAuth)
+- `HomeBloc` — dashboard stats + last transactions
 
-**Cubit** (simpler state emission):
+**Cubit** (14 cubits for simpler state):
 - `TransactionCubit` — CRUD for transactions
 - `CategoryCubit` — CRUD for categories
-- `LimitCubit` — spending limits management
+- `LimitCubit` — spending limits + progress tracking + overspend detection
+- `GoalCubit` — savings goals (create, contribute, delete, update)
+- `InvestmentCubit` — portfolio tracker (CRUD + price updates)
+- `BillCubit` — bill reminders (CRUD)
+- `RecurringCubit` — recurring rules (create, pause, resume, delete, materialise)
+- `TemplateCubit` — quick-fill transaction templates
+- `ImportCubit` — OFX/CSV file import + review flow
+- `ReviewQueueCubit` — confirm/ignore raw imported transactions
+- `OpenFinanceCubit` — Pluggy connected accounts
+- `HealthScoreCubit` — financial health score (0–100) + 6-month sparkline
+- `ReportCubit` — monthly spending report (income/expenses/savings rate/category breakdown)
+- `ReceiptOcrCubit` — Gemini 2.0 Flash receipt photo extraction
 
 **State pattern** (Freezed union types):
 ```dart
@@ -83,6 +111,7 @@ sealed class TransactionState with _$TransactionState {
   const factory TransactionState.loading() = _Loading;
   const factory TransactionState.success(TransactionEntity entity) = _Success;
   const factory TransactionState.error(String message) = _Error;
+  const factory TransactionState.listed(List<TransactionEntity> transactions) = _Listed;
 }
 ```
 
@@ -93,6 +122,7 @@ state.when(
   loading: () => CircularProgressIndicator(),
   error: (msg) => ErrorWidget(msg),
   success: (entity) => SuccessWidget(entity),
+  listed: (transactions) => TransactionList(transactions),
 )
 ```
 
@@ -100,14 +130,34 @@ state.when(
 
 ## Data Models (Entities)
 
-All entities are **immutable Freezed classes** with JSON serialization:
+All entities are **immutable Freezed classes** with JSON serialization (`.fromJson()`, `.toJson()`):
 
-- `CategoryEntity` — `uuid`, `name`, `iconType` (int)
-- `TransactionEntity` — `uuid`, `amount`, `categoryUuid`, `typeUuid`, `data` (DateTime), `title`, `userId`
-- `LimitEntity` — `uuid`, `categoryUuid`, `month`, `limitAmount`, `userId`
-- `StatsEntity` — computed statistics for the dashboard
-- `TypeEntity` — income/expense type
-- `CalendarEntity` — month enum for date filtering
+**Core financial entities:**
+- `CategoryEntity` — `uuid`, `name`, `iconType: int`
+- `TransactionEntity` — `uuid`, `amount: double`, `categoryUUid`, `typeUuid`, `data: DateTime`, `title`, `userId`
+- `LimitEntity` — `uuid`, `categoryUUid`, `month: String`, `limitAmount: double`, `userId`
+- `GoalEntity` — `uuid`, `userId`, `name`, `targetAmount: double`, `currentAmount: double`, `deadline: DateTime`, `icon: int`
+- `InvestmentEntity` — `uuid`, `userId`, `name`, `type: String`, `quantity: double`, `avgCost: double`, `currentPrice: double`, `ticker?: String`
+- `BillEntity` — `uuid`, `userId`, `name`, `amount: double`, `dueDay: int`, `categoryUuid`
+- `RecurringEntity` — `uuid`, `userId`, `templateTransaction: TransactionEntity`, `frequency: String`, `nextDue: DateTime`, `active: bool`
+- `TemplateEntity` — `uuid`, `userId`, `title`, `amount: double`, `categoryUUid`, `typeUuid`
+
+**Import/integration entities:**
+- `ImportCandidateEntity` — parsed CSV/OFX row awaiting review
+- `RawTransactionEntity` — webhook-imported Pluggy transaction (pending review)
+- `ConnectedAccountEntity` — Pluggy bank connection (`pluggyItemId`, `status`, `lastSyncedAt`)
+
+**Classifier enums:**
+- `TypeEntity` — `income`, `expense`
+- `CalendarEntity` — 12-month enum (january…december)
+- `FrequencyEntity` — `daily`, `weekly`, `monthly`
+
+**Computed data classes (non-Freezed):**
+- `StatsEntity` — aggregated income/expense per month (for charts)
+- `LimitProgressItem` — `categoryName`, `iconType`, `spent`, `limitAmount` (for progress bars)
+- `LimitListItem` — `limit: LimitEntity`, `categoryName` (for limit management list)
+- `HealthScoreData` — 4 sub-scores + total + 6-month history
+- `ReportData` — income, expenses, savings rate, category breakdown per month
 
 **After any model change**, regenerate with:
 ```bash
@@ -118,42 +168,85 @@ dart run build_runner build --delete-conflicting-outputs
 
 ## Database (Firebase Firestore)
 
-**Collections**:
-- `category` — filtered by `uuid` (user identifier)
-- `transaction` — filtered by `userId`
-- `limit` — filtered by `userId`
+**Collections:**
+| Collection | Key Filter | Purpose |
+|-----------|-----------|---------|
+| `category` | `uuid` | User categories |
+| `transaction` | `userId` | Income/expense records |
+| `limit` | `userId` | Monthly spending limits |
+| `recurring` | `userId` | Recurring transaction rules |
+| `template` | `userId` | Quick-fill templates |
+| `goal` | `userId` | Savings goals |
+| `investment` | `userId` | Portfolio positions |
+| `bill` | `userId` | Bill reminders |
+| `connected_account` | `userId` | Pluggy bank connections |
+| `raw_transaction` | `userId` | Webhook-imported pending transactions |
+| `categorisation_rule` | `userId` | Learned auto-categorisation rules |
 
-**Direct access pattern** (no repository layer):
+**Offline support**: Both `main_dev.dart` and `main_prod.dart` configure:
 ```dart
-// Read
-FirebaseFirestore.instance.collection('category')
-    .where('uuid', isEqualTo: userUuid).get()
-
-// Write
-FirebaseFirestore.instance.collection('transaction').add(entity.toJson())
+FirebaseFirestore.instance.settings = const Settings(
+  persistenceEnabled: true,
+  cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+);
 ```
 
-Firestore is schemaless — no migrations needed, but keep entity JSON shape consistent.
+**Access pattern** (no repository layer):
+```dart
+// Real-time stream (preferred for lists)
+_firestore.collection('transaction')
+    .where('userId', isEqualTo: userId)
+    .snapshots()
+    .listen((snap) => emit(TransactionState.listed(snap.docs.map(...))));
+
+// One-shot read
+final snap = await _firestore.collection('category').get();
+```
 
 ---
 
 ## Authentication
 
 Clerk OAuth via `clerk_flutter` package. Configuration:
-- `CLERK_PUBLISHABLE_KEY` in `.env` file (git-ignored)
-- Firebase Auth is also initialized (for Firestore security rules)
+- `CLERK_PUBLISHABLE_KEY` in `.env` file (git-ignored), passed as `--dart-define` in CI
+- Firebase Auth is also initialised (for Firestore security rules)
 
 **Auth flow**:
-1. App starts → `HomeScreen` (splash)
-2. Redirects to `LoginScreen` (Clerk UI)
-3. `AuthBloc` captures authenticated state
-4. Navigates to `HomePage` on success
+1. App starts → `HomeScreen` (splash spinner)
+2. `AuthBloc` evaluates Clerk session:
+   - `signedIn` → `/home` (dashboard)
+   - `signedOut` → `/login` (Clerk UI)
+3. On sign-in, `ScaffoldShell.initState` triggers `RecurringCubit.checkAndMaterialise`
 
 ---
 
 ## Navigation
 
-GoRouter (`go_router: ^16.2.1`). Routes defined in `lib/config/routes/router.dart`.
+GoRouter (`go_router`) with 31 routes. Routes defined in `lib/config/routes/router.dart`.
+
+**Bottom navigation** (`ScaffoldShell`):
+- `StatefulShellRoute.indexedStack` with 6 branches
+- Tab 0: Dashboard (`/home`) — HomeBloc + LimitCubit + HealthScoreCubit
+- Tab 1: Transactions (`/lista-transacoes`) — TransactionCubit
+- Tab 2: Categories (`/lista-categorias`) — CategoryCubit
+- Tab 3: Limits (`/lista-limites`) — LimitCubit
+- Tab 4: Recurring (`/lista-recorrentes`) — RecurringCubit
+- Tab 5: Goals (`/lista-metas`) — GoalCubit
+
+**Modal/form routes** (pushed over tabs):
+```
+/cadastro-transacao, /editar-transacao
+/cadastro-categoria, /editar-categoria
+/cadastro-limite,    /editar-limite
+/cadastro-meta,      /editar-meta
+/cadastro-recorrente
+/cadastro-investimento, /editar-investimento, /lista-investimentos
+/cadastro-conta,        /editar-conta,        /lista-contas
+/importar-extrato, /revisar-transacoes
+/relatorio
+/contas-conectadas, /connect-bank
+/seed   (dev only — test data seeder)
+```
 
 BLoC providers are injected at the route level:
 ```dart
@@ -168,41 +261,62 @@ GoRoute(
 
 ---
 
-## Screens
+## Screens (25 total)
 
-| Screen | File | Purpose |
-|--------|------|---------|
-| Home (Splash) | `home_screen.dart` | Entry point / auth redirect |
-| Login | `login_screen.dart` | Clerk OAuth login |
-| Home Page | `home_page.dart` | Dashboard + charts |
-| Add Transaction | `cadastrar_transacao.dart` | Create income/expense |
-| Add Category | `cadastrar_categoria.dart` | Create category + pick icon |
-| Set Limits | `cadastrar_limites.dart` | Monthly spending limits |
+| Screen | File | Bottom Tab |
+|--------|------|-----------|
+| Splash/Entry | `home_screen.dart` | — |
+| Login | `login_screen.dart` | — |
+| Dashboard | `home_page.dart` | 0 (Início) |
+| Transaction List | `lista_transacoes.dart` | 1 (Transações) |
+| Category List | `lista_categorias.dart` | 2 (Categorias) |
+| Limit List | `lista_limites.dart` | 3 (Limites) |
+| Recurring List | `lista_recorrentes.dart` | 4 (Recorrências) |
+| Goals List | `lista_metas.dart` | 5 (Metas) |
+| Add/Edit Transaction | `cadastrar_transacao.dart` | — |
+| Add/Edit Category | `cadastrar_categoria.dart` | — |
+| Add/Edit Limit | `cadastrar_limites.dart` | — |
+| Add/Edit Goal | `cadastrar_meta.dart` | — |
+| Add/Edit Recurring | `cadastrar_recorrente.dart` | — |
+| Investment List | `lista_investimentos.dart` | — |
+| Add/Edit Investment | `cadastrar_investimento.dart` | — |
+| Bill List | `lista_contas.dart` | — |
+| Add/Edit Bill | `cadastrar_conta.dart` | — |
+| Statement Import | `importar_extrato.dart` | — |
+| Report | `relatorio.dart` | — |
+| Connected Accounts | `connected_accounts_screen.dart` | — |
+| Connect Bank | `connect_bank_screen.dart` | — |
+| Review Queue | `review_queue_screen.dart` | — |
+| Scaffold Shell | `scaffold_shell.dart` | Wrapper |
+| Quick-Add Sheet | `quick_add_sheet.dart` | Modal |
+| Dev Seed | `dev_seed_screen.dart` | — |
 
 ---
 
 ## UI Framework
 
 - **Design system**: `shadcn_flutter` (Shadcn components)
-- **Charts**: `fl_chart` (line/bar charts)
-- **Icons**: `cupertino_icons` + `Icons` (Material)
-- **Forms**: `shadcn_flutter` Form + `FormKey<T>` for typed field extraction
+  - **Important**: Hide conflicting symbols from `flutter/material.dart` when importing shadcn:
+    `import 'package:flutter/material.dart' hide AlertDialog, Column, Expanded, Row, TextButton, showDialog;`
+- **Charts**: `fl_chart` (PieChart, BarChart, LineChart, SparkLine)
+- **Icons**: `cupertino_icons` + Material `Icons`
+- **PDF**: `pdf` + `printing` packages for report export
 
 ---
 
 ## Code Style & Conventions
 
-- **Files**: `snake_case.dart`
+- **Files**: `snake_case.dart` (Portuguese names for screens, e.g. `lista_transacoes.dart`)
 - **Classes/Types**: `PascalCase`
 - **Variables/methods**: `camelCase`
 - **Private members**: `_leadingUnderscore`
-- Explicit return types everywhere (strict linting)
+- Explicit return types everywhere (strict linting — `always_declare_return_types`)
 - Use `sealed class` + Freezed for all state/entity types
 - Pattern matching via `.when()` / `.whenOrNull()`
-- Extension methods for layout helpers (`.gap()`, `.withPadding()`)
-- Portuguese naming in screen files (project origin language)
+- `always_put_control_body_on_new_line` — no single-line `if` bodies
+- Portuguese field names in UI strings; English in code identifiers
 
-**Linting**: `analysis_options.yaml` with 140+ rules + `bloc_lint` plugin. Generated files (`*.g.dart`, `*.freezed.dart`) are excluded.
+**Linting**: `analysis_options.yaml` with 134+ rules + `bloc_lint` plugin. Generated files (`*.g.dart`, `*.freezed.dart`) are excluded.
 
 ---
 
@@ -210,45 +324,88 @@ GoRoute(
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| `flutter_bloc` | ^9.1.1 | BLoC state management |
+| `flutter_bloc` | ^9.1.1 | BLoC/Cubit state management |
 | `freezed_annotation` | ^3.1.0 | Immutable code generation |
-| `go_router` | ^16.2.1 | Declarative navigation |
+| `go_router` | ^17.1.0 | Declarative navigation |
 | `shadcn_flutter` | ^0.0.44 | UI component library |
-| `cloud_firestore` | ^6.0.2 | NoSQL database |
+| `cloud_firestore` | ^6.0.2 | NoSQL database (real-time streams) |
 | `firebase_auth` | ^6.0.2 | Firebase authentication |
+| `firebase_core` | ^4.1.0 | Firebase initialisation |
 | `clerk_flutter` | ^0.0.12-beta | Clerk OAuth |
 | `fl_chart` | ^1.1.1 | Charts/graphs |
+| `google_generative_ai` | ^0.4.6 | Gemini 2.0 Flash (receipt OCR) |
+| `flutter_pluggy_connect` | ^3.0.1 | Open Finance / Pluggy Connect Widget |
+| `webview_flutter` | ^4.10.0 | WebView for Pluggy Connect |
+| `image_picker` | ^1.1.2 | Camera / gallery picker |
+| `file_picker` | ^9.0.0 | File import (OFX/CSV) |
+| `pdf` | ^3.11.1 | PDF generation |
+| `printing` | ^5.13.1 | PDF export / share |
 | `result_dart` | ^2.1.1 | Result type for error handling |
-| `flutter_dotenv` | ^5.1.0 | `.env` environment variables |
-| `get_it` | ^8.2.0 | Dependency injection |
-| `logger` | ^2.6.1 | Structured logging |
+| `intl` | ^0.20.2 | Date formatting + i18n |
 | `uuid` | ^4.5.1 | UUID generation |
-| `intl` | ^0.20.2 | Internationalization / date formatting |
+| `logger` | ^2.6.1 | Structured logging (flavored) |
+| `get_it` | ^9.2.1 | Dependency injection |
+| `device_info_plus` | ^12.3.0 | Device info on startup |
+| `package_info_plus` | ^9.0.0 | App version info |
+| `google_sign_in` | ^7.2.0 | Google sign-in |
+
+**Dev dependencies:**
+| Package | Purpose |
+|---------|---------|
+| `bloc_test` | ^10.0.0 | BLoC/Cubit unit testing helpers |
+| `mocktail` | ^1.0.4 | Mocking library |
+| `fake_cloud_firestore` | ^4.0.2 | In-memory Firestore for tests |
 | `build_runner` | ^2.8.0 | Code generation runner |
-| `json_serializable` | ^6.11.1 | JSON serialization codegen |
 | `freezed` | ^3.2.0 | Freezed codegen |
+| `json_serializable` | ^6.11.1 | JSON serialisation codegen |
+| `flutter_lints` | ^6.0.0 | Lint rules |
+| `bloc_lint` | ^0.4.0 | BLoC-specific lint rules |
 
 ---
 
 ## Logging
 
 Centralized via `lib/utils/logger.dart`. Flavor-aware:
-- Enabled in dev
-- Disabled (or reduced) in release/prod builds
+- Enabled with debug output in dev
+- Reduced/disabled in release/prod builds
 
-Log device info on startup. Use the global `logger` instance throughout.
+Logs device info on startup. Use the global `logger` instance throughout.
 
 ---
 
 ## Testing
 
-**Status**: Infrastructure in place, no test files written yet.
+**268 tests** across 23 test files (as of current sprint).
 
-- Framework: `flutter_test`
-- Coverage script: `coverage.sh` (generates HTML report via `lcov`)
-- Run tests: `flutter test --coverage`
+| Category | Files | Tests |
+|----------|-------|-------|
+| Domain entity tests | 7 | ~50 |
+| Domain usecase tests | 3 | ~60 (health score: 37, parsers: 23) |
+| Cubit/BLoC unit tests | 13 | ~145 |
+| Screen widget tests | 3 | ~16 |
 
-When writing tests, place them in `test/` mirroring the `lib/` structure.
+**Test infrastructure:**
+- `fake_cloud_firestore` — all cubit tests use `FakeFirebaseFirestore` (no network)
+- `mocktail` + `MockBloc` — all widget tests mock BLoCs
+- `bloc_test` `blocTest<C, S>(...)` helper for cubit state sequence assertions
+- Real `GoRouter` with stub routes for widget tests requiring navigation
+
+**Running tests:**
+```bash
+flutter test --coverage           # all tests + coverage
+flutter test test/path/file.dart  # single file
+bash coverage.sh                  # HTML coverage report via lcov
+```
+
+**Test file locations** mirror `lib/` structure:
+```
+test/
+├── domain/entity/            # Freezed entity serialisation tests
+├── domain/usecase/           # Parser + health score pure logic tests
+└── presentation/
+    ├── blocs/                # Cubit state emission tests
+    └── screens/              # Widget tests (home_screen, login_screen, scaffold_shell)
+```
 
 ---
 
@@ -256,16 +413,40 @@ When writing tests, place them in `test/` mirroring the `lib/` structure.
 
 Workflow: `.github/workflows/main.yml`
 
-**Triggers**: Push/PR to `main`, release tags (`v*.*.*`)
+**Triggers**: Push/PR to `main`; release tags (`v*.*.*`) trigger APK release
 
-**Steps**:
-1. Cache Pub dependencies
-2. Setup Java 17 (Temurin) + Flutter 3.35.1 stable
-3. `flutter pub get`
-4. `flutter analyze`
-5. `flutter test --coverage`
-6. Build release APK (per-ABI split)
-7. Create GitHub Release (on tag)
+**3 separate jobs (in dependency order):**
+
+**1. lint** (~2 min, ubuntu-latest)
+- Cache pub + setup Flutter
+- `flutter analyze` (134+ lint rules)
+
+**2. test** (~5 min, depends on lint)
+- Cache pub + setup Flutter
+- `flutter test --coverage`
+- Uploads `coverage/lcov.info` as artifact
+
+**3. build** (~15 min, depends on test)
+- Cache pub + setup Flutter + Java 17 + Android CMake 3.22.1
+- `flutter build apk --release --split-per-abi --flavor dev --target lib/main_dev.dart`
+- `CLERK_PUBLISHABLE_KEY` passed via `--dart-define=${{ secrets.CLERK_PUBLISHABLE_KEY }}`
+- Uploads APK artifact
+- On version tags: creates GitHub Release with APKs attached
+
+---
+
+## Cloud Functions (Firebase)
+
+Located in `functions/src/` (TypeScript/Node.js):
+
+| Function | Trigger | Purpose |
+|----------|---------|---------|
+| `createPluggyItem` | HTTP call | Create Pluggy connection + return connectToken |
+| `onPluggyWebhook` | HTTP webhook | Handle TRANSACTION_CREATED/UPDATED → write `raw_transaction` |
+| `syncAllItems` | Scheduled (nightly) | Catch any missed Pluggy webhooks |
+| `deletePluggyItem` | HTTP call | Disconnect account + cleanup Firestore |
+| `billReminders` | Scheduled (09:00 UTC daily) | Send FCM 3 days before bill due date |
+| `categorisationRuleEngine` | Internal | Keyword → category mapping for auto-categorisation |
 
 ---
 
@@ -301,6 +482,7 @@ Examples:
 feat(auth): implement auto-redirect on sign-in
 fix(home): correct splash spinner not showing on initial state
 test(transaction): add unit tests for TransactionCubit
+chore(debt): add overspend/tab tests, offline support, split CI jobs
 ```
 
 ---
@@ -336,21 +518,28 @@ dart run flutter_launcher_icons -f flutter_launcher_icons-prod.yaml
 
 ## Environment Setup
 
-1. Copy `.env.example` to `.env` (if it exists) or create `.env`:
+1. Create `.env` (git-ignored):
    ```
    CLERK_PUBLISHABLE_KEY=pk_test_...
    ```
-2. Ensure `firebase_options_dev.dart` and `firebase_options_prod.dart` are present (generated via `flutterfire configure`)
-3. Run `flutter pub get`
-4. Run `dart run build_runner build --delete-conflicting-outputs`
+2. Ensure `firebase_options_dev.dart` and `firebase_options_prod.dart` are present (via `flutterfire configure`)
+3. `flutter pub get`
+4. `dart run build_runner build --delete-conflicting-outputs`
 
 ---
 
 ## Gotchas & Notes
 
 - **No repository layer**: BLoCs/Cubits access Firestore directly. If you add a repository layer, be consistent across all features.
+- **Shadcn import conflicts**: `showDialog`, `AlertDialog`, `TextButton`, `Column`, `Expanded`, `Row` are defined in both `flutter/material.dart` and `shadcn_flutter`. Always hide from material: `import 'package:flutter/material.dart' hide AlertDialog, Column, Expanded, Row, TextButton, showDialog;`
 - **Freezed union states**: Always handle all variants in `.when()` — the linter will catch missing cases.
 - **Clerk beta**: `clerk_flutter` is `^0.0.12-beta` — API may change on updates.
 - **Generated files**: Never manually edit `*.freezed.dart` or `*.g.dart` — always regenerate.
 - **Dual Firebase**: Make sure you're using the correct `FirebaseOptions` per flavor in main entry points.
-- **Portuguese naming**: Screen files and some variables use Portuguese (Brazilian) — this is intentional and consistent with the project's origin.
+- **Portuguese naming**: Screen files use Portuguese (Brazilian) — this is intentional and consistent with the project's origin. Code identifiers remain English.
+- **`@JsonSerializable(explicitToJson: true)`** is required on `RecurringEntity` (nested `TransactionEntity`); add `// ignore: invalid_annotation_target` comment above it.
+- **`always_put_control_body_on_new_line`**: All `if` bodies must be on a new line — no single-line `if (x) return;`.
+- **`sort_pub_dependencies`**: `pubspec.yaml` dependencies must be alphabetically ordered; analyzer enforces this.
+- **`unawaited_futures`**: Always `await` async calls like `HapticFeedback.mediumImpact()`.
+- **Modal navigation in `StatefulShellRoute`**: Use `onClose` callback pattern (capture `sheetContext` from `showModalBottomSheet` builder) instead of `Navigator.of(context).pop()` to avoid branch-navigator issues.
+- **Wildcard parameters in Dart 3.9+**: Use `(_, _) => ...` (two `_`) instead of `(_, __) => ...` — `unnecessary_underscores` lint enforces this.

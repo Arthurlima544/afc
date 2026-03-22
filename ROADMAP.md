@@ -4,9 +4,11 @@
 
 Build a complete personal finance management app where users can:
 - Authenticate securely via Clerk
-- Track income and expenses with categories
-- Set and monitor monthly spending limits
-- View financial trends through charts and summaries
+- Track income and expenses with custom categories
+- Set and monitor monthly spending limits with overspend alerts
+- View real-time financial trends through charts and summaries
+- Import bank statements, connect bank accounts via Open Finance (Pluggy), and auto-sync transactions
+- Track savings goals, investments, bill reminders, and a financial health score
 
 ---
 
@@ -136,10 +138,10 @@ Build a complete personal finance management app where users can:
 **As a** user, **I want** persistent bottom navigation between the main sections of the app,
 **so that** I can switch between Dashboard, Transactions, Categories, and Limits in one tap.
 
-- [x] `ScaffoldShell` with `StatefulShellRoute` (GoRouter) wrapping the four main screens
+- [x] `ScaffoldShell` with `StatefulShellRoute` (GoRouter) wrapping the six main screens
 - [x] Active tab highlighted; GoRouter state preserved per tab
 - [x] Replace scattered "Ver Todas" buttons with navigation-bar equivalent routes
-- [ ] Widget tests for tab switching
+- [x] Widget tests for tab switching (6 tests — renders, labels, FAB, initial index, tap index 1, tap index 5)
 
 ---
 
@@ -173,7 +175,7 @@ Build a complete personal finance management app where users can:
 
 - [x] `MonthLimitWidget` displays a red badge and warning text when `spent > limitAmount`
 - [x] In-app toast/snackbar on home page when any limit is exceeded
-- [ ] Unit tests for overspend detection logic
+- [x] Unit tests for overspend detection logic (verifies `spent > limitAmount` on `LimitProgressItem`)
 
 ---
 
@@ -392,30 +394,31 @@ User ──► Connect Widget (Pluggy SDK) ──► Bank consent ──► Plug
 
 These items are not user stories but are necessary for long-term quality.
 
-| Item | Priority | Notes |
-|------|----------|-------|
-| Firestore streams (replace `.get()`) | High | Prerequisite for US-14 |
-| Widget test coverage for all screens | High | Currently zero widget tests post-Sprint 1 |
-| Cloud Functions project setup | High | Prerequisite for Sprint 5 (Open Finance proxy + webhooks) |
-| Pluggy sandbox account & API keys | High | Prerequisite for US-28–32; register at pluggy.ai |
-| Integration tests (golden tests) | Medium | Catch regressions on UI redesign |
-| Repository layer abstraction | Medium | Currently BLoCs call Firestore directly — harder to test and swap |
-| Offline support (`FirebaseFirestore.instance.settings`) | Medium | Enable persistence so app works without network |
-| Accessibility audit (semantics, contrast) | Medium | Required for app store compliance |
-| CI: separate lint / test / build jobs | Low | Current workflow runs everything in one step |
-| Error boundary widget | Low | Catch unhandled exceptions and show user-friendly screen |
+| Item | Priority | Status | Notes |
+|------|----------|--------|-------|
+| Firestore streams (replace `.get()`) | High | ✅ Done | All list screens and dashboard use `.snapshots()` |
+| Widget test coverage for key screens | High | ✅ Done | home_screen, login_screen, scaffold_shell (268 total tests) |
+| Cloud Functions project setup | High | ✅ Done | Pluggy proxy + webhooks + bill reminders in `functions/src/` |
+| Offline support (`persistenceEnabled`) | Medium | ✅ Done | Both `main_dev.dart` and `main_prod.dart` configure `CACHE_SIZE_UNLIMITED` |
+| CI: separate lint / test / build jobs | Low | ✅ Done | 3 jobs: lint → test (coverage artifact) → build (APK artifact) |
+| Pluggy sandbox account & API keys | High | ⏳ Pending | Register at pluggy.ai; add API keys to Cloud Functions env |
+| Integration tests (golden tests) | Medium | ⏳ Pending | Catch regressions on UI redesign; complex setup required |
+| Repository layer abstraction | Medium | ⏳ Pending | BLoCs call Firestore directly — major refactor, risky |
+| Accessibility audit (semantics, contrast) | Medium | ⏳ Pending | Required for app store compliance; needs manual device testing |
+| Error boundary widget | Low | ⏳ Pending | Catch unhandled exceptions and show user-friendly screen |
 
 ---
 
 ## Branch Strategy
 
-| Sprint | Branch |
-|--------|--------|
-| Sprint 1 (US-05, US-06) | `feat/us-05-06-auth-navigation` ✅ |
-| Sprint 1 (US-01, US-02) | `feat/us-01-02-dashboard-data` ✅ |
-| Sprint 2 (US-03, US-04) | `feat/us-03-04-limits-charts` ✅ |
-| Sprint 3 (US-07–13) | `feat/us-07-13-crud-lists` ✅ |
-| Sprint 4 (US-14–18) | `feat/us-14-18-ux-reactivity` ✅ |
-| Sprint 5 (US-28–32) | `feat/us-28-32-open-finance` ✅ |
-| Sprint 6 (US-19–22) | `feat/us-19-22-smart-transactions` ✅ |
-| Sprint 7 (US-23–27) | `feat/us-23-27-financial-intelligence` ✅ |
+| Sprint / Work | Branch | Status |
+|--------------|--------|--------|
+| Sprint 1 (US-05, US-06) | `feat/us-05-06-auth-navigation` | ✅ Merged |
+| Sprint 1 (US-01, US-02) | `feat/us-01-02-dashboard-data` | ✅ Merged |
+| Sprint 2 (US-03, US-04) | `feat/us-03-04-limits-charts` | ✅ Merged |
+| Sprint 3 (US-07–13) | `feat/us-07-13-crud-lists` | ✅ Merged |
+| Sprint 4 (US-14–18) | `feat/us-14-18-ux-reactivity` | ✅ Merged |
+| Sprint 5 (US-28–32) | `feat/us-28-32-open-finance` | ✅ Merged |
+| Sprint 6 (US-19–22) | `feat/us-19-22-smart-transactions` | ✅ Merged |
+| Sprint 7 (US-23–27) | `feat/us-23-27-financial-intelligence` | ✅ Merged |
+| Technical debt (tests, offline, CI) | `chore/technical-debt` | ⏳ Open PR |
