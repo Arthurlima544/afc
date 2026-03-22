@@ -8,6 +8,8 @@ import 'package:intl/intl.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart'
     hide Column, Row, Expanded;
 
+import '../../domain/entity/investment_entity.dart';
+
 import '../../domain/entity/stats_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
@@ -49,6 +51,8 @@ class _HomeContent extends StatelessWidget {
         ),
       const SyncStatusWidget(),
       const SummaryWidget(),
+      const Gap(12),
+      const _NetWorthCard(),
       const Gap(20),
       const LastTransactionsWidget(),
       const MonthLimitWidget(),
@@ -56,6 +60,101 @@ class _HomeContent extends StatelessWidget {
       const StatsWidget(),
     ],
   ).withPadding(all: 20);
+}
+
+class _NetWorthCard extends StatefulWidget {
+  const _NetWorthCard();
+
+  @override
+  State<_NetWorthCard> createState() => _NetWorthCardState();
+}
+
+class _NetWorthCardState extends State<_NetWorthCard> {
+  double _portfolioValue = 0;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.microtask(_loadPortfolio);
+  }
+
+  Future<void> _loadPortfolio() async {
+    final String userId =
+        context.read<AuthBloc>().state.whenOrNull(
+              signedIn: (ClerkAuthState s) => s.user?.id,
+            ) ??
+        '';
+    if (userId.isEmpty) {
+      return;
+    }
+    try {
+      final QuerySnapshot<Map<String, dynamic>> snap = await FirebaseFirestore
+          .instance
+          .collection('investment')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      final List<InvestmentEntity> investments = snap.docs
+          .map(
+            (QueryDocumentSnapshot<Map<String, dynamic>> doc) =>
+                InvestmentEntity.fromJson(doc.data()),
+          )
+          .toList();
+
+      final double total = investments.fold(
+        0.0,
+        (double sum, InvestmentEntity inv) =>
+            sum + inv.quantity * inv.currentPrice,
+      );
+
+      if (mounted) {
+        setState(() {
+          _portfolioValue = total;
+          _loaded = true;
+        });
+      }
+    } on Exception {
+      if (mounted) {
+        setState(() => _loaded = true);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded || _portfolioValue == 0) {
+      return const SizedBox();
+    }
+    return GestureDetector(
+      onTap: () => context.push('/lista-investimentos'),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: <Widget>[
+              const Icon(Icons.trending_up, size: 28),
+              const Gap(12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const Text('Carteira de investimentos',
+                        style: AppTextStyles.label),
+                    Text(
+                      convertToCurrencyFormated(_portfolioValue),
+                      style: AppTextStyles.title,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class StatsWidget extends StatelessWidget {

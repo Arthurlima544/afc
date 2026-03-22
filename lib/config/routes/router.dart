@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../domain/entity/category_entity.dart';
 import '../../domain/entity/goal_entity.dart';
+import '../../domain/entity/investment_entity.dart';
 import '../../domain/entity/limit_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../presentation/blocs/auth/auth_bloc.dart';
@@ -12,6 +13,7 @@ import '../../presentation/blocs/category/category_cubit.dart';
 import '../../presentation/blocs/goal/goal_cubit.dart';
 import '../../presentation/blocs/home/home_bloc.dart';
 import '../../presentation/blocs/import/import_cubit.dart';
+import '../../presentation/blocs/investment/investment_cubit.dart';
 import '../../presentation/blocs/limit/limit_cubit.dart';
 import '../../presentation/blocs/open_finance/open_finance_cubit.dart';
 import '../../presentation/blocs/recurring/recurring_cubit.dart';
@@ -19,6 +21,7 @@ import '../../presentation/blocs/report/report_cubit.dart';
 import '../../presentation/blocs/review_queue/review_queue_cubit.dart';
 import '../../presentation/blocs/transaction/transaction_cubit.dart';
 import '../../presentation/screens/cadastrar_categoria.dart';
+import '../../presentation/screens/cadastrar_investimento.dart';
 import '../../presentation/screens/cadastrar_limites.dart';
 import '../../presentation/screens/cadastrar_meta.dart';
 import '../../presentation/screens/cadastrar_recorrente.dart';
@@ -30,6 +33,7 @@ import '../../presentation/screens/home_page.dart';
 import '../../presentation/screens/home_screen.dart';
 import '../../presentation/screens/importar_extrato.dart';
 import '../../presentation/screens/lista_categorias.dart';
+import '../../presentation/screens/lista_investimentos.dart';
 import '../../presentation/screens/lista_limites.dart';
 import '../../presentation/screens/lista_metas.dart';
 import '../../presentation/screens/lista_recorrentes.dart';
@@ -373,6 +377,43 @@ final GoRouter router = GoRouter(
           child: const ReviewQueueScreen(),
         );
       },
+    ),
+
+    // --- Investment routes ---
+
+    GoRoute(
+      path: '/lista-investimentos',
+      builder: (BuildContext context, GoRouterState state) {
+        final String userId =
+            context.read<AuthBloc>().state.whenOrNull(
+                  signedIn: (ClerkAuthState s) => s.user?.id,
+                ) ??
+            '';
+        return BlocProvider<InvestmentCubit>(
+          create: (_) => InvestmentCubit()..loadInvestments(userId),
+          child: const ListaInvestimentos(),
+        );
+      },
+    ),
+
+    GoRoute(
+      path: '/cadastro-investimento',
+      builder: (BuildContext context, GoRouterState state) =>
+          BlocProvider<InvestmentCubit>(
+            create: (_) => InvestmentCubit(),
+            child: const CadastrarInvestimento(),
+          ),
+    ),
+
+    GoRoute(
+      path: '/editar-investimento',
+      builder: (BuildContext context, GoRouterState state) =>
+          BlocProvider<InvestmentCubit>(
+            create: (_) => InvestmentCubit(),
+            child: CadastrarInvestimento(
+              initialInvestment: state.extra as InvestmentEntity?,
+            ),
+          ),
     ),
   ],
 );
