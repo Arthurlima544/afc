@@ -4,6 +4,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../domain/entity/connected_account_entity.dart';
+import '../../../utils/logger.dart';
 
 part 'open_finance_state.dart';
 part 'open_finance_cubit.freezed.dart';
@@ -60,6 +61,8 @@ class OpenFinanceCubit extends Cubit<OpenFinanceState> {
           .call<dynamic>(params);
       final String connectToken =
           (result.data as Map<dynamic, dynamic>)['connectToken'] as String;
+      logger.d('createConnectToken — token received (${connectToken.length} chars): '
+          '${connectToken.isEmpty ? "[EMPTY]" : "${connectToken.substring(0, connectToken.length.clamp(0, 20))}..."}');
       emit(OpenFinanceState.tokenReady(connectToken));
     } on FirebaseFunctionsException catch (e) {
       emit(OpenFinanceState.error(e.message ?? e.toString()));

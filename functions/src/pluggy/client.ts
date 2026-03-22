@@ -62,9 +62,7 @@ export class PluggyClient {
 
   async createConnectToken(itemId?: string): Promise<string> {
     const body: { itemId?: string } = {};
-    if (itemId) {
-      body.itemId = itemId;
-    }
+    if (itemId) body.itemId = itemId;
     const response = await this.http.post<{ accessToken: string }>(
       '/connect_token',
       body,

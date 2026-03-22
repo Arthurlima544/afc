@@ -702,7 +702,33 @@ class SyncStatusWidget extends StatelessWidget {
         AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot,
       ) {
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const SizedBox();
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: <Widget>[
+                    const Icon(Icons.account_balance_outlined, size: 18),
+                    const Gap(8),
+                    const Expanded(
+                      child: Text(
+                        'Nenhum banco conectado',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => context.push('/contas-conectadas'),
+                      child: const Text(
+                        'Conectar banco',
+                        style: TextStyle(fontSize: 13, color: Colors.blue),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
         }
 
         final List<QueryDocumentSnapshot<Map<String, dynamic>>> docs =
