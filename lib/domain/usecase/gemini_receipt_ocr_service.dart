@@ -17,7 +17,7 @@ const String _prompt =
 class GeminiReceiptOcrService implements ReceiptOcrService {
   GeminiReceiptOcrService({String? apiKey})
     : _model = GenerativeModel(
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.5-flash',
         apiKey: apiKey ??
             const String.fromEnvironment('GEMINI_API_KEY'),
       );
