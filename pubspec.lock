@@ -25,14 +25,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "10.0.1"
-  animation_kit:
-    dependency: transitive
-    description:
-      name: animation_kit
-      sha256: d9b0944b3ee02fae3fedbc6cb04d9a9ea26ad1d29f3261e0b55443b1e0bfba63
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.2"
   antlr4:
     dependency: transitive
     description:
@@ -329,14 +321,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.2"
-  country_flags:
-    dependency: transitive
-    description:
-      name: country_flags
-      sha256: f022d18337f3861f1f4e319b936cb53920de9259f38cb09e169eace9942e2b79
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.1.2"
   coverage:
     dependency: transitive
     description:
@@ -377,14 +361,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.7"
-  data_widget:
-    dependency: transitive
-    description:
-      name: data_widget
-      sha256: "4947aae3c50635496d56f94ad18de98e19015c5ebf01abee0f39a2c098c7021a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.3"
   device_info_plus:
     dependency: "direct main"
     description:
@@ -433,14 +409,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.7"
-  expressions:
-    dependency: transitive
-    description:
-      name: expressions
-      sha256: f3b0e99563a9a1bde1138e728eb722f292cc7d2aec55d28136c49b1a370306c5
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.2.5+3"
   fake_async:
     dependency: transitive
     description:
@@ -687,14 +655,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  gap:
-    dependency: transitive
-    description:
-      name: gap
-      sha256: f19387d4e32f849394758b91377f9153a1b41d79513ef7668c088c77dbc6955d
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.1"
   get_it:
     dependency: "direct main"
     description:
@@ -908,22 +868,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.5"
-  jovial_misc:
-    dependency: transitive
-    description:
-      name: jovial_misc
-      sha256: "4301011027d87b8b919cb862db84071a34448eadbb32cc8d40fe505424dfe69a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.9.2"
-  jovial_svg:
-    dependency: transitive
-    description:
-      name: jovial_svg
-      sha256: "08dd24b800d48796c9c0227acb96eb00c6cacccb1d7de58d79fc924090049868"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.28"
   json_annotation:
     dependency: "direct main"
     description:
@@ -1180,14 +1124,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
-  phonecodes:
-    dependency: transitive
-    description:
-      name: phonecodes
-      sha256: d963c19d35914cd83620e64125689a0c09047e25046639f2a124142ccf5868bb
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.4"
   platform:
     dependency: transitive
     description:
@@ -1276,14 +1212,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.2"
-  quiver:
-    dependency: transitive
-    description:
-      name: quiver
-      sha256: ea0b925899e64ecdfbf9c7becb60d5b50e706ade44a85b2363be2a22d88117d2
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.2.2"
   result_dart:
     dependency: "direct main"
     description:
@@ -1308,14 +1236,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.28.0"
-  shadcn_flutter:
-    dependency: "direct main"
-    description:
-      name: shadcn_flutter
-      sha256: b04e2f790e182007d02b78234c647df393f2ea95b39d8da88d7cbdaed56f7701
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.52"
   share_plus:
     dependency: "direct main"
     description:
@@ -1420,14 +1340,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.0"
-  skeletonizer:
-    dependency: transitive
-    description:
-      name: skeletonizer
-      sha256: eebc03dc86b298e2d7f61e0ebce5713e9dbbc3e786f825909b4591756f196eb6
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.0+1"
   sky_engine:
     dependency: transitive
     description: flutter

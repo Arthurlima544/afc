@@ -1,7 +1,7 @@
 import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 import '../config/routes/router.dart';
 import '../config/theme/app_theme.dart';
@@ -50,38 +50,50 @@ class _MyAppState extends State<MyApp> {
                   const String.fromEnvironment('CLERK_PUBLISHABLE_KEY'),
             ),
             child: _ClerkAuthObserver(
-              child: ShadcnApp.router(
+              child: MaterialApp.router(
                 debugShowCheckedModeBanner: false,
                 title: 'AFC',
                 routerConfig: router,
-                theme: _themeDataFor(preference),
+                theme: _themeDataFor(preference, Brightness.light),
+                darkTheme: _themeDataFor(preference, Brightness.dark),
+                themeMode: _themeModeFor(preference),
               ),
             ),
           ),
     ),
   );
 
-  static ThemeData _themeDataFor(ThemePreference preference) {
+  static ThemeData _themeDataFor(
+    ThemePreference preference,
+    Brightness brightness,
+  ) {
     switch (preference) {
       case ThemePreference.light:
         return AppTheme.light();
       case ThemePreference.dark:
         return AppTheme.dark();
       case ThemePreference.system:
-        // Resolve system brightness at build time.
-        // WidgetsBinding is guaranteed to be initialised before MyApp builds.
-        final Brightness brightness =
-            WidgetsBinding.instance.platformDispatcher.platformBrightness;
         return brightness == Brightness.dark
             ? AppTheme.dark()
             : AppTheme.light();
+    }
+  }
+
+  static ThemeMode _themeModeFor(ThemePreference preference) {
+    switch (preference) {
+      case ThemePreference.light:
+        return ThemeMode.light;
+      case ThemePreference.dark:
+        return ThemeMode.dark;
+      case ThemePreference.system:
+        return ThemeMode.system;
     }
   }
 }
 
 /// Listens to Clerk's auth state and dispatches the corresponding
 /// [AuthEvent] to [AuthBloc]. This is the single place in the app that
-/// bridges Clerk ↔ AuthBloc, keeping all other screens decoupled from
+/// bridges Clerk and AuthBloc, keeping all other screens decoupled from
 /// the Clerk SDK and fully testable via a mocked [AuthBloc].
 class _ClerkAuthObserver extends StatelessWidget {
   const _ClerkAuthObserver({required this.child});

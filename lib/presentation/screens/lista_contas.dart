@@ -1,21 +1,12 @@
 import 'package:clerk_flutter/clerk_flutter.dart';
-import 'package:flutter/material.dart'
-    hide
-        Card,
-        Colors,
-        Theme,
-        TextField,
-        IconButton,
-        ButtonStyle;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart'
-    hide AlertDialog, Column, Row, Expanded, showDialog, LinearProgressIndicator;
 
 import '../../domain/entity/bill_entity.dart';
-import '../../utils/app_spacing.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/bill/bill_cubit.dart';
+import '../widgets/design_system.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/skeleton_list.dart';
 
@@ -34,8 +25,7 @@ class ListaContas extends StatelessWidget {
               const Expanded(
                 child: Text('Contas a Pagar', style: AppTextStyles.heading),
               ),
-              IconButton(
-                variance: const ButtonStyle.outline(),
+              AppIconButton(
                 onPressed: () => context.push('/cadastro-conta'),
                 icon: const Icon(Icons.add),
               ),
@@ -46,10 +36,8 @@ class ListaContas extends StatelessWidget {
             builder: (BuildContext context, BillState state) => state.when(
               initial: () => const SizedBox(),
               loading: () => const SkeletonList(),
-              error: (String msg) => EmptyState(
-                message: msg,
-                icon: Icons.error_outline,
-              ),
+              error: (String msg) =>
+                  EmptyState(message: msg, icon: Icons.error_outline),
               success: (_) => const SizedBox(),
               listed: (List<BillEntity> bills) => bills.isEmpty
                   ? const EmptyState(
@@ -97,8 +85,8 @@ class _BillItem extends StatelessWidget {
     final Color borderColor = status == _BillStatus.overdue
         ? AppColors.expense
         : status == _BillStatus.upcoming
-            ? AppColors.warning
-            : const Color(0xFF3A3A3A);
+        ? AppColors.warning
+        : const Color(0xFF3A3A3A);
 
     return Container(
       decoration: BoxDecoration(
@@ -112,9 +100,7 @@ class _BillItem extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                Expanded(
-                  child: Text(bill.name, style: AppTextStyles.title),
-                ),
+                Expanded(child: Text(bill.name, style: AppTextStyles.title)),
                 if (status == _BillStatus.upcoming)
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -169,8 +155,8 @@ class _BillItem extends StatelessWidget {
                     color: status == _BillStatus.overdue
                         ? AppColors.expense
                         : status == _BillStatus.upcoming
-                            ? AppColors.warning
-                            : null,
+                        ? AppColors.warning
+                        : null,
                   ),
                 ),
               ],
@@ -179,15 +165,12 @@ class _BillItem extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: <Widget>[
-                IconButton(
-                  variance: const ButtonStyle.outline(),
-                  onPressed: () =>
-                      context.push('/editar-conta', extra: bill),
+                AppIconButton(
+                  onPressed: () => context.push('/editar-conta', extra: bill),
                   icon: const Icon(Icons.edit, size: 18),
                 ),
                 const Gap(8),
-                IconButton(
-                  variance: const ButtonStyle.outline(),
+                AppIconButton(
                   onPressed: () => _confirmDelete(context),
                   icon: const Icon(Icons.delete, size: 18),
                 ),
@@ -199,32 +182,34 @@ class _BillItem extends StatelessWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context) {
+  Future<void> _confirmDelete(BuildContext context) async {
     final String userId =
         context.read<AuthBloc>().state.whenOrNull(
-              signedIn: (ClerkAuthState s) => s.user?.id,
-            ) ??
+          signedIn: (ClerkAuthState s) => s.user?.id,
+        ) ??
         '';
-    showDialog<void>(
+    final bool? confirmed = await showAppDialog<bool>(
       context: context,
-      builder: (BuildContext dialogContext) => AlertDialog(
+      builder: (BuildContext dialogContext) => AppAlertDialog(
         title: const Text('Excluir conta'),
         content: Text('Deseja excluir "${bill.name}"?'),
         actions: <Widget>[
           SecondaryButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Cancelar'),
           ),
+          const Gap(8),
           PrimaryButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              context.read<BillCubit>().delete(bill.uuid, userId);
-            },
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Excluir'),
           ),
         ],
       ),
     );
+    if (confirmed == true) {
+      // ignore: use_build_context_synchronously
+      await context.read<BillCubit>().delete(bill.uuid, userId);
+    }
   }
 }
 

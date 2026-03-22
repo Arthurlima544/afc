@@ -1,20 +1,10 @@
-import 'package:flutter/material.dart'
-    hide
-        Card,
-        Colors,
-        Theme,
-        TextField,
-        IconButton,
-        ButtonStyle;
-import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart'
-    hide AlertDialog, Column, Row, Expanded, showDialog;
 
 import '../../domain/entity/investment_entity.dart';
-import '../../utils/app_spacing.dart';
 import '../blocs/investment/investment_cubit.dart';
+import '../widgets/design_system.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/skeleton_list.dart';
 
@@ -54,8 +44,7 @@ class ListaInvestimentos extends StatelessWidget {
               const Expanded(
                 child: Text('Investimentos', style: AppTextStyles.heading),
               ),
-              IconButton(
-                variance: const ButtonStyle.outline(),
+              AppIconButton(
                 onPressed: () => context.push('/cadastro-investimento'),
                 icon: const Icon(Icons.add),
               ),
@@ -63,14 +52,11 @@ class ListaInvestimentos extends StatelessWidget {
           ),
           const Gap(16),
           BlocBuilder<InvestmentCubit, InvestmentState>(
-            builder: (BuildContext context, InvestmentState state) =>
-                state.when(
+            builder: (BuildContext context, InvestmentState state) => state.when(
               initial: () => const SizedBox(),
               loading: () => const SkeletonList(),
-              error: (String msg) => EmptyState(
-                message: msg,
-                icon: Icons.error_outline,
-              ),
+              error: (String msg) =>
+                  EmptyState(message: msg, icon: Icons.error_outline),
               success: (_) => const SizedBox(),
               listed: (List<InvestmentEntity> investments) {
                 if (investments.isEmpty) {
@@ -159,20 +145,15 @@ class _SummaryCard extends StatelessWidget {
   final Color? valueColor;
 
   @override
-  Widget build(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(label, style: AppTextStyles.caption),
-          const Gap(4),
-          Text(
-            value,
-            style: AppTextStyles.labelBold.copyWith(color: valueColor),
-          ),
-        ],
-      ),
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.all(10),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(label, style: AppTextStyles.caption),
+        const Gap(4),
+        Text(value, style: AppTextStyles.labelBold.copyWith(color: valueColor)),
+      ],
     ),
   );
 }
@@ -193,174 +174,146 @@ class _InvestmentItem extends StatelessWidget {
     final Color gainColor = gainLoss >= 0
         ? AppColors.income
         : AppColors.expense;
-    final String nameLabel = investment.ticker != null &&
-            investment.ticker!.isNotEmpty
+    final String nameLabel =
+        investment.ticker != null && investment.ticker!.isNotEmpty
         ? '${investment.name} (${investment.ticker})'
         : investment.name;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(nameLabel, style: AppTextStyles.title),
-                      const Gap(2),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF3A3A3A),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          _typeLabelPt(investment.type),
-                          style: AppTextStyles.caption,
-                        ),
+    return AppCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(nameLabel, style: AppTextStyles.title),
+                    const Gap(2),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
                       ),
-                    ],
-                  ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3A3A3A),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        _typeLabelPt(investment.type),
+                        style: AppTextStyles.caption,
+                      ),
+                    ),
+                  ],
                 ),
-                IconButton(
-                  variance: const ButtonStyle.outline(),
-                  onPressed: () => _showPriceDialog(context),
-                  icon: const Icon(Icons.price_change_outlined, size: 18),
-                ),
-                const Gap(4),
-                IconButton(
-                  variance: const ButtonStyle.outline(),
-                  onPressed: () =>
-                      context.push('/editar-investimento', extra: investment),
-                  icon: const Icon(Icons.edit, size: 18),
-                ),
-                IconButton(
-                  variance: const ButtonStyle.outline(),
-                  onPressed: () => _confirmDelete(context),
-                  icon: const Icon(Icons.delete, size: 18),
-                ),
-              ],
-            ),
-            const Gap(8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Text(
-                  '${investment.quantity.toStringAsFixed(2)} × ${_formatCurrency(investment.avgCost)}',
-                  style: AppTextStyles.label,
-                ),
-                Text(
-                  'Inv: ${_formatCurrency(totalInvested)}',
-                  style: AppTextStyles.label,
-                ),
-              ],
-            ),
-            const Gap(4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Text(
-                  'Atual: ${_formatCurrency(investment.currentPrice)}/un',
-                  style: AppTextStyles.label,
-                ),
-                Text(
-                  'Val: ${_formatCurrency(currentValue)}',
-                  style: AppTextStyles.label,
-                ),
-              ],
-            ),
-            const Gap(8),
-            Row(
-              children: <Widget>[
-                Text(
-                  '${gainLoss >= 0 ? '+' : ''}${_formatCurrency(gainLoss)}',
-                  style: AppTextStyles.bodyBold.copyWith(color: gainColor),
-                ),
-                const Gap(8),
-                Text(
-                  '(${gainLossPct >= 0 ? '+' : ''}${gainLossPct.toStringAsFixed(2)}%)',
-                  style: AppTextStyles.label.copyWith(color: gainColor),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showPriceDialog(BuildContext context) {
-    final TextEditingController controller = TextEditingController(
-      text: investment.currentPrice.toStringAsFixed(2),
-    );
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext dialogContext) => AlertDialog(
-        title: const Text('Atualizar preço'),
-        content: TextField(
-          controller: controller,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: <TextInputFormatter>[
-            FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
-          ],
-          placeholder: const Text('Novo preço (ex: 35.50)'),
-        ),
-        actions: <Widget>[
-          SecondaryButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancelar'),
+              ),
+              AppIconButton(
+                onPressed: () => _showPriceDialog(context),
+                icon: const Icon(Icons.price_change_outlined, size: 18),
+              ),
+              const Gap(4),
+              AppIconButton(
+                onPressed: () =>
+                    context.push('/editar-investimento', extra: investment),
+                icon: const Icon(Icons.edit, size: 18),
+              ),
+              AppIconButton(
+                onPressed: () => _confirmDelete(context),
+                icon: const Icon(Icons.delete, size: 18),
+              ),
+            ],
           ),
-          PrimaryButton(
-            onPressed: () {
-              final String raw = controller.text.replaceAll(',', '.');
-              final double? price = double.tryParse(raw);
-              if (price != null && price >= 0) {
-                context.read<InvestmentCubit>().updatePrice(
-                  investment.uuid,
-                  price,
-                );
-              }
-              Navigator.of(dialogContext).pop();
-            },
-            child: const Text('Atualizar'),
+          const Gap(8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              Text(
+                '${investment.quantity.toStringAsFixed(2)} × ${_formatCurrency(investment.avgCost)}',
+                style: AppTextStyles.label,
+              ),
+              Text(
+                'Inv: ${_formatCurrency(totalInvested)}',
+                style: AppTextStyles.label,
+              ),
+            ],
+          ),
+          const Gap(4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              Text(
+                'Atual: ${_formatCurrency(investment.currentPrice)}/un',
+                style: AppTextStyles.label,
+              ),
+              Text(
+                'Val: ${_formatCurrency(currentValue)}',
+                style: AppTextStyles.label,
+              ),
+            ],
+          ),
+          const Gap(8),
+          Row(
+            children: <Widget>[
+              Text(
+                '${gainLoss >= 0 ? '+' : ''}${_formatCurrency(gainLoss)}',
+                style: AppTextStyles.bodyBold.copyWith(color: gainColor),
+              ),
+              const Gap(8),
+              Text(
+                '(${gainLossPct >= 0 ? '+' : ''}${gainLossPct.toStringAsFixed(2)}%)',
+                style: AppTextStyles.label.copyWith(color: gainColor),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  void _confirmDelete(BuildContext context) {
-    showDialog<void>(
+  Future<void> _showPriceDialog(BuildContext context) async {
+    final String? result = await showInputDialog(
       context: context,
-      builder: (BuildContext dialogContext) => AlertDialog(
+      title: 'Atualizar preço',
+      hintText: 'Novo preço (ex: 35.50)',
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+    );
+    if (result == null) {
+      return;
+    }
+    final double? price = double.tryParse(result.replaceAll(',', '.'));
+    if (price != null && price >= 0) {
+      // ignore: use_build_context_synchronously
+      await context.read<InvestmentCubit>().updatePrice(investment.uuid, price);
+    }
+  }
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final bool? confirmed = await showAppDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) => AppAlertDialog(
         title: const Text('Remover investimento'),
-        content: Text(
-          'Deseja remover "${investment.name}"?',
-        ),
+        content: Text('Deseja remover "${investment.name}"?'),
         actions: <Widget>[
           SecondaryButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Cancelar'),
           ),
+          const Gap(8),
           DestructiveButton(
-            onPressed: () {
-              context.read<InvestmentCubit>().delete(
-                investment.uuid,
-                investment.userId,
-              );
-              Navigator.of(dialogContext).pop();
-            },
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Remover'),
           ),
         ],
       ),
     );
+    if (confirmed == true) {
+      // ignore: use_build_context_synchronously
+      await context.read<InvestmentCubit>().delete(
+        investment.uuid,
+        investment.userId,
+      );
+    }
   }
 }

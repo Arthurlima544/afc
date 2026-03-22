@@ -1,5 +1,6 @@
-import 'package:flutter/widgets.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' hide Column;
+import 'package:flutter/material.dart';
+
+import 'design_system.dart';
 
 class SkeletonList extends StatelessWidget {
   const SkeletonList({this.itemCount = 4, super.key});
@@ -12,17 +13,15 @@ class SkeletonList extends StatelessWidget {
       for (int i = 0; i < itemCount; i++)
         const Padding(
           padding: EdgeInsets.only(bottom: 12),
-          child: Card(
-            child: Padding(
-              padding: EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  _SkeletonBox(width: 160, height: 14),
-                  Gap(8),
-                  _SkeletonBox(width: 100, height: 12),
-                ],
-              ),
+          child: AppCard(
+            padding: EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                _SkeletonBox(width: 160, height: 14),
+                Gap(8),
+                _SkeletonBox(width: 100, height: 12),
+              ],
             ),
           ),
         ),

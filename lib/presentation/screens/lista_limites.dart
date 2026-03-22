@@ -1,16 +1,13 @@
 import 'dart:async';
 
 import 'package:clerk_flutter/clerk_flutter.dart';
-import 'package:flutter/material.dart' show RefreshIndicator;
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart'
-    hide Column, Row, Expanded;
 
-import '../../utils/app_spacing.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/limit/limit_cubit.dart';
+import '../widgets/design_system.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_state.dart';
 import '../widgets/skeleton_list.dart';
@@ -25,8 +22,8 @@ class ListaLimites extends StatelessWidget {
       onRefresh: () async {
         final String userId =
             context.read<AuthBloc>().state.whenOrNull(
-                  signedIn: (ClerkAuthState s) => s.user?.id,
-                ) ??
+              signedIn: (ClerkAuthState s) => s.user?.id,
+            ) ??
             '';
         unawaited(context.read<LimitCubit>().loadLimits(userId));
       },
@@ -41,8 +38,7 @@ class ListaLimites extends StatelessWidget {
                 const Expanded(
                   child: Text('Limites', style: AppTextStyles.heading),
                 ),
-                IconButton(
-                  variance: const ButtonStyle.outline(),
+                AppIconButton(
                   onPressed: () => context.push('/cadastro-limite'),
                   icon: const Icon(Icons.add),
                 ),
@@ -50,41 +46,38 @@ class ListaLimites extends StatelessWidget {
             ),
             const Gap(16),
             BlocBuilder<LimitCubit, LimitState>(
-              builder: (BuildContext context, LimitState state) =>
-                  state.when(
-                    initial: (_) => const SizedBox(),
-                    loading: () => const SkeletonList(),
-                    error: (String msg) => ErrorState(
-                      message: msg,
-                      onRetry: () {
-                        final String userId = context
-                                .read<AuthBloc>()
-                                .state
-                                .whenOrNull(
-                                  signedIn: (ClerkAuthState s) => s.user?.id,
-                                ) ??
-                            '';
-                        context.read<LimitCubit>().loadLimits(userId);
-                      },
-                    ),
-                    loaded: (_) => const SizedBox(),
-                    success: (_) => const SizedBox(),
-                    listed: (List<LimitListItem> items) => items.isEmpty
-                        ? const EmptyState(
-                            message:
-                                'Nenhum limite ainda.\nToque em + para definir.',
-                            icon: Icons.tune_outlined,
-                          )
-                        : Column(
-                            children: <Widget>[
-                              for (final LimitListItem item in items)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: _LimiteItem(item: item),
-                                ),
-                            ],
-                          ),
-                  ),
+              builder: (BuildContext context, LimitState state) => state.when(
+                initial: (_) => const SizedBox(),
+                loading: () => const SkeletonList(),
+                error: (String msg) => ErrorState(
+                  message: msg,
+                  onRetry: () {
+                    final String userId =
+                        context.read<AuthBloc>().state.whenOrNull(
+                          signedIn: (ClerkAuthState s) => s.user?.id,
+                        ) ??
+                        '';
+                    context.read<LimitCubit>().loadLimits(userId);
+                  },
+                ),
+                loaded: (_) => const SizedBox(),
+                success: (_) => const SizedBox(),
+                listed: (List<LimitListItem> items) => items.isEmpty
+                    ? const EmptyState(
+                        message:
+                            'Nenhum limite ainda.\nToque em + para definir.',
+                        icon: Icons.tune_outlined,
+                      )
+                    : Column(
+                        children: <Widget>[
+                          for (final LimitListItem item in items)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _LimiteItem(item: item),
+                            ),
+                        ],
+                      ),
+              ),
             ),
           ],
         ),
@@ -99,38 +92,33 @@ class _LimiteItem extends StatelessWidget {
   final LimitListItem item;
 
   @override
-  Widget build(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(item.categoryName, style: AppTextStyles.title),
-                const Gap(4),
-                Text(
-                  '${item.limit.month} · R\$ ${item.limit.limitAmount.toStringAsFixed(2)}',
-                  style: AppTextStyles.label,
-                ),
-              ],
-            ),
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.all(12),
+    child: Row(
+      children: <Widget>[
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(item.categoryName, style: AppTextStyles.title),
+              const Gap(4),
+              Text(
+                '${item.limit.month} · R\$ ${item.limit.limitAmount.toStringAsFixed(2)}',
+                style: AppTextStyles.label,
+              ),
+            ],
           ),
-          IconButton(
-            variance: const ButtonStyle.outline(),
-            onPressed: () =>
-                context.push('/editar-limite', extra: item.limit),
-            icon: const Icon(Icons.edit, size: 18),
-          ),
-          IconButton(
-            variance: const ButtonStyle.outline(),
-            onPressed: () =>
-                context.read<LimitCubit>().deleteLimit(item.limit.uuid),
-            icon: const Icon(Icons.delete, size: 18),
-          ),
-        ],
-      ),
+        ),
+        AppIconButton(
+          onPressed: () => context.push('/editar-limite', extra: item.limit),
+          icon: const Icon(Icons.edit, size: 18),
+        ),
+        AppIconButton(
+          onPressed: () =>
+              context.read<LimitCubit>().deleteLimit(item.limit.uuid),
+          icon: const Icon(Icons.delete, size: 18),
+        ),
+      ],
     ),
   );
 }

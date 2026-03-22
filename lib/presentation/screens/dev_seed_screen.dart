@@ -1,12 +1,11 @@
 import 'package:clerk_flutter/clerk_flutter.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart'
-    hide Column, Row, Expanded;
 
 import '../../presentation/blocs/auth/auth_bloc.dart';
 import '../../utils/seeder.dart';
+import '../widgets/design_system.dart';
 
 class DevSeedScreen extends StatefulWidget {
   const DevSeedScreen({super.key});
@@ -63,8 +62,7 @@ class _DevSeedScreenState extends State<DevSeedScreen> {
         children: <Widget>[
           Row(
             children: <Widget>[
-              IconButton(
-                variance: const ButtonStyle.outline(),
+              AppIconButton(
                 onPressed: () => context.pop(),
                 icon: const Icon(Icons.arrow_back),
               ),

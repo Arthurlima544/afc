@@ -1,8 +1,6 @@
-import 'package:flutter/widgets.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' hide Column, Row, Expanded;
+import 'package:flutter/material.dart';
 
-import '../../config/theme/app_colors.dart';
-import '../../config/theme/app_icons.dart';
+import 'design_system.dart';
 
 /// Generic error-state placeholder with a retry action.
 ///
@@ -10,11 +8,7 @@ import '../../config/theme/app_icons.dart';
 /// calls [onRetry].  All list screens should render this widget instead
 /// of a raw [Text] whenever their BLoC emits an error state.
 class ErrorState extends StatelessWidget {
-  const ErrorState({
-    required this.message,
-    required this.onRetry,
-    super.key,
-  });
+  const ErrorState({required this.message, required this.onRetry, super.key});
 
   final String message;
   final VoidCallback onRetry;

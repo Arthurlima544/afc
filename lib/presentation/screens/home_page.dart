@@ -1,21 +1,17 @@
 import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart'
-    hide Column, Row, Expanded;
 
 import '../../domain/entity/bill_entity.dart';
 import '../../domain/entity/investment_entity.dart';
-
 import '../../domain/entity/stats_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
 import '../../domain/usecase/health_score.dart';
-import '../../utils/app_spacing.dart';
 import '../../utils/flavors.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/health_score/health_score_cubit.dart';
@@ -23,60 +19,59 @@ import '../blocs/home/home_bloc.dart';
 import '../blocs/home/stats_state.dart';
 import '../blocs/home/transaction_state.dart';
 import '../blocs/limit/limit_cubit.dart';
+import '../widgets/design_system.dart';
 import '../widgets/skeleton_list.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) => const SafeArea(
-    child: SingleChildScrollView(
-      child: _HomeContent(),
-    ),
-  );
+  Widget build(BuildContext context) =>
+      const SafeArea(child: SingleChildScrollView(child: _HomeContent()));
 }
 
 class _HomeContent extends StatelessWidget {
   const _HomeContent();
 
   @override
-  Widget build(BuildContext context) => Column(
-    children: <Widget>[
-      const Gap(20),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: <Widget>[
-          if (Flavor.isDevelopment())
-            IconButton(
-              variance: const ButtonStyle.outline(),
-              onPressed: () => context.push('/seed'),
-              icon: const Icon(Icons.data_object, size: 20),
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(20),
+    child: Column(
+      children: <Widget>[
+        const Gap(20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: <Widget>[
+            if (Flavor.isDevelopment())
+              AppIconButton(
+                onPressed: () => context.push('/seed'),
+                icon: const Icon(Icons.data_object, size: 20),
+              ),
+            Semantics(
+              label: 'Configurações',
+              child: AppIconButton(
+                onPressed: () => context.push('/settings'),
+                icon: const Icon(AppIcons.settings, size: 20),
+              ),
             ),
-          Semantics(
-            label: 'Configurações',
-            child: IconButton(
-              variance: const ButtonStyle.outline(),
-              onPressed: () => context.push('/settings'),
-              icon: const Icon(AppIcons.settings, size: 20),
-            ),
-          ),
-        ],
-      ),
-      const SyncStatusWidget(),
-      const SummaryWidget(),
-      const Gap(12),
-      const _NetWorthCard(),
-      const Gap(12),
-      const _BillsCard(),
-      const Gap(12),
-      const _HealthScoreCard(),
-      const Gap(20),
-      const LastTransactionsWidget(),
-      const MonthLimitWidget(),
-      const Gap(20),
-      const StatsWidget(),
-    ],
-  ).withPadding(all: 20);
+          ],
+        ),
+        const SyncStatusWidget(),
+        const SummaryWidget(),
+        const Gap(12),
+        const _NetWorthCard(),
+        const Gap(12),
+        const _BillsCard(),
+        const Gap(12),
+        const _HealthScoreCard(),
+        const Gap(20),
+        const LastTransactionsWidget(),
+        const MonthLimitWidget(),
+        const Gap(20),
+        const StatsWidget(),
+      ],
+    ),
+  );
 }
 
 class _NetWorthCard extends StatefulWidget {
@@ -99,8 +94,8 @@ class _NetWorthCardState extends State<_NetWorthCard> {
   Future<void> _loadPortfolio() async {
     final String userId =
         context.read<AuthBloc>().state.whenOrNull(
-              signedIn: (ClerkAuthState s) => s.user?.id,
-            ) ??
+          signedIn: (ClerkAuthState s) => s.user?.id,
+        ) ??
         '';
     if (userId.isEmpty) {
       return;
@@ -145,29 +140,29 @@ class _NetWorthCardState extends State<_NetWorthCard> {
     }
     return GestureDetector(
       onTap: () => context.push('/lista-investimentos'),
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: <Widget>[
-              const Icon(Icons.trending_up, size: 28),
-              const Gap(12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    const Text('Carteira de investimentos',
-                        style: AppTextStyles.label),
-                    Text(
-                      convertToCurrencyFormated(_portfolioValue),
-                      style: AppTextStyles.title,
-                    ),
-                  ],
-                ),
+      child: AppCard(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: <Widget>[
+            const Icon(Icons.trending_up, size: 28),
+            const Gap(12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const Text(
+                    'Carteira de investimentos',
+                    style: AppTextStyles.label,
+                  ),
+                  Text(
+                    convertToCurrencyFormated(_portfolioValue),
+                    style: AppTextStyles.title,
+                  ),
+                ],
               ),
-              const Icon(Icons.chevron_right),
-            ],
-          ),
+            ),
+            const Icon(Icons.chevron_right),
+          ],
         ),
       ),
     );
@@ -178,77 +173,75 @@ class StatsWidget extends StatelessWidget {
   const StatsWidget({super.key});
 
   @override
-  Widget build(BuildContext context) =>
-      BlocBuilder<HomeBloc, HomeState>(
-        builder: (BuildContext context, HomeState state) {
-          List<FlSpot> expenseSpots = <FlSpot>[const FlSpot(0, 0)];
-          List<FlSpot> incomeSpots = <FlSpot>[const FlSpot(0, 0)];
+  Widget build(BuildContext context) => BlocBuilder<HomeBloc, HomeState>(
+    builder: (BuildContext context, HomeState state) {
+      List<FlSpot> expenseSpots = <FlSpot>[const FlSpot(0, 0)];
+      List<FlSpot> incomeSpots = <FlSpot>[const FlSpot(0, 0)];
 
-          state.statsState.whenOrNull(
-            success: (List<StatsEntity> stats) {
-              final List<FlSpot> expenses = stats
+      state.statsState.whenOrNull(
+        success: (List<StatsEntity> stats) {
+          final List<FlSpot> expenses =
+              stats
                   .where((StatsEntity s) => s.type == TypeEntity.expense)
                   .map(
-                    (StatsEntity s) =>
-                        FlSpot(s.date.index.toDouble(), s.total),
+                    (StatsEntity s) => FlSpot(s.date.index.toDouble(), s.total),
                   )
                   .toList()
                 ..sort((FlSpot a, FlSpot b) => a.x.compareTo(b.x));
 
-              final List<FlSpot> income = stats
+          final List<FlSpot> income =
+              stats
                   .where((StatsEntity s) => s.type == TypeEntity.income)
                   .map(
-                    (StatsEntity s) =>
-                        FlSpot(s.date.index.toDouble(), s.total),
+                    (StatsEntity s) => FlSpot(s.date.index.toDouble(), s.total),
                   )
                   .toList()
                 ..sort((FlSpot a, FlSpot b) => a.x.compareTo(b.x));
 
-              if (expenses.isNotEmpty) {
-                expenseSpots = expenses;
-              }
-              if (income.isNotEmpty) {
-                incomeSpots = income;
-              }
-            },
-          );
-
-          final double maxY = <FlSpot>[...expenseSpots, ...incomeSpots]
-              .map((FlSpot s) => s.y)
-              .fold(0.0, (double max, double y) => y > max ? y : max);
-          final double yInterval =
-              maxY > 0 ? (maxY / 5).ceilToDouble() : 500;
-
-          return Column(
-            children: <Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  const Text('Estatísticas', style: AppTextStyles.sectionTitle),
-                  TextButton(
-                    onPressed: () => context.go('/lista-transacoes'),
-                    child: const Text(
-                      'Ver Todas',
-                      style: TextStyle(
-                        fontSize: AppTextStyle.sizeMd,
-                        color: AppColors.link,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const Gap(10),
-              LineChartSample7(
-                line1Color: AppColors.expense,
-                line2Color: AppColors.income,
-                expenseSpots: expenseSpots,
-                incomeSpots: incomeSpots,
-                yInterval: yInterval,
-              ),
-            ],
-          );
+          if (expenses.isNotEmpty) {
+            expenseSpots = expenses;
+          }
+          if (income.isNotEmpty) {
+            incomeSpots = income;
+          }
         },
       );
+
+      final double maxY = <FlSpot>[...expenseSpots, ...incomeSpots]
+          .map((FlSpot s) => s.y)
+          .fold(0.0, (double max, double y) => y > max ? y : max);
+      final double yInterval = maxY > 0 ? (maxY / 5).ceilToDouble() : 500;
+
+      return Column(
+        children: <Widget>[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              const Text('Estatísticas', style: AppTextStyles.sectionTitle),
+              TextButton(
+                onPressed: () => context.go('/lista-transacoes'),
+                child: const Text(
+                  'Ver Todas',
+                  style: TextStyle(
+                    fontSize: AppTextStyle.sizeMd,
+                    color: AppColors.link,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Gap(10),
+          LineChartSample7(
+            line1Color: AppColors.expense,
+            line2Color: AppColors.income,
+            expenseSpots: expenseSpots,
+            incomeSpots: incomeSpots,
+            yInterval: yInterval,
+          ),
+        ],
+      );
+    },
+  );
 }
 
 class LineChartSample7 extends StatelessWidget {
@@ -427,54 +420,45 @@ class _MonthLimitWidgetState extends State<MonthLimitWidget> {
         listener: (BuildContext context, LimitState state) {
           state.whenOrNull(
             loaded: (List<LimitProgressItem> items) {
-              final bool hasOverspend =
-                  items.any((LimitProgressItem i) => i.spent > i.limitAmount);
+              final bool hasOverspend = items.any(
+                (LimitProgressItem i) => i.spent > i.limitAmount,
+              );
               if (hasOverspend && !_overspendAlerted) {
                 _overspendAlerted = true;
-                showToast(
-                  context: context,
-                  builder: (BuildContext toastCtx, ToastOverlay overlay) =>
-                      SurfaceCard(
-                        child: Basic(
-                          title: const Text('Limite excedido!'),
-                          subtitle: const Text(
-                            'Você ultrapassou o limite em uma ou mais categorias.',
-                          ),
-                          trailing: PrimaryButton(
-                            onPressed: overlay.close,
-                            child: const Text('OK'),
-                          ),
-                        ),
-                      ),
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Limite excedido! Você ultrapassou o limite em uma ou mais categorias.',
+                    ),
+                  ),
                 );
               }
             },
           );
         },
-        builder: (BuildContext context, LimitState state) =>
-            state.when(
-              initial: (_) => const SizedBox(),
-              loading: () => const SkeletonList(itemCount: 2),
-              error: Text.new,
-              success: (_) => const SizedBox(),
-              listed: (_) => const SizedBox(),
-              loaded: (List<LimitProgressItem> items) => items.isEmpty
-                  ? const SizedBox()
-                  : Column(
-                      children: <Widget>[
-                        for (final LimitProgressItem item in items)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: MonthLimit(
-                              category: item.categoryName,
-                              amount: item.spent,
-                              icon: _iconFromType(item.iconType),
-                              totalLimit: item.limitAmount,
-                            ),
-                          ),
-                      ],
-                    ),
-            ),
+        builder: (BuildContext context, LimitState state) => state.when(
+          initial: (_) => const SizedBox(),
+          loading: () => const SkeletonList(itemCount: 2),
+          error: Text.new,
+          success: (_) => const SizedBox(),
+          listed: (_) => const SizedBox(),
+          loaded: (List<LimitProgressItem> items) => items.isEmpty
+              ? const SizedBox()
+              : Column(
+                  children: <Widget>[
+                    for (final LimitProgressItem item in items)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: MonthLimit(
+                          category: item.categoryName,
+                          amount: item.spent,
+                          icon: _iconFromType(item.iconType),
+                          totalLimit: item.limitAmount,
+                        ),
+                      ),
+                  ],
+                ),
+        ),
       ),
     ],
   );
@@ -500,15 +484,18 @@ class MonthLimit extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: <Widget>[
-      IconButton(
-        variance: const ButtonStyle.primary().withBackgroundColor(
-          color: isExceeded ? AppColors.expense : null,
+      Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: isExceeded ? AppColors.expense : AppColors.primary,
+          shape: BoxShape.circle,
         ),
-        enabled: true,
-        shape: ButtonShape.circle,
-        icon: Icon(
+        alignment: Alignment.center,
+        child: Icon(
           isExceeded ? Icons.warning_amber_rounded : icon,
           size: 24,
+          color: AppColors.onPrimary,
         ),
       ),
       const Gap(15),
@@ -530,8 +517,8 @@ class MonthLimit extends StatelessWidget {
               color: isExceeded
                   ? AppColors.expense
                   : percent > 0.5
-                      ? AppColors.warning
-                      : AppColors.income,
+                  ? AppColors.warning
+                  : AppColors.income,
               value: percent,
               minHeight: 3,
             ),
@@ -558,62 +545,61 @@ class SummaryWidget extends StatelessWidget {
   const SummaryWidget({super.key});
 
   @override
-  Widget build(BuildContext context) =>
-      BlocBuilder<HomeBloc, HomeState>(
-        builder: (BuildContext context, HomeState state) {
-          double totalIncome = 0;
-          double totalExpenses = 0;
+  Widget build(BuildContext context) => BlocBuilder<HomeBloc, HomeState>(
+    builder: (BuildContext context, HomeState state) {
+      double totalIncome = 0;
+      double totalExpenses = 0;
 
-          state.statsState.whenOrNull(
-            success: (List<StatsEntity> stats) {
-              totalIncome = stats
-                  .where((StatsEntity s) => s.type == TypeEntity.income)
-                  .fold(0.0, (double sum, StatsEntity s) => sum + s.total);
-              totalExpenses = stats
-                  .where((StatsEntity s) => s.type == TypeEntity.expense)
-                  .fold(0.0, (double sum, StatsEntity s) => sum + s.total);
-            },
-          );
-
-          final double balance = totalIncome - totalExpenses;
-
-          return Column(
-            children: <Widget>[
-              HomeCard(
-                title: 'Saldo',
-                totalAmount: balance,
-                icon: Icons.savings_outlined,
-                backgroundColor: const Color(0xFFDCE1FF),
-                iconColor: Colors.black,
-              ),
-              const Gap(20),
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: HomeCard(
-                      title: 'Entradas',
-                      totalAmount: totalIncome,
-                      icon: Icons.attach_money,
-                      backgroundColor: const Color(0xFFBDECB5),
-                      iconColor: Colors.black,
-                    ),
-                  ),
-                  const Gap(5),
-                  Expanded(
-                    child: HomeCard(
-                      title: 'Despesas',
-                      totalAmount: totalExpenses,
-                      icon: Icons.currency_exchange,
-                      backgroundColor: const Color(0xFFFFDAD6),
-                      iconColor: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          );
+      state.statsState.whenOrNull(
+        success: (List<StatsEntity> stats) {
+          totalIncome = stats
+              .where((StatsEntity s) => s.type == TypeEntity.income)
+              .fold(0.0, (double sum, StatsEntity s) => sum + s.total);
+          totalExpenses = stats
+              .where((StatsEntity s) => s.type == TypeEntity.expense)
+              .fold(0.0, (double sum, StatsEntity s) => sum + s.total);
         },
       );
+
+      final double balance = totalIncome - totalExpenses;
+
+      return Column(
+        children: <Widget>[
+          HomeCard(
+            title: 'Saldo',
+            totalAmount: balance,
+            icon: Icons.savings_outlined,
+            backgroundColor: const Color(0xFFDCE1FF),
+            iconColor: Colors.black,
+          ),
+          const Gap(20),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: HomeCard(
+                  title: 'Entradas',
+                  totalAmount: totalIncome,
+                  icon: Icons.attach_money,
+                  backgroundColor: const Color(0xFFBDECB5),
+                  iconColor: Colors.black,
+                ),
+              ),
+              const Gap(5),
+              Expanded(
+                child: HomeCard(
+                  title: 'Despesas',
+                  totalAmount: totalExpenses,
+                  icon: Icons.currency_exchange,
+                  backgroundColor: const Color(0xFFFFDAD6),
+                  iconColor: Colors.black,
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    },
+  );
 }
 
 class LastTransactionsWidget extends StatelessWidget {
@@ -681,11 +667,8 @@ class LastTransactions extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: <Widget>[
-      IconButton(
-        variance: const ButtonStyle.primary(),
-        enabled: true,
-        shape: ButtonShape.circle,
-        icon: Icon(icon, size: 24),
+      AppIconButton.circle(
+        icon: Icon(icon, size: 24, color: AppColors.onPrimary),
       ),
       const Gap(15),
       Expanded(
@@ -723,7 +706,7 @@ class HomeCard extends StatelessWidget {
   final Color backgroundColor;
 
   @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context) => AppCard(
     child: LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         final double cardWidth = constraints.maxWidth;
@@ -739,13 +722,15 @@ class HomeCard extends StatelessWidget {
 
         return Row(
           children: <Widget>[
-            IconButton(
-              variance: const ButtonStyle.primary().withBackgroundColor(
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
                 color: backgroundColor,
+                shape: BoxShape.circle,
               ),
-              enabled: true,
-              shape: ButtonShape.circle,
-              icon: Icon(icon, size: iconSize, color: iconColor),
+              alignment: Alignment.center,
+              child: Icon(icon, size: iconSize, color: iconColor),
             ),
             Gap(gapSize),
             Expanded(
@@ -763,7 +748,7 @@ class HomeCard extends StatelessWidget {
                     title,
                     style: TextStyle(
                       fontSize: smallFontSize,
-                      color: Colors.gray,
+                      color: Colors.grey,
                     ),
                   ),
                 ],
@@ -793,8 +778,7 @@ class HomeAppBar extends StatelessWidget {
       const Gap(10),
       if (Flavor.isDevelopment()) ...<Widget>[
         const Gap(10),
-        IconButton(
-          variance: const ButtonStyle.outline(),
+        AppIconButton(
           onPressed: () => context.push('/seed'),
           icon: const Icon(Icons.data_object, size: 20),
         ),
@@ -820,8 +804,8 @@ final List<IconData> _categoryIcons = <IconData>[
 
 IconData _iconFromType(int iconType) =>
     (iconType >= 0 && iconType < _categoryIcons.length)
-        ? _categoryIcons[iconType]
-        : Icons.category;
+    ? _categoryIcons[iconType]
+    : Icons.category;
 
 String convertToCurrencyFormated(double amount) {
   final NumberFormat format = NumberFormat.currency(
@@ -870,132 +854,126 @@ class _HealthScoreCardState extends State<_HealthScoreCard> {
       BlocBuilder<HealthScoreCubit, HealthScoreState>(
         builder: (BuildContext context, HealthScoreState state) => state.when(
           initial: () => const SizedBox(),
-          loading: () => const Card(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: Center(child: CircularProgressIndicator()),
-            ),
+          loading: () => const AppCard(
+            padding: EdgeInsets.all(20),
+            child: Center(child: CircularProgressIndicator()),
           ),
-          error: (String msg) => Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Erro ao carregar score: $msg',
-                style: const TextStyle(
-                  fontSize: AppTextStyle.sizeSm,
-                  color: AppColors.expense,
-                ),
+          error: (String msg) => AppCard(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Erro ao carregar score: $msg',
+              style: const TextStyle(
+                fontSize: AppTextStyle.sizeSm,
+                color: AppColors.expense,
               ),
             ),
           ),
-          success: (HealthScoreData data) => Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  // Header row
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            const Text(
-                              'Saúde Financeira',
-                              style: AppTextStyles.sectionTitle,
+          success: (HealthScoreData data) => AppCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                // Header row
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          const Text(
+                            'Saúde Financeira',
+                            style: AppTextStyles.sectionTitle,
+                          ),
+                          const Gap(2),
+                          Text(
+                            _scoreLabel(data.score),
+                            style: TextStyle(
+                              fontSize: AppTextStyle.sizeSm,
+                              color: _scoreColor(data.score),
+                              fontWeight: FontWeight.w600,
                             ),
-                            const Gap(2),
-                            Text(
-                              _scoreLabel(data.score),
-                              style: TextStyle(
-                                fontSize: AppTextStyle.sizeSm,
-                                color: _scoreColor(data.score),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        '${data.score}',
+                    ),
+                    Text(
+                      '${data.score}',
+                      style: TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                        color: _scoreColor(data.score),
+                      ),
+                    ),
+                    const Gap(4),
+                    const Text(
+                      '/100',
+                      style: TextStyle(
+                        fontSize: AppTextStyle.sizeSm,
+                        color: Color(0xFF9CA3AF),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const Gap(12),
+
+                // Sparkline — last 6 months
+                _HealthSparkline(scores: data.last6MonthScores),
+
+                const Gap(12),
+
+                // Expand/collapse toggle
+                GestureDetector(
+                  onTap: () => setState(() => _expanded = !_expanded),
+                  child: Row(
+                    children: <Widget>[
+                      const Text(
+                        'Detalhes',
                         style: TextStyle(
-                          fontSize: 40,
-                          fontWeight: FontWeight.bold,
-                          color: _scoreColor(data.score),
+                          fontSize: AppTextStyle.sizeSm,
+                          color: AppColors.link,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                       const Gap(4),
-                      const Text(
-                        '/100',
-                        style: TextStyle(
-                          fontSize: AppTextStyle.sizeSm,
-                          color: Color(0xFF9CA3AF),
-                        ),
+                      Icon(
+                        _expanded
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down,
+                        size: 16,
+                        color: AppColors.link,
                       ),
                     ],
                   ),
+                ),
 
-                  const Gap(12),
-
-                  // Sparkline — last 6 months
-                  _HealthSparkline(scores: data.last6MonthScores),
-
-                  const Gap(12),
-
-                  // Expand/collapse toggle
-                  GestureDetector(
-                    onTap: () => setState(() => _expanded = !_expanded),
-                    child: Row(
-                      children: <Widget>[
-                        const Text(
-                          'Detalhes',
-                          style: TextStyle(
-                            fontSize: AppTextStyle.sizeSm,
-                            color: AppColors.link,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const Gap(4),
-                        Icon(
-                          _expanded
-                              ? Icons.keyboard_arrow_up
-                              : Icons.keyboard_arrow_down,
-                          size: 16,
-                          color: AppColors.link,
-                        ),
-                      ],
-                    ),
+                if (_expanded) ...<Widget>[
+                  const Gap(10),
+                  _ScoreRow(
+                    label: 'Poupança',
+                    points: data.savingsPoints,
+                    tooltip: 'Taxa de poupança (renda − despesas) / renda',
                   ),
-
-                  if (_expanded) ...<Widget>[
-                    const Gap(10),
-                    _ScoreRow(
-                      label: 'Poupança',
-                      points: data.savingsPoints,
-                      tooltip: 'Taxa de poupança (renda − despesas) / renda',
-                    ),
-                    const Gap(6),
-                    _ScoreRow(
-                      label: 'Limites',
-                      points: data.limitPoints,
-                      tooltip: 'Média de gasto/limite por categoria',
-                    ),
-                    const Gap(6),
-                    _ScoreRow(
-                      label: 'Metas',
-                      points: data.goalPoints,
-                      tooltip: 'Progresso médio das metas ativas',
-                    ),
-                    const Gap(6),
-                    _ScoreRow(
-                      label: 'Variação',
-                      points: data.variancePoints,
-                      tooltip: 'Variação de gastos em relação ao mês anterior',
-                    ),
-                  ],
+                  const Gap(6),
+                  _ScoreRow(
+                    label: 'Limites',
+                    points: data.limitPoints,
+                    tooltip: 'Média de gasto/limite por categoria',
+                  ),
+                  const Gap(6),
+                  _ScoreRow(
+                    label: 'Metas',
+                    points: data.goalPoints,
+                    tooltip: 'Progresso médio das metas ativas',
+                  ),
+                  const Gap(6),
+                  _ScoreRow(
+                    label: 'Variação',
+                    points: data.variancePoints,
+                    tooltip: 'Variação de gastos em relação ao mês anterior',
+                  ),
                 ],
-              ),
+              ],
             ),
           ),
         ),
@@ -1015,14 +993,10 @@ class _ScoreRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Tooltip(
-    tooltip: (BuildContext _) => TooltipContainer(
-      child: Text(tooltip, style: AppTextStyles.label),
-    ),
+    message: tooltip,
     child: Row(
       children: <Widget>[
-        Expanded(
-          child: Text(label, style: AppTextStyles.bodyBold),
-        ),
+        Expanded(child: Text(label, style: AppTextStyles.bodyBold)),
         Text(
           '$points / 25',
           style: TextStyle(
@@ -1073,17 +1047,17 @@ class _HealthSparkline extends StatelessWidget {
               isCurved: true,
               color: AppColors.income,
               dotData: FlDotData(
-                getDotPainter: (
-                  FlSpot spot,
-                  double xPercentage,
-                  LineChartBarData bar,
-                  int index,
-                ) =>
-                    FlDotCirclePainter(
-                  radius: 3,
-                  color: _scoreColor(spot.y.toInt()),
-                  strokeColor: _scoreColor(spot.y.toInt()),
-                ),
+                getDotPainter:
+                    (
+                      FlSpot spot,
+                      double xPercentage,
+                      LineChartBarData bar,
+                      int index,
+                    ) => FlDotCirclePainter(
+                      radius: 3,
+                      color: _scoreColor(spot.y.toInt()),
+                      strokeColor: _scoreColor(spot.y.toInt()),
+                    ),
               ),
             ),
           ],
@@ -1115,8 +1089,8 @@ class _BillsCardState extends State<_BillsCard> {
   Future<void> _loadBills() async {
     final String userId =
         context.read<AuthBloc>().state.whenOrNull(
-              signedIn: (ClerkAuthState s) => s.user?.id,
-            ) ??
+          signedIn: (ClerkAuthState s) => s.user?.id,
+        ) ??
         '';
     if (userId.isEmpty) {
       return;
@@ -1162,30 +1136,28 @@ class _BillsCardState extends State<_BillsCard> {
     }
     return GestureDetector(
       onTap: () => context.push('/lista-contas'),
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: <Widget>[
-              const Icon(Icons.receipt_long_outlined, size: 28),
-              const Gap(12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    const Text('Contas a pagar', style: AppTextStyles.label),
-                    Text(
-                      _dueThisMonth == 0
-                          ? 'Nenhuma conta pendente'
-                          : '$_dueThisMonth conta(s) este mês',
-                      style: AppTextStyles.title,
-                    ),
-                  ],
-                ),
+      child: AppCard(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: <Widget>[
+            const Icon(Icons.receipt_long_outlined, size: 28),
+            const Gap(12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const Text('Contas a pagar', style: AppTextStyles.label),
+                  Text(
+                    _dueThisMonth == 0
+                        ? 'Nenhuma conta pendente'
+                        : '$_dueThisMonth conta(s) este mês',
+                    style: AppTextStyles.title,
+                  ),
+                ],
               ),
-              const Icon(Icons.chevron_right),
-            ],
-          ),
+            ),
+            const Icon(Icons.chevron_right),
+          ],
         ),
       ),
     );
@@ -1213,8 +1185,8 @@ class SyncStatusWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final String userId =
         context.watch<AuthBloc>().state.whenOrNull(
-              signedIn: (ClerkAuthState s) => s.user?.id,
-            ) ??
+          signedIn: (ClerkAuthState s) => s.user?.id,
+        ) ??
         '';
 
     if (userId.isEmpty) {
@@ -1226,163 +1198,164 @@ class SyncStatusWidget extends StatelessWidget {
           .collection('connected_account')
           .where('userId', isEqualTo: userId)
           .snapshots(),
-      builder: (
-        BuildContext context,
-        AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot,
-      ) {
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: <Widget>[
-                    const Icon(Icons.account_balance_outlined, size: 18),
-                    const Gap(8),
-                    const Expanded(
-                      child: Text(
-                        'Nenhum banco conectado',
-                        style: AppTextStyles.label,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => context.push('/contas-conectadas'),
-                      child: const Text(
-                        'Conectar banco',
-                        style: TextStyle(
-                          fontSize: AppTextStyle.sizeSm,
-                          color: AppColors.link,
+      builder:
+          (
+            BuildContext context,
+            AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot,
+          ) {
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: AppCard(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: <Widget>[
+                      const Icon(Icons.account_balance_outlined, size: 18),
+                      const Gap(8),
+                      const Expanded(
+                        child: Text(
+                          'Nenhum banco conectado',
+                          style: AppTextStyles.label,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }
-
-        final List<QueryDocumentSnapshot<Map<String, dynamic>>> docs =
-            snapshot.data!.docs;
-
-        DateTime? mostRecent;
-        bool hasExpired = false;
-
-        for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in docs) {
-          final dynamic rawSynced = doc.data()['lastSyncedAt'];
-          if (rawSynced is Timestamp) {
-            final DateTime dt = rawSynced.toDate();
-            if (mostRecent == null || dt.isAfter(mostRecent)) {
-              mostRecent = dt;
-            }
-          }
-          final dynamic status = doc.data()['status'];
-          if (status == 'consent_expired') {
-            hasExpired = true;
-          }
-        }
-
-        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-          stream: FirebaseFirestore.instance
-              .collection('raw_transaction')
-              .where('userId', isEqualTo: userId)
-              .where('status', isEqualTo: 'pending')
-              .snapshots(),
-          builder: (
-            BuildContext context,
-            AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> pendingSnap,
-          ) {
-            final int pendingCount =
-                pendingSnap.hasData ? pendingSnap.data!.docs.length : 0;
-
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Row(
-                        children: <Widget>[
-                          const Icon(Icons.sync, size: 18),
-                          const Gap(6),
-                          Expanded(
-                            child: Text(
-                              'Última sincronização: ${_formatSyncTime(mostRecent)}',
-                              style: AppTextStyles.label,
-                            ),
+                      TextButton(
+                        onPressed: () => context.push('/contas-conectadas'),
+                        child: const Text(
+                          'Conectar banco',
+                          style: TextStyle(
+                            fontSize: AppTextStyle.sizeSm,
+                            color: AppColors.link,
                           ),
-                          TextButton(
-                            onPressed: () =>
-                                context.push('/contas-conectadas'),
-                            child: const Text(
-                              'Open Finance',
-                              style: TextStyle(
-                                fontSize: AppTextStyle.sizeSm,
-                                color: AppColors.link,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                      if (hasExpired) ...<Widget>[
-                        const Gap(6),
-                        GestureDetector(
-                          onTap: () => context.push('/contas-conectadas'),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.warningBackground,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            final List<QueryDocumentSnapshot<Map<String, dynamic>>> docs =
+                snapshot.data!.docs;
+
+            DateTime? mostRecent;
+            bool hasExpired = false;
+
+            for (final QueryDocumentSnapshot<Map<String, dynamic>> doc
+                in docs) {
+              final dynamic rawSynced = doc.data()['lastSyncedAt'];
+              if (rawSynced is Timestamp) {
+                final DateTime dt = rawSynced.toDate();
+                if (mostRecent == null || dt.isAfter(mostRecent)) {
+                  mostRecent = dt;
+                }
+              }
+              final dynamic status = doc.data()['status'];
+              if (status == 'consent_expired') {
+                hasExpired = true;
+              }
+            }
+
+            return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: FirebaseFirestore.instance
+                  .collection('raw_transaction')
+                  .where('userId', isEqualTo: userId)
+                  .where('status', isEqualTo: 'pending')
+                  .snapshots(),
+              builder:
+                  (
+                    BuildContext context,
+                    AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>>
+                    pendingSnap,
+                  ) {
+                    final int pendingCount = pendingSnap.hasData
+                        ? pendingSnap.data!.docs.length
+                        : 0;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: AppCard(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Row(
                               children: <Widget>[
-                                Icon(
-                                  Icons.warning_amber,
-                                  size: 14,
-                                  color: AppColors.warning,
+                                const Icon(Icons.sync, size: 18),
+                                const Gap(6),
+                                Expanded(
+                                  child: Text(
+                                    'Última sincronização: ${_formatSyncTime(mostRecent)}',
+                                    style: AppTextStyles.label,
+                                  ),
                                 ),
-                                Gap(4),
-                                Text(
-                                  'Consentimento expirado — reconecte',
-                                  style: TextStyle(
-                                    fontSize: AppTextStyle.sizeXs,
-                                    color: AppColors.warningText,
+                                TextButton(
+                                  onPressed: () =>
+                                      context.push('/contas-conectadas'),
+                                  child: const Text(
+                                    'Open Finance',
+                                    style: TextStyle(
+                                      fontSize: AppTextStyle.sizeSm,
+                                      color: AppColors.link,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
+                            if (hasExpired) ...<Widget>[
+                              const Gap(6),
+                              GestureDetector(
+                                onTap: () => context.push('/contas-conectadas'),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.warningBackground,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: <Widget>[
+                                      Icon(
+                                        Icons.warning_amber,
+                                        size: 14,
+                                        color: AppColors.warning,
+                                      ),
+                                      Gap(4),
+                                      Text(
+                                        'Consentimento expirado — reconecte',
+                                        style: TextStyle(
+                                          fontSize: AppTextStyle.sizeXs,
+                                          color: AppColors.warningText,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                            if (pendingCount > 0) ...<Widget>[
+                              const Gap(6),
+                              TextButton(
+                                onPressed: () =>
+                                    context.push('/revisar-transacoes'),
+                                child: Text(
+                                  'Revisar $pendingCount importação(ões) pendente(s)',
+                                  style: const TextStyle(
+                                    fontSize: AppTextStyle.sizeSm,
+                                    color: AppColors.link,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                      ],
-                      if (pendingCount > 0) ...<Widget>[
-                        const Gap(6),
-                        TextButton(
-                          onPressed: () =>
-                              context.push('/revisar-transacoes'),
-                          child: Text(
-                            'Revisar $pendingCount importação(ões) pendente(s)',
-                            style: const TextStyle(
-                              fontSize: AppTextStyle.sizeSm,
-                              color: AppColors.link,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
+                      ),
+                    );
+                  },
             );
           },
-        );
-      },
     );
   }
 }

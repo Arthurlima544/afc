@@ -1,15 +1,13 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart'
-    hide Column, Row, Expanded;
 
 import '../../domain/entity/bank_profile_entity.dart';
 import '../../domain/entity/import_candidate_entity.dart';
 import '../../domain/entity/type_entity.dart';
-import '../../utils/app_spacing.dart';
 import '../blocs/import/import_cubit.dart';
+import '../widgets/design_system.dart';
 
 class ImportarExtrato extends StatefulWidget {
   const ImportarExtrato({required this.userId, super.key});
@@ -25,15 +23,12 @@ class _ImportarExtratoState extends State<ImportarExtrato> {
   StatementType? _type;
 
   @override
-  Widget build(BuildContext context) => DrawerOverlay(
-    child: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: BlocListener<ImportCubit, ImportState>(
+  Widget build(BuildContext context) => SafeArea(
+    child: Padding(
+      padding: const EdgeInsets.all(20),
+      child: BlocListener<ImportCubit, ImportState>(
         listener: (BuildContext context, ImportState state) {
-          state.whenOrNull(
-            done: (int _) => context.pop(),
-          );
+          state.whenOrNull(done: (int _) => context.pop());
         },
         child: BlocBuilder<ImportCubit, ImportState>(
           builder: (BuildContext context, ImportState state) => state.when(
@@ -41,29 +36,20 @@ class _ImportarExtratoState extends State<ImportarExtrato> {
               userId: widget.userId,
               bank: _bank,
               type: _type,
-              onBankChanged: (BankProfile? b) =>
-                  setState(() => _bank = b),
-              onTypeChanged: (StatementType? t) =>
-                  setState(() => _type = t),
+              onBankChanged: (BankProfile? b) => setState(() => _bank = b),
+              onTypeChanged: (StatementType? t) => setState(() => _type = t),
             ),
-            loading: () =>
-                const Center(child: CircularProgressIndicator(size: 32)),
-            saving: () =>
-                const Center(child: CircularProgressIndicator(size: 32)),
-            error: (String msg) =>
-                _ErrorView(message: msg),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            saving: () => const Center(child: CircularProgressIndicator()),
+            error: (String msg) => _ErrorView(message: msg),
             done: (int _) => const SizedBox.shrink(),
-            reviewed: (
-              List<ImportCandidateEntity> candidates,
-              String uid,
-            ) =>
+            reviewed: (List<ImportCandidateEntity> candidates, String uid) =>
                 _ReviewView(candidates: candidates),
           ),
         ),
       ),
     ),
-  ),
-);
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -118,54 +104,38 @@ class _PickerView extends StatelessWidget {
       // Bank selector
       const Text('Banco', style: AppTextStyles.labelBold),
       const Gap(8),
-      Select<BankProfile>(
-        itemBuilder: (BuildContext context, BankProfile item) =>
-            Text(_bankLabel(item)),
-        popupConstraints: const BoxConstraints(
-          maxHeight: 200,
-          maxWidth: 220,
-        ),
+      DropdownButtonFormField<BankProfile>(
+        initialValue: bank,
+        hint: const Text('Selecione o banco'),
+        decoration: const InputDecoration(),
         onChanged: onBankChanged,
-        value: bank,
-        placeholder: const Text('Selecione o banco'),
-        popup: SelectPopup<BankProfile>(
-          items: SelectItemList(
-            children: <Widget>[
-              for (final BankProfile b in BankProfile.values)
-                SelectItemButton<BankProfile>(
-                  value: b,
-                  child: Text(_bankLabel(b)),
-                ),
-            ],
-          ),
-        ).call,
+        items: BankProfile.values
+            .map(
+              (BankProfile b) => DropdownMenuItem<BankProfile>(
+                value: b,
+                child: Text(_bankLabel(b)),
+              ),
+            )
+            .toList(),
       ),
       const Gap(20),
 
       // Statement type selector
       const Text('Tipo de arquivo', style: AppTextStyles.labelBold),
       const Gap(8),
-      Select<StatementType>(
-        itemBuilder: (BuildContext context, StatementType item) =>
-            Text(_typeLabel(item)),
-        popupConstraints: const BoxConstraints(
-          maxHeight: 200,
-          maxWidth: 280,
-        ),
+      DropdownButtonFormField<StatementType>(
+        initialValue: type,
+        hint: const Text('Selecione o tipo'),
+        decoration: const InputDecoration(),
         onChanged: onTypeChanged,
-        value: type,
-        placeholder: const Text('Selecione o tipo'),
-        popup: SelectPopup<StatementType>(
-          items: SelectItemList(
-            children: <Widget>[
-              for (final StatementType t in StatementType.values)
-                SelectItemButton<StatementType>(
-                  value: t,
-                  child: Text(_typeLabel(t)),
-                ),
-            ],
-          ),
-        ).call,
+        items: StatementType.values
+            .map(
+              (StatementType t) => DropdownMenuItem<StatementType>(
+                value: t,
+                child: Text(_typeLabel(t)),
+              ),
+            )
+            .toList(),
       ),
       const Gap(32),
 
@@ -177,7 +147,6 @@ class _PickerView extends StatelessWidget {
                 statementType: type,
               )
             : null,
-        leading: const Icon(Icons.folder_open_outlined),
         child: const Text('Escolher arquivo'),
       ),
     ],
@@ -193,10 +162,9 @@ class _ReviewView extends StatelessWidget {
 
   final List<ImportCandidateEntity> candidates;
 
-  int get _accepted =>
-      candidates
-          .where((ImportCandidateEntity c) => c.status == ImportStatus.accepted)
-          .length;
+  int get _accepted => candidates
+      .where((ImportCandidateEntity c) => c.status == ImportStatus.accepted)
+      .length;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -237,10 +205,8 @@ class _ReviewView extends StatelessWidget {
         child: ListView.separated(
           itemCount: candidates.length,
           separatorBuilder: (BuildContext context, int _) => const Gap(8),
-          itemBuilder: (BuildContext context, int index) => _CandidateItem(
-            candidate: candidates[index],
-            index: index,
-          ),
+          itemBuilder: (BuildContext context, int index) =>
+              _CandidateItem(candidate: candidates[index], index: index),
         ),
       ),
     ],
@@ -263,75 +229,68 @@ class _CandidateItem extends StatelessWidget {
     final bool isRejected = candidate.status == ImportStatus.rejected;
     final bool isExpense = candidate.typeUuid == TypeEntity.expense.name;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: <Widget>[
-            Checkbox(
-              state: isAccepted
-                  ? CheckboxState.checked
-                  : CheckboxState.unchecked,
-              onChanged: candidate.isDuplicate
-                  ? null
-                  : (_) {
-                      if (isAccepted) {
-                        context.read<ImportCubit>().reject(index);
-                      } else {
-                        context.read<ImportCubit>().accept(index);
-                      }
-                    },
+    return AppCard(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        children: <Widget>[
+          Checkbox(
+            value: isAccepted,
+            onChanged: candidate.isDuplicate
+                ? null
+                : (_) {
+                    if (isAccepted) {
+                      context.read<ImportCubit>().reject(index);
+                    } else {
+                      context.read<ImportCubit>().accept(index);
+                    }
+                  },
+          ),
+          const Gap(10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  candidate.title,
+                  style: isRejected
+                      ? AppTextStyles.label.copyWith(
+                          color: const Color(0xFF9CA3AF),
+                          decoration: TextDecoration.lineThrough,
+                        )
+                      : AppTextStyles.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  DateFormat('dd/MM/yyyy').format(candidate.date),
+                  style: AppTextStyles.caption,
+                ),
+              ],
             ),
-            const Gap(10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    candidate.title,
-                    style: isRejected
-                        ? AppTextStyles.label.copyWith(
-                            color: const Color(0xFF9CA3AF),
-                            decoration: TextDecoration.lineThrough,
-                          )
-                        : AppTextStyles.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    DateFormat('dd/MM/yyyy').format(candidate.date),
-                    style: AppTextStyles.caption,
-                  ),
-                ],
+          ),
+          if (candidate.isDuplicate) ...<Widget>[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.warningBackground,
+                borderRadius: BorderRadius.circular(4),
               ),
-            ),
-            if (candidate.isDuplicate) ...<Widget>[
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 6,
-                  vertical: 2,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.warningBackground,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'Duplicata',
-                  style: AppTextStyles.captionBold.copyWith(
-                    color: AppColors.warningText,
-                  ),
+              child: Text(
+                'Duplicata',
+                style: AppTextStyles.captionBold.copyWith(
+                  color: AppColors.warningText,
                 ),
               ),
-              const Gap(8),
-            ],
-            Text(
-              'R\$ ${candidate.amount.toStringAsFixed(2)}',
-              style: AppTextStyles.labelBold.copyWith(
-                color: isExpense ? AppColors.expense : AppColors.income,
-              ),
             ),
+            const Gap(8),
           ],
-        ),
+          Text(
+            'R\$ ${candidate.amount.toStringAsFixed(2)}',
+            style: AppTextStyles.labelBold.copyWith(
+              color: isExpense ? AppColors.expense : AppColors.income,
+            ),
+          ),
+        ],
       ),
     );
   }

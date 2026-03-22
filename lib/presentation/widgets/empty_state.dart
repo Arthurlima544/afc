@@ -1,9 +1,6 @@
-import 'package:flutter/material.dart'
-    hide TextButton, showDialog, AlertDialog;
-import 'package:shadcn_flutter/shadcn_flutter.dart' hide Column, Row, Expanded;
+import 'package:flutter/material.dart';
 
-import '../../config/theme/app_colors.dart';
-import '../../config/theme/app_icons.dart';
+import 'design_system.dart';
 
 /// Generic empty-state placeholder shown when a list has no items.
 ///

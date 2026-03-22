@@ -1,15 +1,13 @@
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/material.dart'
-    hide Colors, Theme, IconButton, ButtonStyle, CircularProgressIndicator;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' hide Column, Row, Expanded;
 
-import '../../utils/app_spacing.dart';
 import '../blocs/report/report_cubit.dart';
+import '../widgets/design_system.dart';
 
 const List<Color> _kPieColors = <Color>[
   Color(0xFF6366F1),
@@ -23,8 +21,18 @@ const List<Color> _kPieColors = <Color>[
 ];
 
 const List<String> _kMonthNames = <String>[
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
 ];
 
 class Relatorio extends StatefulWidget {
@@ -78,7 +86,10 @@ class _RelatorioState extends State<Relatorio> {
   }
 
   Future<void> _exportPdf(ReportData data) async {
-    final NumberFormat fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    final NumberFormat fmt = NumberFormat.currency(
+      locale: 'pt_BR',
+      symbol: 'R\$',
+    );
     await Printing.layoutPdf(
       onLayout: (_) {
         final pw.Document doc = pw.Document()
@@ -90,21 +101,31 @@ class _RelatorioState extends State<Relatorio> {
                 children: <pw.Widget>[
                   pw.Text(
                     'Relatório Financeiro — ${_kMonthNames[data.month - 1]} ${data.year}',
-                    style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
+                    style: pw.TextStyle(
+                      fontSize: 20,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
                   ),
                   pw.SizedBox(height: 16),
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: <pw.Widget>[
                       pw.Text('Receita total: ${fmt.format(data.totalIncome)}'),
-                      pw.Text('Despesa total: ${fmt.format(data.totalExpenses)}'),
-                      pw.Text('Taxa de poupança: ${data.savingsRate.toStringAsFixed(1)}%'),
+                      pw.Text(
+                        'Despesa total: ${fmt.format(data.totalExpenses)}',
+                      ),
+                      pw.Text(
+                        'Taxa de poupança: ${data.savingsRate.toStringAsFixed(1)}%',
+                      ),
                     ],
                   ),
                   pw.SizedBox(height: 24),
                   pw.Text(
                     'Despesas por categoria',
-                    style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+                    style: pw.TextStyle(
+                      fontSize: 14,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
                   ),
                   pw.SizedBox(height: 8),
                   ...data.expensesByCategory.entries.map(
@@ -143,10 +164,10 @@ class _RelatorioState extends State<Relatorio> {
               ),
               BlocBuilder<ReportCubit, ReportState>(
                 builder: (BuildContext context, ReportState state) {
-                  final ReportData? data =
-                      state.whenOrNull(success: (ReportData d) => d);
-                  return IconButton(
-                    variance: const ButtonStyle.outline(),
+                  final ReportData? data = state.whenOrNull(
+                    success: (ReportData d) => d,
+                  );
+                  return AppIconButton(
                     onPressed: data != null ? () => _exportPdf(data) : null,
                     icon: const Icon(Icons.picture_as_pdf_outlined),
                   );
@@ -160,8 +181,7 @@ class _RelatorioState extends State<Relatorio> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              IconButton(
-                variance: const ButtonStyle.outline(),
+              AppIconButton(
                 onPressed: _prevMonth,
                 icon: const Icon(Icons.chevron_left),
               ),
@@ -171,8 +191,7 @@ class _RelatorioState extends State<Relatorio> {
                 style: AppTextStyles.sectionTitle,
               ),
               const Gap(8),
-              IconButton(
-                variance: const ButtonStyle.outline(),
+              AppIconButton(
                 onPressed: _nextMonth,
                 icon: const Icon(Icons.chevron_right),
               ),
@@ -201,8 +220,10 @@ class _ReportContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final NumberFormat fmt =
-        NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    final NumberFormat fmt = NumberFormat.currency(
+      locale: 'pt_BR',
+      symbol: 'R\$',
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -230,7 +251,9 @@ class _ReportContent extends StatelessWidget {
               child: _SummaryCard(
                 label: 'Poupança',
                 value: '${data.savingsRate.toStringAsFixed(1)}%',
-                color: data.savingsRate >= 0 ? AppColors.income : AppColors.expense,
+                color: data.savingsRate >= 0
+                    ? AppColors.income
+                    : AppColors.expense,
               ),
             ),
           ],
@@ -296,12 +319,15 @@ class _ReportContent extends StatelessWidget {
     ReportData data,
     NumberFormat fmt,
   ) {
-    final List<MapEntry<String, double>> entries =
-        data.expensesByCategory.entries.toList();
+    final List<MapEntry<String, double>> entries = data
+        .expensesByCategory
+        .entries
+        .toList();
     return List<PieChartSectionData>.generate(entries.length, (int i) {
       final MapEntry<String, double> entry = entries[i];
-      final double pct =
-          data.totalExpenses > 0 ? entry.value / data.totalExpenses * 100 : 0;
+      final double pct = data.totalExpenses > 0
+          ? entry.value / data.totalExpenses * 100
+          : 0;
       return PieChartSectionData(
         value: entry.value,
         title: '${pct.toStringAsFixed(0)}%',
@@ -340,30 +366,29 @@ class _ComparisonChart extends StatelessWidget {
       height: 200,
       child: BarChart(
         BarChartData(
-          barGroups: List<BarChartGroupData>.generate(
-            categories.length,
-            (int i) {
-              final String key = categories[i];
-              return BarChartGroupData(
-                x: i,
-                barsSpace: 4,
-                barRods: <BarChartRodData>[
-                  BarChartRodData(
-                    toY: data.expensesByCategory[key] ?? 0,
-                    color: AppColors.expense,
-                    width: 10,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  BarChartRodData(
-                    toY: data.prevExpensesByCategory[key] ?? 0,
-                    color: const Color(0xFF94A3B8),
-                    width: 10,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ],
-              );
-            },
-          ),
+          barGroups: List<BarChartGroupData>.generate(categories.length, (
+            int i,
+          ) {
+            final String key = categories[i];
+            return BarChartGroupData(
+              x: i,
+              barsSpace: 4,
+              barRods: <BarChartRodData>[
+                BarChartRodData(
+                  toY: data.expensesByCategory[key] ?? 0,
+                  color: AppColors.expense,
+                  width: 10,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                BarChartRodData(
+                  toY: data.prevExpensesByCategory[key] ?? 0,
+                  color: const Color(0xFF94A3B8),
+                  width: 10,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ],
+            );
+          }),
           titlesData: FlTitlesData(
             leftTitles: const AxisTitles(),
             rightTitles: const AxisTitles(),
@@ -375,8 +400,7 @@ class _ComparisonChart extends StatelessWidget {
                   if (idx < 0 || idx >= categories.length) {
                     return const SizedBox.shrink();
                   }
-                  final String name =
-                      data.categoryNames[categories[idx]] ?? '';
+                  final String name = data.categoryNames[categories[idx]] ?? '';
                   return Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
@@ -438,10 +462,14 @@ class _PieLegend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final NumberFormat fmt =
-        NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    final List<MapEntry<String, double>> entries =
-        data.expensesByCategory.entries.toList();
+    final NumberFormat fmt = NumberFormat.currency(
+      locale: 'pt_BR',
+      symbol: 'R\$',
+    );
+    final List<MapEntry<String, double>> entries = data
+        .expensesByCategory
+        .entries
+        .toList();
     return Wrap(
       spacing: 12,
       runSpacing: 6,
@@ -472,9 +500,6 @@ class _LegendDot extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     width: 10,
     height: 10,
-    decoration: BoxDecoration(
-      color: color,
-      shape: BoxShape.circle,
-    ),
+    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
   );
 }

@@ -44,6 +44,14 @@ abstract final class AppColors {
   /// Light muted — dividers, placeholder backgrounds.
   static const Color mutedLight = Color(0xFFE5E7EB);
 
+  // ── Borders ────────────────────────────────────────────────────────────────
+
+  /// Card / input border in light mode.
+  static const Color borderLight = Color(0xFFE5E7EB);
+
+  /// Card / input border in dark mode.
+  static const Color borderDark = Color(0xFF2C2C2E);
+
   // ── Surface — Light theme ──────────────────────────────────────────────────
 
   /// Page background in light mode.

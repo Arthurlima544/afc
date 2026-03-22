@@ -1,13 +1,10 @@
-import 'package:flutter/material.dart' show RefreshIndicator;
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart'
-    hide Column, Row, Expanded;
 
 import '../../domain/entity/category_entity.dart';
-import '../../utils/app_spacing.dart';
 import '../blocs/category/category_cubit.dart';
+import '../widgets/design_system.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_state.dart';
 import '../widgets/skeleton_list.dart';
@@ -19,8 +16,7 @@ class ListaCategorias extends StatelessWidget {
   Widget build(BuildContext context) => SafeArea(
     child: RefreshIndicator(
       color: AppColors.primary,
-      onRefresh: () async =>
-          context.read<CategoryCubit>().loadCategories(),
+      onRefresh: () async => context.read<CategoryCubit>().loadCategories(),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(20),
@@ -32,8 +28,7 @@ class ListaCategorias extends StatelessWidget {
                 const Expanded(
                   child: Text('Categorias', style: AppTextStyles.heading),
                 ),
-                IconButton(
-                  variance: const ButtonStyle.outline(),
+                AppIconButton(
                   onPressed: () => context.push('/cadastro-categoria'),
                   icon: const Icon(Icons.add),
                 ),
@@ -41,32 +36,30 @@ class ListaCategorias extends StatelessWidget {
             ),
             const Gap(16),
             BlocBuilder<CategoryCubit, CategoryState>(
-              builder: (BuildContext context, CategoryState state) =>
-                  state.when(
-                    initial: (_) => const SizedBox(),
-                    loading: () => const SkeletonList(),
-                    error: (String msg) => ErrorState(
-                      message: msg,
-                      onRetry: () =>
-                          context.read<CategoryCubit>().loadCategories(),
-                    ),
-                    success: (_) => const SizedBox(),
-                    listed: (List<CategoryEntity> cats) => cats.isEmpty
-                        ? const EmptyState(
-                            message:
-                                'Nenhuma categoria ainda.\nToque em + para criar.',
-                            icon: Icons.category_outlined,
-                          )
-                        : Column(
-                            children: <Widget>[
-                              for (final CategoryEntity cat in cats)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: _CategoriaItem(cat: cat),
-                                ),
-                            ],
-                          ),
-                  ),
+              builder: (BuildContext context, CategoryState state) => state.when(
+                initial: (_) => const SizedBox(),
+                loading: () => const SkeletonList(),
+                error: (String msg) => ErrorState(
+                  message: msg,
+                  onRetry: () => context.read<CategoryCubit>().loadCategories(),
+                ),
+                success: (_) => const SizedBox(),
+                listed: (List<CategoryEntity> cats) => cats.isEmpty
+                    ? const EmptyState(
+                        message:
+                            'Nenhuma categoria ainda.\nToque em + para criar.',
+                        icon: Icons.category_outlined,
+                      )
+                    : Column(
+                        children: <Widget>[
+                          for (final CategoryEntity cat in cats)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _CategoriaItem(cat: cat),
+                            ),
+                        ],
+                      ),
+              ),
             ),
           ],
         ),
@@ -81,39 +74,29 @@ class _CategoriaItem extends StatelessWidget {
   final CategoryEntity cat;
 
   @override
-  Widget build(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        children: <Widget>[
-          IconButton(
-            variance: const ButtonStyle.primary(),
-            enabled: true,
-            shape: ButtonShape.circle,
-            icon: Icon(
-              _iconFromType(cat.iconType),
-              size: 24,
-              color: Colors.white,
-            ),
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.all(12),
+    child: Row(
+      children: <Widget>[
+        AppIconButton.circle(
+          icon: Icon(
+            _iconFromType(cat.iconType),
+            size: 24,
+            color: AppColors.onPrimary,
           ),
-          const Gap(12),
-          Expanded(
-            child: Text(cat.name, style: AppTextStyles.title),
-          ),
-          IconButton(
-            variance: const ButtonStyle.outline(),
-            onPressed: () =>
-                context.push('/editar-categoria', extra: cat),
-            icon: const Icon(Icons.edit, size: 18),
-          ),
-          IconButton(
-            variance: const ButtonStyle.outline(),
-            onPressed: () =>
-                context.read<CategoryCubit>().deleteCategory(cat.uuid),
-            icon: const Icon(Icons.delete, size: 18),
-          ),
-        ],
-      ),
+        ),
+        const Gap(12),
+        Expanded(child: Text(cat.name, style: AppTextStyles.title)),
+        AppIconButton(
+          onPressed: () => context.push('/editar-categoria', extra: cat),
+          icon: const Icon(Icons.edit, size: 18),
+        ),
+        AppIconButton(
+          onPressed: () =>
+              context.read<CategoryCubit>().deleteCategory(cat.uuid),
+          icon: const Icon(Icons.delete, size: 18),
+        ),
+      ],
     ),
   );
 }
@@ -135,5 +118,5 @@ const List<IconData> _categoryIcons = <IconData>[
 
 IconData _iconFromType(int iconType) =>
     (iconType >= 0 && iconType < _categoryIcons.length)
-        ? _categoryIcons[iconType]
-        : Icons.category;
+    ? _categoryIcons[iconType]
+    : Icons.category;
