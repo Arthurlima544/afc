@@ -2,6 +2,7 @@ import 'package:afc/domain/entity/recurring_entity.dart';
 import 'package:afc/domain/entity/transaction_entity.dart';
 import 'package:afc/presentation/blocs/recurring/recurring_cubit.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -19,7 +20,7 @@ TransactionEntity _template({
       amount: amount,
       categoryUUid: 'cat-1',
       typeUuid: typeUuid,
-      data: DateTime(2025, 1, 1),
+      data: DateTime(2025),
       title: 'Netflix',
       userId: 'user-1',
     );
@@ -35,7 +36,7 @@ RecurringEntity _rule({
       userId: 'user-1',
       templateTransaction: _template(),
       frequency: frequency,
-      nextDue: nextDue ?? DateTime(2025, 2, 1),
+      nextDue: nextDue ?? DateTime(2025, 2),
       active: active,
     );
 
@@ -61,12 +62,12 @@ void main() {
     });
 
     test('monthly wraps December to January next year', () {
-      final DateTime from = DateTime(2025, 12, 1);
-      expect(nextDueAfter('monthly', from), DateTime(2026, 1, 1));
+      final DateTime from = DateTime(2025, 12);
+      expect(nextDueAfter('monthly', from), DateTime(2026));
     });
 
     test('unknown frequency falls back to 30 days', () {
-      final DateTime from = DateTime(2025, 3, 1);
+      final DateTime from = DateTime(2025, 3);
       expect(nextDueAfter('unknown', from), DateTime(2025, 3, 31));
     });
   });
@@ -102,7 +103,7 @@ void main() {
         RecurringState.success(_rule()),
       ],
       verify: (_) async {
-        final snap = await fakeFirestore
+        final QuerySnapshot<Map<String, dynamic>> snap = await fakeFirestore
             .collection('recurring')
             .where('uuid', isEqualTo: 'rule-1')
             .get();
@@ -153,7 +154,7 @@ void main() {
       build: () => RecurringCubit(firestore: fakeFirestore),
       act: (RecurringCubit cubit) => cubit.pause('rule-1'),
       verify: (_) async {
-        final snap = await fakeFirestore
+        final QuerySnapshot<Map<String, dynamic>> snap = await fakeFirestore
             .collection('recurring')
             .where('uuid', isEqualTo: 'rule-1')
             .get();
@@ -171,7 +172,7 @@ void main() {
       build: () => RecurringCubit(firestore: fakeFirestore),
       act: (RecurringCubit cubit) => cubit.resume('rule-1'),
       verify: (_) async {
-        final snap = await fakeFirestore
+        final QuerySnapshot<Map<String, dynamic>> snap = await fakeFirestore
             .collection('recurring')
             .where('uuid', isEqualTo: 'rule-1')
             .get();
@@ -191,7 +192,7 @@ void main() {
       build: () => RecurringCubit(firestore: fakeFirestore),
       act: (RecurringCubit cubit) => cubit.delete('rule-1'),
       verify: (_) async {
-        final snap = await fakeFirestore
+        final QuerySnapshot<Map<String, dynamic>> snap = await fakeFirestore
             .collection('recurring')
             .where('uuid', isEqualTo: 'rule-1')
             .get();
@@ -218,14 +219,14 @@ void main() {
           cubit.checkAndMaterialise('user-1'),
       verify: (_) async {
         // A transaction should have been created
-        final txSnap = await fakeFirestore
+        final QuerySnapshot<Map<String, dynamic>> txSnap = await fakeFirestore
             .collection('transaction')
             .where('userId', isEqualTo: 'user-1')
             .get();
         expect(txSnap.docs, isNotEmpty);
 
         // nextDue should have advanced to a future date
-        final ruleSnap = await fakeFirestore
+        final QuerySnapshot<Map<String, dynamic>> ruleSnap = await fakeFirestore
             .collection('recurring')
             .where('uuid', isEqualTo: 'rule-1')
             .get();
@@ -249,7 +250,7 @@ void main() {
       act: (RecurringCubit cubit) =>
           cubit.checkAndMaterialise('user-1'),
       verify: (_) async {
-        final txSnap = await fakeFirestore
+        final QuerySnapshot<Map<String, dynamic>> txSnap = await fakeFirestore
             .collection('transaction')
             .where('userId', isEqualTo: 'user-1')
             .get();
@@ -270,7 +271,7 @@ void main() {
       act: (RecurringCubit cubit) =>
           cubit.checkAndMaterialise('user-1'),
       verify: (_) async {
-        final txSnap = await fakeFirestore
+        final QuerySnapshot<Map<String, dynamic>> txSnap = await fakeFirestore
             .collection('transaction')
             .where('userId', isEqualTo: 'user-1')
             .get();

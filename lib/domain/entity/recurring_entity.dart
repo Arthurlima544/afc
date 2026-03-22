@@ -7,6 +7,7 @@ part 'recurring_entity.g.dart';
 
 @freezed
 sealed class RecurringEntity with _$RecurringEntity {
+  // ignore: invalid_annotation_target
   @JsonSerializable(explicitToJson: true)
   const factory RecurringEntity({
     required String uuid,

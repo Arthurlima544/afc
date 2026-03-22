@@ -1,6 +1,7 @@
 import 'package:afc/domain/entity/template_entity.dart';
 import 'package:afc/presentation/blocs/template/template_cubit.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -55,7 +56,7 @@ void main() {
         TemplateState.success(_template()),
       ],
       verify: (_) async {
-        final snap = await fakeFirestore
+        final QuerySnapshot<Map<String, dynamic>> snap = await fakeFirestore
             .collection('template')
             .where('uuid', isEqualTo: 'tpl-1')
             .get();
@@ -128,7 +129,7 @@ void main() {
       build: () => TemplateCubit(firestore: fakeFirestore),
       act: (TemplateCubit cubit) => cubit.delete('tpl-1'),
       verify: (_) async {
-        final snap = await fakeFirestore
+        final QuerySnapshot<Map<String, dynamic>> snap = await fakeFirestore
             .collection('template')
             .where('uuid', isEqualTo: 'tpl-1')
             .get();

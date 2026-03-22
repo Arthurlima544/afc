@@ -48,7 +48,7 @@ void main() {
 
     test('parses DD/MM/YYYY date', () {
       final List<ImportCandidateEntity> r = parseNubankExtrato(_extrato);
-      expect(r[0].date, DateTime(2026, 2, 1));
+      expect(r[0].date, DateTime(2026, 2));
     });
 
     test('uses Descrição as title', () {

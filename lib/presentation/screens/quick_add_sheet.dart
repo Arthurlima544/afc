@@ -1,7 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart' hide Colors, TextField, Theme, CircularProgressIndicator;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' hide Column, Row, Expanded;
+import 'package:shadcn_flutter/shadcn_flutter.dart' hide AlertDialog, Column, Expanded, Row, TextButton, showDialog;
 import 'package:uuid/uuid.dart';
 
 import '../../domain/entity/category_entity.dart';
@@ -14,9 +15,10 @@ import '../blocs/template/template_cubit.dart';
 import '../blocs/transaction/transaction_cubit.dart';
 
 class QuickAddSheet extends StatefulWidget {
-  const QuickAddSheet({required this.userId, super.key});
+  const QuickAddSheet({required this.userId, required this.onClose, super.key});
 
   final String userId;
+  final VoidCallback onClose;
 
   @override
   State<QuickAddSheet> createState() => _QuickAddSheetState();
@@ -82,8 +84,58 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
     });
   }
 
-  void _save(List<CategoryEntity> categories) {
-    if (_amount <= 0 || _categoryUuid == null) {
+  Future<void> _showAddCategoryDialog() async {
+    final TextEditingController controller = TextEditingController();
+    final String? name = await showDialog<String>(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: const Text('Nova categoria'),
+        content: TextField(
+          controller: controller,
+          placeholder: const Text('Nome da categoria'),
+          autofocus: true,
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              final String n = controller.text.trim();
+              if (n.isNotEmpty) {
+                Navigator.of(dialogContext).pop(n);
+              }
+            },
+            child: const Text('Criar'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name == null || !mounted) {
+      return;
+    }
+    final CategoryEntity newCat = CategoryEntity(
+      uuid: const Uuid().v1(),
+      name: name,
+      iconType: 0,
+    );
+    await FirebaseFirestore.instance.collection('category').add(newCat.toJson());
+    await _cubit.getCategories();
+    if (mounted) {
+      setState(() => _categoryUuid = newCat.uuid);
+    }
+  }
+
+  Future<void> _save(List<CategoryEntity> categories) async {
+    if (_categoryUuid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecione uma categoria')),
+      );
+      return;
+    }
+    if (_amount <= 0) {
       return;
     }
     final String title = _titleController.text.trim().isEmpty
@@ -94,7 +146,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
               '')
         : _titleController.text.trim();
 
-    _cubit.saveTransaction(
+    await _cubit.saveTransaction(
       TransactionEntity(
         uuid: const Uuid().v1(),
         amount: _amount,
@@ -105,8 +157,8 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
         userId: widget.userId,
       ),
     );
-    HapticFeedback.mediumImpact();
-    Navigator.of(context).pop();
+    await HapticFeedback.mediumImpact();
+    widget.onClose();
   }
 
   @override
@@ -274,17 +326,20 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                   const Gap(16),
 
                   // Category chips
-                  if (categories.isNotEmpty) ...<Widget>[
-                    const Text('Categoria', style: AppTextStyles.labelBold),
-                    const Gap(8),
+                  const Text('Categoria', style: AppTextStyles.labelBold),
+                  const Gap(8),
+                  if (state.whenOrNull(loading: () => true) == true)
+                    const Center(child: CircularProgressIndicator())
+                  else
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: <Widget>[
                         for (final CategoryEntity cat in categories)
                           GestureDetector(
-                            onTap: () =>
-                                setState(() => _categoryUuid = cat.uuid),
+                            onTap: () => setState(() {
+                              _categoryUuid = cat.uuid;
+                            }),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -312,11 +367,50 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                               ),
                             ),
                           ),
+                        // "+" chip to create a new category inline
+                        GestureDetector(
+                          onTap: _showAddCategoryDialog,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .muted
+                                    .withValues(alpha: 0.4),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                Icon(
+                                  Icons.add,
+                                  size: 14,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .muted,
+                                ),
+                                const Gap(4),
+                                Text(
+                                  'Nova',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ],
                     ),
-                    const Gap(16),
-                  ] else if (state.whenOrNull(loading: () => true) == true)
-                    const Center(child: CircularProgressIndicator()),
+                  const Gap(16),
 
 
                   // Optional title
@@ -392,7 +486,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
 
                   // Save button
                   PrimaryButton(
-                    onPressed: _amount > 0 && _categoryUuid != null
+                    onPressed: _amount > 0
                         ? () => _save(categories)
                         : null,
                     child: const Text('Salvar'),

@@ -167,9 +167,8 @@ DATA:OFXSGML
     });
 
     test('strips currency prefix', () {
-      // ignore: prefer_interpolation_to_compose_strings
-      final String csvCurrency = 'data,descricao,valor\n'
-          '15/03/2025,Gas,' + r'R$ -80.00' + '\n';
+      const String csvCurrency = 'data,descricao,valor\n'
+          r'15/03/2025,Gas,R$ -80.00' '\n';
       final List<ImportCandidateEntity> result = parseCsv(csvCurrency);
       expect(result[0].amount, closeTo(80.00, 0.001));
     });

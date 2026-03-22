@@ -48,7 +48,10 @@ class _ScaffoldShellState extends State<ScaffoldShell> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (_) => QuickAddSheet(userId: userId),
+      builder: (BuildContext sheetContext) => QuickAddSheet(
+        userId: userId,
+        onClose: () => Navigator.of(sheetContext).pop(),
+      ),
     );
   }
 
