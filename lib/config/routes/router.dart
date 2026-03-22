@@ -13,6 +13,7 @@ import '../../presentation/blocs/import/import_cubit.dart';
 import '../../presentation/blocs/limit/limit_cubit.dart';
 import '../../presentation/blocs/open_finance/open_finance_cubit.dart';
 import '../../presentation/blocs/recurring/recurring_cubit.dart';
+import '../../presentation/blocs/report/report_cubit.dart';
 import '../../presentation/blocs/review_queue/review_queue_cubit.dart';
 import '../../presentation/blocs/transaction/transaction_cubit.dart';
 import '../../presentation/screens/cadastrar_categoria.dart';
@@ -30,6 +31,7 @@ import '../../presentation/screens/lista_limites.dart';
 import '../../presentation/screens/lista_recorrentes.dart';
 import '../../presentation/screens/lista_transacoes.dart';
 import '../../presentation/screens/login_screen.dart';
+import '../../presentation/screens/relatorio.dart';
 import '../../presentation/screens/review_queue_screen.dart';
 import '../../presentation/screens/scaffold_shell.dart';
 import '../../utils/logger.dart';
@@ -254,6 +256,21 @@ final GoRouter router = GoRouter(
         return BlocProvider<ImportCubit>(
           create: (_) => ImportCubit(),
           child: ImportarExtrato(userId: userId),
+        );
+      },
+    ),
+
+    GoRoute(
+      path: '/relatorio',
+      builder: (BuildContext context, GoRouterState state) {
+        final String userId =
+            context.read<AuthBloc>().state.whenOrNull(
+                  signedIn: (ClerkAuthState s) => s.user?.id,
+                ) ??
+            '';
+        return BlocProvider<ReportCubit>(
+          create: (_) => ReportCubit(),
+          child: Relatorio(userId: userId),
         );
       },
     ),
