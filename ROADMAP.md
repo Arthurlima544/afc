@@ -390,6 +390,99 @@ User ──► Connect Widget (Pluggy SDK) ──► Bank consent ──► Plug
 
 ---
 
+## Sprint 8 — Brand Identity & Visual Language (US-33–37)
+
+### US-33 · Brand color system & typography scale ✅
+- Primary color (`#10B981` emerald), full colour palette, typography scale defined in `app_theme.dart`
+
+### US-34 · Custom app icon & branded splash screen ✅
+- App icons (dev/prod) via `flutter_launcher_icons`; native splash screen configured
+
+### US-35 · Consistent iconography system ✅
+- `AppIcons` constants class; icon list for goals/categories; `cupertino_icons` + Material Icons
+
+### US-36 · Dark mode & theme toggle ✅
+- `ThemeCubit` (light / dark / system); `ThemeMode` propagated through `MyApp`
+
+### US-37 · Branded empty states ✅
+- `EmptyState` widget with icon + message; applied to all list screens
+
+---
+
+## Sprint 9 — User Experience & Interaction Design (US-38–44)
+
+### US-38 · Onboarding flow (first-time user) ✅
+- `OnboardingScreen` (4-page `PageView`, dot indicators); `SharedPreferences` `onboarding_done` flag; `HomeScreen` routes to `/onboarding` on first launch
+
+### US-39 · Skeleton loading screens ✅
+- `SkeletonList` with shimmer animation (`AnimationController` + `LinearGradient`); respects `MediaQuery.disableAnimations`
+
+### US-40 · Micro-animations & page transitions ✅
+- `transitions.dart` (`slideUpTransition`, `fadeScaleTransition`); FAB `ScaleTransition` pop-in; haptic `lightImpact` on tab taps
+
+### US-41 · User profile & settings screen ✅
+- `SettingsCubit` + `SettingsScreen` (`/settings`); Profile, Appearance, Notifications, Data, About sections; gear icon on dashboard
+
+### US-42 · Contextual error states with retry ✅
+- `ErrorState` widget with retry button; replaces bare error text on all 5 list screens
+
+### US-43 · Pull-to-refresh on all list screens ✅
+- `RefreshIndicator` on transactions, categories, limits, recurring, goals list screens
+
+### US-44 · Accessibility & inclusive design ✅
+- `Semantics` labels on FAB + settings button; `tooltip` on all `NavigationDestination`s; `docs/accessibility_checklist.md`
+
+---
+
+## Sprint 10 — Remove Shadcn & Establish AFC Design System (US-33b–44b)
+
+Full migration from `shadcn_flutter` to a custom Material 3 design system:
+
+- `AppCard`, `AppButton`, `AppIconButton`, `AppTextField`, `AppDialog`, `Gap` widgets
+- `AppColors`, `AppTextStyles`, `AppSpacing` constants
+- `design_system.dart` barrel export
+- All 25 screens migrated — `hide Column, Row, Expanded` clauses removed
+- `ColorScheme.fromSeed()` with `useMaterial3: true`
+- `shadcn_flutter` removed from `pubspec.yaml`
+
+---
+
+## Sprint 11 — Design Polish & Navigation Overhaul (US-45–53)
+
+### US-45 · Fix primary color propagation ✅
+- Explicit `primary: AppColors.primary, onPrimary: AppColors.onPrimary` overrides in `ColorScheme.fromSeed()` (both light and dark themes)
+
+### US-46 · Fix HomeCard internal layout ✅
+- Added `padding: const EdgeInsets.all(16)` to `AppCard` in `HomeCard`; corrected icon circle sizing
+
+### US-47 · Fix light/dark mode card adaptation ✅
+- `AppCard` and `AppIconButton` now use `Theme.of(context).brightness` (responds to `ThemeCubit`-driven theme changes, not just system brightness)
+
+### US-48 · Scaffold wrapper for all push-route screens ✅
+- Every `context.push()` screen wrapped in `Scaffold` (Material surface + background colour); form screens get `AppBar` with `BackButton`
+
+### US-49 · Fix OFX/CSV encoding (Latin-1 fallback) ✅
+- `ImportCubit` tries `utf8.decode` first; falls back to `latin1.decode` on `FormatException`; fixes garbled "transferência" from Nubank exports
+
+### US-50 · Bottom nav reorganisation (6→4 tabs) ✅
+- Tabs: Home | Transactions | Limits | Goals
+- Categories moved to Settings screen ("Gerenciar categorias" tile)
+- Recurring moved to Transactions header (repeat icon button)
+- `lista_categorias.dart` and `lista_recorrentes.dart` converted to push routes with back button
+
+### US-51 · Form screens as BottomSheet ✅
+- `showFormSheet<T>()` utility (`DraggableScrollableSheet`, 90% initial, 50–95% range)
+- All create/edit forms shown as draggable bottom sheets; each form gets its own `BlocProvider` inline
+
+### US-52 · Fix Edit Transaction & Edit Limit dropdown assertion ✅
+- Guard `_typeValue` against values not present in `TypeEntity.values` (set to `null` if not found)
+- Guard `_monthValue` in `CadastrarLimites` against values not in `CalendarEntity.values`
+
+### US-53 · Fix "Ver Todas" navigation ✅
+- Confirmed `context.go('/lista-transacoes')` correctly switches to the Transactions tab in `StatsWidget`
+
+---
+
 ## Technical Debt & Cross-cutting
 
 These items are not user stories but are necessary for long-term quality.
@@ -422,3 +515,7 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 6 (US-19–22) | `feat/us-19-22-smart-transactions` | ✅ Merged |
 | Sprint 7 (US-23–27) | `feat/us-23-27-financial-intelligence` | ✅ Merged |
 | Technical debt (tests, offline, CI) | `chore/technical-debt` | ⏳ Open PR |
+| Sprint 8 (US-33–37) | `feat/us-33-37-brand-identity` | ✅ Merged |
+| Sprint 9 (US-38–44) | `feat/us-38-44-ux-polish` | ✅ Merged |
+| Sprint 10 (design system migration) | `feat/sprint10-design-system` | ✅ Merged |
+| Sprint 11 (US-45–53) | `feat/sprint11-polish` | ⏳ Open |

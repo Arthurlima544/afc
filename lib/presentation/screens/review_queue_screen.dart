@@ -20,7 +20,8 @@ class ReviewQueueScreen extends StatelessWidget {
             ) ??
         '';
 
-    return SafeArea(
+    return Scaffold(
+      body: SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -79,6 +80,7 @@ class ReviewQueueScreen extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }

@@ -122,22 +122,10 @@ class _ScaffoldShellState extends State<ScaffoldShell>
             tooltip: 'Transações',
           ),
           NavigationDestination(
-            icon: Icon(AppIcons.categories),
-            selectedIcon: Icon(AppIcons.categoriesSelected),
-            label: 'Categorias',
-            tooltip: 'Categorias',
-          ),
-          NavigationDestination(
             icon: Icon(AppIcons.limits),
             selectedIcon: Icon(AppIcons.limitsSelected),
             label: 'Limites',
             tooltip: 'Limites',
-          ),
-          NavigationDestination(
-            icon: Icon(AppIcons.recurring),
-            selectedIcon: Icon(AppIcons.recurringSelected),
-            label: 'Recorrências',
-            tooltip: 'Recorrências',
           ),
           NavigationDestination(
             icon: Icon(AppIcons.goals),

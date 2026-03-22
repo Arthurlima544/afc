@@ -9,28 +9,41 @@ import '../blocs/bill/bill_cubit.dart';
 import '../widgets/design_system.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/skeleton_list.dart';
+import 'cadastrar_conta.dart';
 
 class ListaContas extends StatelessWidget {
   const ListaContas({super.key});
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              const Expanded(
-                child: Text('Contas a Pagar', style: AppTextStyles.heading),
-              ),
-              AppIconButton(
-                onPressed: () => context.push('/cadastro-conta'),
-                icon: const Icon(Icons.add),
-              ),
-            ],
-          ),
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                AppIconButton(
+                  onPressed: () => context.pop(),
+                  icon: const Icon(Icons.arrow_back),
+                ),
+                const Gap(8),
+                const Expanded(
+                  child: Text('Contas a Pagar', style: AppTextStyles.heading),
+                ),
+                AppIconButton(
+                  onPressed: () => showFormSheet<void>(
+                    context,
+                    builder: (BuildContext ctx) => BlocProvider<BillCubit>(
+                      create: (_) => BillCubit(),
+                      child: const CadastrarConta(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.add),
+                ),
+              ],
+            ),
           const Gap(16),
           BlocBuilder<BillCubit, BillState>(
             builder: (BuildContext context, BillState state) => state.when(
@@ -59,7 +72,8 @@ class ListaContas extends StatelessWidget {
         ],
       ),
     ),
-  );
+  ),
+);
 }
 
 class _BillItem extends StatelessWidget {
@@ -166,7 +180,13 @@ class _BillItem extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: <Widget>[
                 AppIconButton(
-                  onPressed: () => context.push('/editar-conta', extra: bill),
+                  onPressed: () => showFormSheet<void>(
+                    context,
+                    builder: (BuildContext ctx) => BlocProvider<BillCubit>(
+                      create: (_) => BillCubit(),
+                      child: CadastrarConta(initialBill: bill),
+                    ),
+                  ),
                   icon: const Icon(Icons.edit, size: 18),
                 ),
                 const Gap(8),

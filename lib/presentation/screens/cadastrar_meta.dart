@@ -79,7 +79,9 @@ class _CadastrarMetaState extends State<CadastrarMeta> {
   }
 
   @override
-  Widget build(BuildContext context) => BlocListener<GoalCubit, GoalState>(
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(leading: BackButton(onPressed: () => context.pop())),
+    body: BlocListener<GoalCubit, GoalState>(
     listener: (BuildContext context, GoalState state) {
       state.whenOrNull(success: (_) => context.pop());
     },
@@ -183,6 +185,7 @@ class _CadastrarMetaState extends State<CadastrarMeta> {
         ),
       ),
     ),
+  ),
   );
 
   void _save() {

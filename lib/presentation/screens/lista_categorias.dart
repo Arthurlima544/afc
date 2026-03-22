@@ -8,32 +8,45 @@ import '../widgets/design_system.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_state.dart';
 import '../widgets/skeleton_list.dart';
+import 'cadastrar_categoria.dart';
 
 class ListaCategorias extends StatelessWidget {
   const ListaCategorias({super.key});
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: RefreshIndicator(
-      color: AppColors.primary,
-      onRefresh: () async => context.read<CategoryCubit>().loadCategories(),
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                const Expanded(
-                  child: Text('Categorias', style: AppTextStyles.heading),
-                ),
-                AppIconButton(
-                  onPressed: () => context.push('/cadastro-categoria'),
-                  icon: const Icon(Icons.add),
-                ),
-              ],
-            ),
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      child: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () async => context.read<CategoryCubit>().loadCategories(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  AppIconButton(
+                    onPressed: () => context.pop(),
+                    icon: const Icon(Icons.arrow_back),
+                  ),
+                  const Gap(8),
+                  const Expanded(
+                    child: Text('Categorias', style: AppTextStyles.heading),
+                  ),
+                  AppIconButton(
+                    onPressed: () => showFormSheet<void>(
+                    context,
+                    builder: (BuildContext ctx) => BlocProvider<CategoryCubit>(
+                      create: (_) => CategoryCubit(),
+                      child: const CadastrarCategoria(),
+                    ),
+                  ),
+                    icon: const Icon(Icons.add),
+                  ),
+                ],
+              ),
             const Gap(16),
             BlocBuilder<CategoryCubit, CategoryState>(
               builder: (BuildContext context, CategoryState state) => state.when(
@@ -65,7 +78,8 @@ class ListaCategorias extends StatelessWidget {
         ),
       ),
     ),
-  );
+  ),
+);
 }
 
 class _CategoriaItem extends StatelessWidget {
@@ -88,7 +102,13 @@ class _CategoriaItem extends StatelessWidget {
         const Gap(12),
         Expanded(child: Text(cat.name, style: AppTextStyles.title)),
         AppIconButton(
-          onPressed: () => context.push('/editar-categoria', extra: cat),
+          onPressed: () => showFormSheet<void>(
+            context,
+            builder: (BuildContext ctx) => BlocProvider<CategoryCubit>(
+              create: (_) => CategoryCubit(),
+              child: CadastrarCategoria(initialCategory: cat),
+            ),
+          ),
           icon: const Icon(Icons.edit, size: 18),
         ),
         AppIconButton(

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
@@ -49,9 +50,18 @@ class ImportCubit extends Cubit<ImportState> {
       String content;
 
       if (file.bytes != null) {
-        content = String.fromCharCodes(file.bytes!);
+        try {
+          content = utf8.decode(file.bytes!);
+        } on FormatException {
+          content = latin1.decode(file.bytes!);
+        }
       } else if (file.path != null) {
-        content = await File(file.path!).readAsString();
+        final List<int> bytes = await File(file.path!).readAsBytes();
+        try {
+          content = utf8.decode(bytes);
+        } on FormatException {
+          content = latin1.decode(bytes);
+        }
       } else {
         emit(const ImportState.error('Não foi possível ler o arquivo.'));
         return;

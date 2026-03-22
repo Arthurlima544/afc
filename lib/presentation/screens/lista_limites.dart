@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/limit/limit_cubit.dart';
@@ -11,6 +10,7 @@ import '../widgets/design_system.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_state.dart';
 import '../widgets/skeleton_list.dart';
+import 'cadastrar_limites.dart';
 
 class ListaLimites extends StatelessWidget {
   const ListaLimites({super.key});
@@ -39,7 +39,13 @@ class ListaLimites extends StatelessWidget {
                   child: Text('Limites', style: AppTextStyles.heading),
                 ),
                 AppIconButton(
-                  onPressed: () => context.push('/cadastro-limite'),
+                  onPressed: () => showFormSheet<void>(
+                    context,
+                    builder: (BuildContext ctx) => BlocProvider<LimitCubit>(
+                      create: (_) => LimitCubit(),
+                      child: const CadastrarLimites(),
+                    ),
+                  ),
                   icon: const Icon(Icons.add),
                 ),
               ],
@@ -110,7 +116,13 @@ class _LimiteItem extends StatelessWidget {
           ),
         ),
         AppIconButton(
-          onPressed: () => context.push('/editar-limite', extra: item.limit),
+          onPressed: () => showFormSheet<void>(
+            context,
+            builder: (BuildContext ctx) => BlocProvider<LimitCubit>(
+              create: (_) => LimitCubit(),
+              child: CadastrarLimites(initialLimit: item.limit),
+            ),
+          ),
           icon: const Icon(Icons.edit, size: 18),
         ),
         AppIconButton(

@@ -14,6 +14,7 @@ import '../widgets/design_system.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_state.dart';
 import '../widgets/skeleton_list.dart';
+import 'cadastrar_transacao.dart';
 
 class ListaTransacoes extends StatelessWidget {
   const ListaTransacoes({super.key});
@@ -42,6 +43,12 @@ class ListaTransacoes extends StatelessWidget {
                   child: Text('Transações', style: AppTextStyles.heading),
                 ),
                 AppIconButton(
+                  onPressed: () => context.push('/lista-recorrentes'),
+                  icon: const Icon(Icons.repeat_outlined),
+                  tooltip: 'Recorrências',
+                ),
+                const Gap(8),
+                AppIconButton(
                   onPressed: () => context.push('/relatorio'),
                   icon: const Icon(Icons.analytics_outlined),
                 ),
@@ -52,7 +59,13 @@ class ListaTransacoes extends StatelessWidget {
                 ),
                 const Gap(8),
                 AppIconButton(
-                  onPressed: () => context.push('/cadastro-transacao'),
+                  onPressed: () => showFormSheet<void>(
+                    context,
+                    builder: (BuildContext ctx) => BlocProvider<TransactionCubit>(
+                      create: (_) => TransactionCubit(),
+                      child: const CadastrarTransacao(),
+                    ),
+                  ),
                   icon: const Icon(Icons.add),
                 ),
               ],
@@ -129,7 +142,13 @@ class _TransacaoItem extends StatelessWidget {
             ),
           ),
           AppIconButton(
-            onPressed: () => context.push('/editar-transacao', extra: tx),
+            onPressed: () => showFormSheet<void>(
+              context,
+              builder: (BuildContext ctx) => BlocProvider<TransactionCubit>(
+                create: (_) => TransactionCubit(),
+                child: CadastrarTransacao(initialTransaction: tx),
+              ),
+            ),
             icon: const Icon(Icons.edit, size: 18),
           ),
           AppIconButton(

@@ -20,7 +20,8 @@ class ConnectedAccountsScreen extends StatelessWidget {
         ) ??
         '';
 
-    return BlocConsumer<OpenFinanceCubit, OpenFinanceState>(
+    return Scaffold(
+      body: BlocConsumer<OpenFinanceCubit, OpenFinanceState>(
       listener: (BuildContext ctx, OpenFinanceState state) async {
         await state.whenOrNull(
           tokenReady: (String connectToken) async {
@@ -103,6 +104,7 @@ class ConnectedAccountsScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

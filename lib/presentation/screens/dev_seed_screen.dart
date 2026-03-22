@@ -54,9 +54,10 @@ class _DevSeedScreenState extends State<DevSeedScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -141,7 +142,8 @@ class _DevSeedScreenState extends State<DevSeedScreen> {
         ],
       ),
     ),
-  );
+  ),
+);
 }
 
 enum _SeedStatus { idle, loading, done, error }

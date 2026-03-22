@@ -2,6 +2,7 @@ import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/entity/calendar_entity.dart';
@@ -34,7 +35,11 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
     if (widget.initialLimit != null) {
       final LimitEntity limit = widget.initialLimit!;
       _amountController.text = limit.limitAmount.toString();
-      _monthValue = limit.month;
+      _monthValue = CalendarEntity.values.any(
+        (CalendarEntity m) => m.name == limit.month,
+      )
+          ? limit.month
+          : null;
       _categoryUuid = limit.categoryUUid;
     }
   }
@@ -54,10 +59,12 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
   }
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: BlocConsumer<LimitCubit, LimitState>(
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(leading: BackButton(onPressed: () => context.pop())),
+    body: SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: BlocConsumer<LimitCubit, LimitState>(
         listener: (BuildContext context, LimitState state) {
           state.whenOrNull(
             initial: (List<CategoryEntity> categories) {
@@ -208,5 +215,6 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
         ),
       ),
     ),
+  ),
   );
 }

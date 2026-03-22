@@ -23,10 +23,15 @@ class _ImportarExtratoState extends State<ImportarExtrato> {
   StatementType? _type;
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: Padding(
-      padding: const EdgeInsets.all(20),
-      child: BlocListener<ImportCubit, ImportState>(
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      leading: BackButton(onPressed: () => context.pop()),
+      title: const Text('Importar Extrato'),
+    ),
+    body: SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: BlocListener<ImportCubit, ImportState>(
         listener: (BuildContext context, ImportState state) {
           state.whenOrNull(done: (int _) => context.pop());
         },
@@ -46,6 +51,7 @@ class _ImportarExtratoState extends State<ImportarExtrato> {
             reviewed: (List<ImportCandidateEntity> candidates, String uid) =>
                 _ReviewView(candidates: candidates),
           ),
+        ),
         ),
       ),
     ),

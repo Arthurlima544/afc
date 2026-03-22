@@ -7,6 +7,7 @@ import '../blocs/investment/investment_cubit.dart';
 import '../widgets/design_system.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/skeleton_list.dart';
+import 'cadastrar_investimento.dart';
 
 String _typeLabelPt(String type) {
   switch (type) {
@@ -33,23 +34,35 @@ class ListaInvestimentos extends StatelessWidget {
   const ListaInvestimentos({super.key});
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              const Expanded(
-                child: Text('Investimentos', style: AppTextStyles.heading),
-              ),
-              AppIconButton(
-                onPressed: () => context.push('/cadastro-investimento'),
-                icon: const Icon(Icons.add),
-              ),
-            ],
-          ),
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                AppIconButton(
+                  onPressed: () => context.pop(),
+                  icon: const Icon(Icons.arrow_back),
+                ),
+                const Gap(8),
+                const Expanded(
+                  child: Text('Investimentos', style: AppTextStyles.heading),
+                ),
+                AppIconButton(
+                  onPressed: () => showFormSheet<void>(
+                    context,
+                    builder: (BuildContext ctx) => BlocProvider<InvestmentCubit>(
+                      create: (_) => InvestmentCubit(),
+                      child: const CadastrarInvestimento(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.add),
+                ),
+              ],
+            ),
           const Gap(16),
           BlocBuilder<InvestmentCubit, InvestmentState>(
             builder: (BuildContext context, InvestmentState state) => state.when(
@@ -130,7 +143,8 @@ class ListaInvestimentos extends StatelessWidget {
         ],
       ),
     ),
-  );
+  ),
+);
 }
 
 class _SummaryCard extends StatelessWidget {
@@ -215,8 +229,13 @@ class _InvestmentItem extends StatelessWidget {
               ),
               const Gap(4),
               AppIconButton(
-                onPressed: () =>
-                    context.push('/editar-investimento', extra: investment),
+                onPressed: () => showFormSheet<void>(
+                  context,
+                  builder: (BuildContext ctx) => BlocProvider<InvestmentCubit>(
+                    create: (_) => InvestmentCubit(),
+                    child: CadastrarInvestimento(initialInvestment: investment),
+                  ),
+                ),
                 icon: const Icon(Icons.edit, size: 18),
               ),
               AppIconButton(

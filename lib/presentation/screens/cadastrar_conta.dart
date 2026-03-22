@@ -117,8 +117,9 @@ class _CadastrarContaState extends State<CadastrarConta> {
   }
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: SingleChildScrollView(
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      child: SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,5 +290,6 @@ class _CadastrarContaState extends State<CadastrarConta> {
         ],
       ),
     ),
+  ),
   );
 }
