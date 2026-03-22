@@ -9,6 +9,7 @@ import '../../domain/entity/transaction_entity.dart';
 import '../../presentation/blocs/auth/auth_bloc.dart';
 import '../../presentation/blocs/category/category_cubit.dart';
 import '../../presentation/blocs/home/home_bloc.dart';
+import '../../presentation/blocs/import/import_cubit.dart';
 import '../../presentation/blocs/limit/limit_cubit.dart';
 import '../../presentation/blocs/open_finance/open_finance_cubit.dart';
 import '../../presentation/blocs/recurring/recurring_cubit.dart';
@@ -23,6 +24,7 @@ import '../../presentation/screens/connected_accounts_screen.dart';
 import '../../presentation/screens/dev_seed_screen.dart';
 import '../../presentation/screens/home_page.dart';
 import '../../presentation/screens/home_screen.dart';
+import '../../presentation/screens/importar_extrato.dart';
 import '../../presentation/screens/lista_categorias.dart';
 import '../../presentation/screens/lista_limites.dart';
 import '../../presentation/screens/lista_recorrentes.dart';
@@ -239,6 +241,21 @@ final GoRouter router = GoRouter(
               initialLimit: state.extra as LimitEntity?,
             ),
           ),
+    ),
+
+    GoRoute(
+      path: '/importar-extrato',
+      builder: (BuildContext context, GoRouterState state) {
+        final String userId =
+            context.read<AuthBloc>().state.whenOrNull(
+                  signedIn: (ClerkAuthState s) => s.user?.id,
+                ) ??
+            '';
+        return BlocProvider<ImportCubit>(
+          create: (_) => ImportCubit(),
+          child: ImportarExtrato(userId: userId),
+        );
+      },
     ),
 
     GoRoute(

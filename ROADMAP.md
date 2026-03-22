@@ -289,15 +289,15 @@ User ──► Connect Widget (Pluggy SDK) ──► Bank consent ──► Plug
 
 ---
 
-### US-21 · Bank statement import (OFX / CSV) 🔲
+### US-21 · Bank statement import (OFX / CSV) ✅
 **As a** user, **I want** to import my bank statement file,
 **so that** I don't have to manually enter transactions I've already made.
 
-- [ ] File picker accepting `.ofx` and `.csv` formats
-- [ ] Parser maps statement rows → `TransactionEntity` candidates
-- [ ] Review screen: user confirms, rejects, or re-categorises each import row before saving
-- [ ] Duplicate detection (same date + amount + description → skip or warn)
-- [ ] Unit tests for OFX and CSV parsing logic
+- [x] File picker accepting `.ofx` and `.csv` formats
+- [x] Parser maps statement rows → `TransactionEntity` candidates
+- [x] Review screen: user confirms, rejects, or re-categorises each import row before saving
+- [x] Duplicate detection (same date + amount + description → skip or warn)
+- [x] Unit tests for OFX and CSV parsing logic
 
 ---
 
