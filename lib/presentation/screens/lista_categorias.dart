@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show RefreshIndicator;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,7 @@ import '../../domain/entity/category_entity.dart';
 import '../../utils/app_spacing.dart';
 import '../blocs/category/category_cubit.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/error_state.dart';
 import '../widgets/skeleton_list.dart';
 
 class ListaCategorias extends StatelessWidget {
@@ -15,51 +17,59 @@ class ListaCategorias extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SafeArea(
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              const Expanded(
-                child: Text('Categorias', style: AppTextStyles.heading),
-              ),
-              IconButton(
-                variance: const ButtonStyle.outline(),
-                onPressed: () => context.push('/cadastro-categoria'),
-                icon: const Icon(Icons.add),
-              ),
-            ],
-          ),
-          const Gap(16),
-          BlocBuilder<CategoryCubit, CategoryState>(
-            builder: (BuildContext context, CategoryState state) =>
-                state.when(
-                  initial: (_) => const SizedBox(),
-                  loading: () => const SkeletonList(),
-                  error: (String msg) => EmptyState(
-                    message: msg,
-                    icon: Icons.error_outline,
-                  ),
-                  success: (_) => const SizedBox(),
-                  listed: (List<CategoryEntity> cats) => cats.isEmpty
-                      ? const EmptyState(
-                          message: 'Nenhuma categoria ainda.\nToque em + para criar.',
-                          icon: Icons.category_outlined,
-                        )
-                      : Column(
-                          children: <Widget>[
-                            for (final CategoryEntity cat in cats)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: _CategoriaItem(cat: cat),
-                              ),
-                          ],
-                        ),
+    child: RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: () async =>
+          context.read<CategoryCubit>().loadCategories(),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                const Expanded(
+                  child: Text('Categorias', style: AppTextStyles.heading),
                 ),
-          ),
-        ],
+                IconButton(
+                  variance: const ButtonStyle.outline(),
+                  onPressed: () => context.push('/cadastro-categoria'),
+                  icon: const Icon(Icons.add),
+                ),
+              ],
+            ),
+            const Gap(16),
+            BlocBuilder<CategoryCubit, CategoryState>(
+              builder: (BuildContext context, CategoryState state) =>
+                  state.when(
+                    initial: (_) => const SizedBox(),
+                    loading: () => const SkeletonList(),
+                    error: (String msg) => ErrorState(
+                      message: msg,
+                      onRetry: () =>
+                          context.read<CategoryCubit>().loadCategories(),
+                    ),
+                    success: (_) => const SizedBox(),
+                    listed: (List<CategoryEntity> cats) => cats.isEmpty
+                        ? const EmptyState(
+                            message:
+                                'Nenhuma categoria ainda.\nToque em + para criar.',
+                            icon: Icons.category_outlined,
+                          )
+                        : Column(
+                            children: <Widget>[
+                              for (final CategoryEntity cat in cats)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: _CategoriaItem(cat: cat),
+                                ),
+                            ],
+                          ),
+                  ),
+            ),
+          ],
+        ),
       ),
     ),
   );

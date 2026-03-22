@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart'
     hide
         Card,
@@ -14,9 +17,11 @@ import 'package:shadcn_flutter/shadcn_flutter.dart'
 
 import '../../domain/entity/goal_entity.dart';
 import '../../utils/app_spacing.dart';
+import '../blocs/auth/auth_bloc.dart';
 import '../blocs/goal/goal_cubit.dart';
 import '../screens/cadastrar_categoria.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/error_state.dart';
 import '../widgets/skeleton_list.dart';
 
 class ListaMetas extends StatelessWidget {
@@ -24,50 +29,73 @@ class ListaMetas extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SafeArea(
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              const Expanded(
-                child: Text('Metas', style: AppTextStyles.heading),
-              ),
-              IconButton(
-                variance: const ButtonStyle.outline(),
-                onPressed: () => context.push('/cadastro-meta'),
-                icon: const Icon(Icons.add),
-              ),
-            ],
-          ),
-          const Gap(16),
-          BlocBuilder<GoalCubit, GoalState>(
-            builder: (BuildContext context, GoalState state) => state.when(
-              initial: () => const SizedBox(),
-              loading: () => const SkeletonList(),
-              error: (String msg) => EmptyState(
-                message: msg,
-                icon: Icons.error_outline,
-              ),
-              success: (_) => const SizedBox(),
-              listed: (List<GoalEntity> goals) => goals.isEmpty
-                  ? const EmptyState(
-                      message: 'Nenhuma meta ainda.\nToque em + para criar.',
-                      icon: Icons.savings_outlined,
-                    )
-                  : Column(
-                      children: <Widget>[
-                        for (final GoalEntity goal in goals)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _MetaItem(goal: goal),
-                          ),
-                      ],
-                    ),
+    child: RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: () async {
+        final String userId =
+            context.read<AuthBloc>().state.whenOrNull(
+                  signedIn: (ClerkAuthState s) => s.user?.id,
+                ) ??
+            '';
+        unawaited(context.read<GoalCubit>().loadGoals(userId));
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                const Expanded(
+                  child: Text('Metas', style: AppTextStyles.heading),
+                ),
+                IconButton(
+                  variance: const ButtonStyle.outline(),
+                  onPressed: () => context.push('/cadastro-meta'),
+                  icon: const Icon(Icons.add),
+                ),
+              ],
             ),
-          ),
-        ],
+            const Gap(16),
+            BlocBuilder<GoalCubit, GoalState>(
+              builder: (BuildContext context, GoalState state) =>
+                  state.when(
+                    initial: () => const SizedBox(),
+                    loading: () => const SkeletonList(),
+                    error: (String msg) => ErrorState(
+                      message: msg,
+                      onRetry: () {
+                        final String userId = context
+                                .read<AuthBloc>()
+                                .state
+                                .whenOrNull(
+                                  signedIn: (ClerkAuthState s) => s.user?.id,
+                                ) ??
+                            '';
+                        context.read<GoalCubit>().loadGoals(userId);
+                      },
+                    ),
+                    success: (_) => const SizedBox(),
+                    listed: (List<GoalEntity> goals) => goals.isEmpty
+                        ? const EmptyState(
+                            message:
+                                'Nenhuma meta ainda.\nToque em + para criar.',
+                            icon: Icons.savings_outlined,
+                          )
+                        : Column(
+                            children: <Widget>[
+                              for (final GoalEntity goal in goals)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: _MetaItem(goal: goal),
+                                ),
+                            ],
+                          ),
+                  ),
+            ),
+          ],
+        ),
       ),
     ),
   );

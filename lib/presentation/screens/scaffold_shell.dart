@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart' hide Colors;
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,10 +20,25 @@ class ScaffoldShell extends StatefulWidget {
   State<ScaffoldShell> createState() => _ScaffoldShellState();
 }
 
-class _ScaffoldShellState extends State<ScaffoldShell> {
+class _ScaffoldShellState extends State<ScaffoldShell>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _fabController;
+  late final Animation<double> _fabScale;
+
   @override
   void initState() {
     super.initState();
+
+    // FAB pop-in animation on first load.
+    _fabController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _fabScale = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fabController, curve: Curves.elasticOut),
+    );
+    _fabController.forward();
+
     Future<void>.microtask(() {
       if (!mounted) {
         return;
@@ -34,6 +52,12 @@ class _ScaffoldShellState extends State<ScaffoldShell> {
         context.read<RecurringCubit>().checkAndMaterialise(userId);
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _fabController.dispose();
+    super.dispose();
   }
 
   void _showQuickAdd(BuildContext context) {
@@ -56,51 +80,73 @@ class _ScaffoldShellState extends State<ScaffoldShell> {
     );
   }
 
+  void _onTabSelected(int index) {
+    unawaited(HapticFeedback.lightImpact());
+    widget.navigationShell.goBranch(
+      index,
+      initialLocation: index == widget.navigationShell.currentIndex,
+    );
+  }
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: widget.navigationShell,
-    floatingActionButton: FloatingActionButton(
-      onPressed: () => _showQuickAdd(context),
-      child: const Icon(Icons.add),
-    ),
-    bottomNavigationBar: NavigationBar(
-      selectedIndex: widget.navigationShell.currentIndex,
-      onDestinationSelected: (int index) => widget.navigationShell.goBranch(
-        index,
-        initialLocation: index == widget.navigationShell.currentIndex,
+  Widget build(BuildContext context) {
+    final bool disableAnimations = MediaQuery.of(context).disableAnimations;
+
+    return Scaffold(
+      body: widget.navigationShell,
+      floatingActionButton: Semantics(
+        label: 'Adicionar transação',
+        child: ScaleTransition(
+          scale: disableAnimations ? const AlwaysStoppedAnimation<double>(1.0) : _fabScale,
+          child: FloatingActionButton(
+            onPressed: () => _showQuickAdd(context),
+            tooltip: 'Adicionar transação',
+            child: const Icon(Icons.add),
+          ),
+        ),
       ),
-      destinations: const <NavigationDestination>[
-        NavigationDestination(
-          icon: Icon(AppIcons.home),
-          selectedIcon: Icon(AppIcons.homeSelected),
-          label: 'Início',
-        ),
-        NavigationDestination(
-          icon: Icon(AppIcons.transactions),
-          selectedIcon: Icon(AppIcons.transactionsSelected),
-          label: 'Transações',
-        ),
-        NavigationDestination(
-          icon: Icon(AppIcons.categories),
-          selectedIcon: Icon(AppIcons.categoriesSelected),
-          label: 'Categorias',
-        ),
-        NavigationDestination(
-          icon: Icon(AppIcons.limits),
-          selectedIcon: Icon(AppIcons.limitsSelected),
-          label: 'Limites',
-        ),
-        NavigationDestination(
-          icon: Icon(AppIcons.recurring),
-          selectedIcon: Icon(AppIcons.recurringSelected),
-          label: 'Recorrências',
-        ),
-        NavigationDestination(
-          icon: Icon(AppIcons.goals),
-          selectedIcon: Icon(AppIcons.goalsSelected),
-          label: 'Metas',
-        ),
-      ],
-    ),
-  );
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: widget.navigationShell.currentIndex,
+        onDestinationSelected: _onTabSelected,
+        destinations: const <NavigationDestination>[
+          NavigationDestination(
+            icon: Icon(AppIcons.home),
+            selectedIcon: Icon(AppIcons.homeSelected),
+            label: 'Início',
+            tooltip: 'Início',
+          ),
+          NavigationDestination(
+            icon: Icon(AppIcons.transactions),
+            selectedIcon: Icon(AppIcons.transactionsSelected),
+            label: 'Transações',
+            tooltip: 'Transações',
+          ),
+          NavigationDestination(
+            icon: Icon(AppIcons.categories),
+            selectedIcon: Icon(AppIcons.categoriesSelected),
+            label: 'Categorias',
+            tooltip: 'Categorias',
+          ),
+          NavigationDestination(
+            icon: Icon(AppIcons.limits),
+            selectedIcon: Icon(AppIcons.limitsSelected),
+            label: 'Limites',
+            tooltip: 'Limites',
+          ),
+          NavigationDestination(
+            icon: Icon(AppIcons.recurring),
+            selectedIcon: Icon(AppIcons.recurringSelected),
+            label: 'Recorrências',
+            tooltip: 'Recorrências',
+          ),
+          NavigationDestination(
+            icon: Icon(AppIcons.goals),
+            selectedIcon: Icon(AppIcons.goalsSelected),
+            label: 'Metas',
+            tooltip: 'Metas',
+          ),
+        ],
+      ),
+    );
+  }
 }
