@@ -182,9 +182,8 @@ final GoRouter router = GoRouter(
                           signedIn: (ClerkAuthState s) => s.user?.id,
                         ) ??
                     '';
-                return BlocProvider<RecurringCubit>.value(
-                  value: context.read<RecurringCubit>()
-                    ..loadRecurring(userId),
+                return BlocProvider<RecurringCubit>(
+                  create: (_) => RecurringCubit()..loadRecurring(userId),
                   child: const ListaRecorrentes(),
                 );
               },
@@ -250,8 +249,8 @@ final GoRouter router = GoRouter(
               BlocProvider<TransactionCubit>(
                 create: (_) => TransactionCubit()..getCategories(),
               ),
-              BlocProvider<RecurringCubit>.value(
-                value: context.read<RecurringCubit>(),
+              BlocProvider<RecurringCubit>(
+                create: (_) => RecurringCubit(),
               ),
             ],
             child: const CadastrarRecorrente(),
