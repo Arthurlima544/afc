@@ -20,6 +20,7 @@ import '../../presentation/blocs/investment/investment_cubit.dart';
 import '../../presentation/blocs/limit/limit_cubit.dart';
 import '../../presentation/blocs/market/market_opportunity_cubit.dart';
 import '../../presentation/blocs/open_finance/open_finance_cubit.dart';
+import '../../presentation/blocs/passive_income/passive_income_cubit.dart';
 import '../../presentation/blocs/recurring/recurring_cubit.dart';
 import '../../presentation/blocs/report/report_cubit.dart';
 import '../../presentation/blocs/review_queue/review_queue_cubit.dart';
@@ -52,6 +53,7 @@ import '../../presentation/screens/lista_watchlist.dart';
 import '../../presentation/screens/login_screen.dart';
 import '../../presentation/screens/onboarding_screen.dart';
 import '../../presentation/screens/oportunidades_screen.dart';
+import '../../presentation/screens/passive_income_screen.dart';
 import '../../presentation/screens/portfolio_dashboard_screen.dart';
 import '../../presentation/screens/relatorio.dart';
 import '../../presentation/screens/review_queue_screen.dart';
@@ -498,6 +500,21 @@ final GoRouter router = GoRouter(
             create: (_) => InvestmentCubit(),
             child: const PortfolioDashboardScreen(),
           ),
+    ),
+
+    GoRoute(
+      path: '/renda-passiva',
+      builder: (BuildContext context, GoRouterState state) {
+        final String userId =
+            context.read<AuthBloc>().state.whenOrNull(
+                  signedIn: (ClerkAuthState s) => s.user?.id,
+                ) ??
+            '';
+        return BlocProvider<PassiveIncomeCubit>(
+          create: (_) => PassiveIncomeCubit()..loadStreams(userId),
+          child: PassiveIncomeScreen(userId: userId),
+        );
+      },
     ),
 
     // --- Market opportunities & watchlist ---

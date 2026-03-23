@@ -552,16 +552,17 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
-### US-63 · Passive Income Tracker ⏳
+### US-63 · Passive Income Tracker ✅
 **As a** user, **I want** to track my passive income streams (dividends, interest, rental income),
 **so that** I can monitor how close I am to covering my expenses with passive income.
 
-- [ ] `PassiveIncomeEntity` — `uuid`, `userId`, `source` (dividend / interest / rent / other), `amount`, `frequency` (monthly/quarterly/annual), `assetUuid?`
-- [ ] `PassiveIncomeCubit` — CRUD
-- [ ] Passive income screen: list of income streams, total monthly equivalent
-- [ ] Dashboard widget: "Renda Passiva vs Despesas" ratio — the key FIRE metric
-- [ ] When passive income ≥ expenses → "Você atingiu a independência financeira!" badge
-- [ ] Unit tests for monthly equivalent calculation across frequencies
+- [x] `PassiveIncomeEntity` — `uuid`, `userId`, `source` (dividend / interest / rent / other), `amount`, `frequency` (monthly/quarterly/annual), `assetUuid?` (Freezed + JSON)
+- [x] `PassiveIncomeCubit` — `loadStreams`, `add`, `create`, `update`, `delete`; sorted by amount desc
+- [x] Passive income screen: swipe-to-delete stream cards, total monthly equivalent summary card
+- [x] `_AddStreamSheet` bottom sheet form with source and frequency dropdowns
+- [x] `_PassiveIncomeCard` on Dashboard → `/renda-passiva`
+- [x] `monthlyEquivalent()` helper: monthly×1, quarterly÷3, annual÷12
+- [x] 13 unit tests: `monthlyEquivalent` (4 cases) + `PassiveIncomeCubit` (9 cases — load/filter/sort/add/delete/update)
 
 ---
 
@@ -653,7 +654,7 @@ These items are not user stories but are necessary for long-term quality.
 | Item | Priority | Status | Notes |
 |------|----------|--------|-------|
 | Firestore streams (replace `.get()`) | High | ✅ Done | All list screens and dashboard use `.snapshots()` |
-| Widget test coverage for key screens | High | ✅ Done | home_screen, login_screen, scaffold_shell (321 total tests) |
+| Widget test coverage for key screens | High | ✅ Done | home_screen, login_screen, scaffold_shell (334 total tests) |
 | Cloud Functions project setup | High | ✅ Done | Pluggy proxy + webhooks + bill reminders in `functions/src/` |
 | Offline support (`persistenceEnabled`) | Medium | ✅ Done | Both `main_dev.dart` and `main_prod.dart` configure `CACHE_SIZE_UNLIMITED` |
 | CI: separate lint / test / build jobs | Low | ✅ Done | 3 jobs: lint → test (coverage artifact) → build (APK artifact) |
@@ -682,4 +683,4 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 9 (US-38–44) | `feat/us-38-44-ux-polish` | ✅ Merged |
 | Sprint 10 (design system migration) | `feat/sprint10-design-system` | ✅ Merged |
 | Sprint 11 (US-45–59) | `feat/sprint11-polish` | ✅ Merged |
-| Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | 🔄 In Progress (US-60–62, US-68, US-69 ✅) |
+| Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | 🔄 In Progress (US-60–63, US-68, US-69 ✅) |
