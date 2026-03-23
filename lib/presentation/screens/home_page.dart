@@ -15,6 +15,7 @@ import '../../domain/entity/type_entity.dart';
 import '../../domain/usecase/health_score.dart';
 import '../../utils/flavors.dart';
 import '../blocs/auth/auth_bloc.dart';
+import '../blocs/fi_score/fi_score_cubit.dart';
 import '../blocs/health_score/health_score_cubit.dart';
 import '../blocs/home/home_bloc.dart';
 import '../blocs/home/stats_state.dart';
@@ -66,6 +67,8 @@ class _HomeContent extends StatelessWidget {
         const _BillsCard(),
         const Gap(12),
         const _HealthScoreCard(),
+        const Gap(12),
+        const _FiScoreCard(),
         const Gap(20),
         const LastTransactionsWidget(),
         const MonthLimitWidget(),
@@ -998,6 +1001,243 @@ class _HealthSparkline extends StatelessWidget {
                       radius: 3,
                       color: _scoreColor(spot.y.toInt()),
                       strokeColor: _scoreColor(spot.y.toInt()),
+                    ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// FI Score card
+// ---------------------------------------------------------------------------
+
+class _FiScoreCard extends StatelessWidget {
+  const _FiScoreCard();
+
+  @override
+  Widget build(BuildContext context) =>
+      BlocBuilder<FiScoreCubit, FiScoreState>(
+        builder: (BuildContext context, FiScoreState state) => state.when(
+          initial: () => const SizedBox(),
+          loading: () => const AppCard(
+            padding: EdgeInsets.all(20),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (String msg) => AppCard(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Erro ao carregar score IF: $msg',
+              style: const TextStyle(
+                fontSize: AppTextStyle.sizeSm,
+                color: AppColors.expense,
+              ),
+            ),
+          ),
+          success: (FiScoreData data) => AppCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                // Header
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          const Text(
+                            'Independência Financeira',
+                            style: AppTextStyles.sectionTitle,
+                          ),
+                          const Gap(2),
+                          Text(
+                            _fiLabel(data.fiScore),
+                            style: TextStyle(
+                              fontSize: AppTextStyle.sizeSm,
+                              color: _fiColor(data.fiScore),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '${data.fiScore.toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                        color: _fiColor(data.fiScore),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const Gap(12),
+
+                // Sparkline
+                _FiSparkline(scores: data.last6Scores),
+
+                const Gap(12),
+
+                // Progress bar
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: (data.fiScore / 100).clamp(0.0, 1.0),
+                    minHeight: 8,
+                    backgroundColor:
+                        AppColors.muted.withValues(alpha: 0.2),
+                    color: _fiColor(data.fiScore),
+                  ),
+                ),
+
+                const Gap(8),
+
+                // Income vs expenses caption
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Text(
+                      'Renda passiva: ${NumberFormat.compactCurrency(locale: 'pt_BR', symbol: 'R\$', decimalDigits: 0).format(data.passiveIncomeMonthly)}/mês',
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.muted),
+                    ),
+                    Text(
+                      'Despesas: ${NumberFormat.compactCurrency(locale: 'pt_BR', symbol: 'R\$', decimalDigits: 0).format(data.monthlyExpenses)}/mês',
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.muted),
+                    ),
+                  ],
+                ),
+
+                const Gap(12),
+
+                // Milestone badges
+                Row(
+                  children: <int>[10, 25, 50, 75, 100]
+                      .map<Widget>(
+                        (int m) => _MilestoneBadge(
+                          value: m,
+                          achieved: data.fiScore >= m,
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+Color _fiColor(double score) {
+  if (score >= 75) {
+    return AppColors.income;
+  }
+  if (score >= 25) {
+    return AppColors.warning;
+  }
+  return AppColors.expense;
+}
+
+String _fiLabel(double score) {
+  if (score >= 100) {
+    return 'FIRE Atingido';
+  }
+  if (score >= 75) {
+    return 'Próximo do FIRE';
+  }
+  if (score >= 50) {
+    return 'Metade do caminho';
+  }
+  if (score >= 25) {
+    return 'Em progresso';
+  }
+  return 'Início da jornada';
+}
+
+class _MilestoneBadge extends StatelessWidget {
+  const _MilestoneBadge({required this.value, required this.achieved});
+
+  final int value;
+  final bool achieved;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.only(right: 6),
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: achieved
+          ? AppColors.primary.withValues(alpha: 0.12)
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: achieved
+            ? AppColors.primary
+            : AppColors.muted.withValues(alpha: 0.3),
+        width: achieved ? 1.5 : 1,
+      ),
+    ),
+    child: Text(
+      '$value%',
+      style: AppTextStyles.caption.copyWith(
+        color: achieved ? AppColors.primary : AppColors.muted,
+        fontWeight: achieved ? FontWeight.w600 : FontWeight.normal,
+      ),
+    ),
+  );
+}
+
+class _FiSparkline extends StatelessWidget {
+  const _FiSparkline({required this.scores});
+
+  final List<double> scores;
+
+  @override
+  Widget build(BuildContext context) {
+    if (scores.isEmpty) {
+      return const SizedBox();
+    }
+    final List<FlSpot> spots = <FlSpot>[
+      for (int i = 0; i < scores.length; i++)
+        FlSpot(i.toDouble(), scores[i]),
+    ];
+    return SizedBox(
+      height: 40,
+      child: LineChart(
+        LineChartData(
+          lineTouchData: const LineTouchData(enabled: false),
+          borderData: FlBorderData(show: false),
+          gridData: const FlGridData(show: false),
+          titlesData: const FlTitlesData(
+            bottomTitles: AxisTitles(),
+            leftTitles: AxisTitles(),
+            topTitles: AxisTitles(),
+            rightTitles: AxisTitles(),
+          ),
+          minY: 0,
+          maxY: 100,
+          lineBarsData: <LineChartBarData>[
+            LineChartBarData(
+              spots: spots,
+              isCurved: true,
+              color: AppColors.primary,
+              barWidth: 2,
+              dotData: FlDotData(
+                getDotPainter:
+                    (
+                      FlSpot spot,
+                      double xPercentage,
+                      LineChartBarData bar,
+                      int index,
+                    ) => FlDotCirclePainter(
+                      radius: 3,
+                      color: _fiColor(spot.y),
+                      strokeColor: _fiColor(spot.y),
                     ),
               ),
             ),

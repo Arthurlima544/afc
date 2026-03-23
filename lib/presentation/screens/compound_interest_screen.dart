@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../domain/usecase/compound_interest_calculator.dart';
+import '../../domain/usecase/inflation_calculator.dart';
 import '../widgets/design_system.dart';
 
 // ─── Comparison rates ─────────────────────────────────────────────────────────
@@ -33,8 +34,11 @@ class _CompoundInterestScreenState extends State<CompoundInterestScreen> {
       TextEditingController(text: '1000');
   final TextEditingController _rateCtrl = TextEditingController(text: '12');
   final TextEditingController _yearsCtrl = TextEditingController(text: '20');
+  final TextEditingController _inflationCtrl =
+      TextEditingController(text: '4.5');
 
   bool _showComparison = false;
+  bool _inflationAdjusted = false;
   CompoundResult? _result;
   List<CompoundResult> _comparisons = <CompoundResult>[];
 
@@ -50,6 +54,7 @@ class _CompoundInterestScreenState extends State<CompoundInterestScreen> {
     _monthlyCtrl.dispose();
     _rateCtrl.dispose();
     _yearsCtrl.dispose();
+    _inflationCtrl.dispose();
     super.dispose();
   }
 
@@ -80,56 +85,86 @@ class _CompoundInterestScreenState extends State<CompoundInterestScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      leading: BackButton(onPressed: () => context.pop()),
-      title: const Text('Juros Compostos'),
-      centerTitle: false,
-    ),
-    body: SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          const _SectionLabel('Parâmetros'),
-          const Gap(8),
-          _InputCard(
-            initialCtrl: _initialCtrl,
-            monthlyCtrl: _monthlyCtrl,
-            rateCtrl: _rateCtrl,
-            yearsCtrl: _yearsCtrl,
-            onChanged: _calculate,
-          ),
-          const Gap(16),
-          if (_result != null) ...<Widget>[
-            const _SectionLabel('Resultado'),
+  Widget build(BuildContext context) {
+    final double inflation = _inflationAdjusted
+        ? (double.tryParse(_inflationCtrl.text.replaceAll(',', '.')) ?? 4.5)
+        : 0;
+    final List<double>? realTimeline =
+        (_inflationAdjusted && _result != null)
+            ? InflationCalculator.adjustTimeline(
+                nominalTimeline: _result!.yearlyTimeline,
+                inflationPercent: inflation,
+              )
+            : null;
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: BackButton(onPressed: () => context.pop()),
+        title: const Text('Juros Compostos'),
+        centerTitle: false,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const _SectionLabel('Parâmetros'),
             const Gap(8),
-            _ResultCard(result: _result!),
+            _InputCard(
+              initialCtrl: _initialCtrl,
+              monthlyCtrl: _monthlyCtrl,
+              rateCtrl: _rateCtrl,
+              yearsCtrl: _yearsCtrl,
+              onChanged: _calculate,
+            ),
+            const Gap(12),
+            _InflationCard(
+              adjusted: _inflationAdjusted,
+              controller: _inflationCtrl,
+              onToggle: (bool v) => setState(() => _inflationAdjusted = v),
+              onChanged: _calculate,
+            ),
             const Gap(16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                const _SectionLabel('Evolução do Patrimônio'),
-                _ComparisonToggle(
-                  value: _showComparison,
-                  onChanged: (bool v) => setState(() => _showComparison = v),
+            if (_result != null) ...<Widget>[
+              const _SectionLabel('Resultado'),
+              const Gap(8),
+              _ResultCard(
+                result: _result!,
+                inflationAdjusted: _inflationAdjusted,
+                realFinalAmount: realTimeline?.lastOrNull,
+              ),
+              const Gap(16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  const _SectionLabel('Evolução do Patrimônio'),
+                  _ComparisonToggle(
+                    value: _showComparison,
+                    onChanged: (bool v) =>
+                        setState(() => _showComparison = v),
+                  ),
+                ],
+              ),
+              const Gap(8),
+              _GrowthChart(
+                result: _result!,
+                comparisons:
+                    _showComparison ? _comparisons : <CompoundResult>[],
+                realTimeline: realTimeline,
+              ),
+              if (_showComparison) ...<Widget>[
+                const Gap(8),
+                _ComparisonLegend(
+                  result: _result!,
+                  comparisons: _comparisons,
                 ),
               ],
-            ),
-            const Gap(8),
-            _GrowthChart(
-              result: _result!,
-              comparisons: _showComparison ? _comparisons : <CompoundResult>[],
-            ),
-            if (_showComparison) ...<Widget>[
-              const Gap(8),
-              _ComparisonLegend(result: _result!, comparisons: _comparisons),
             ],
           ],
-        ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 // ─── Input card ───────────────────────────────────────────────────────────────
@@ -216,12 +251,80 @@ class _NumField extends StatelessWidget {
   );
 }
 
+// ─── Inflation card ────────────────────────────────────────────────────────────
+
+class _InflationCard extends StatelessWidget {
+  const _InflationCard({
+    required this.adjusted,
+    required this.controller,
+    required this.onToggle,
+    required this.onChanged,
+  });
+
+  final bool adjusted;
+  final TextEditingController controller;
+  final ValueChanged<bool> onToggle;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const Text(
+                    'Ajuste de Inflação',
+                    style: AppTextStyles.label,
+                  ),
+                  const Gap(2),
+                  Text(
+                    'Valores em poder de compra de hoje',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Switch(
+              value: adjusted,
+              onChanged: onToggle,
+              activeThumbColor: AppColors.primary,
+            ),
+          ],
+        ),
+        if (adjusted) ...<Widget>[
+          const Gap(8),
+          _NumField(
+            controller: controller,
+            label: 'Taxa de inflação anual (%)',
+            hint: 'Ex: 4.5 %',
+            onChanged: onChanged,
+          ),
+        ],
+      ],
+    ),
+  );
+}
+
 // ─── Result card ──────────────────────────────────────────────────────────────
 
 class _ResultCard extends StatelessWidget {
-  const _ResultCard({required this.result});
+  const _ResultCard({
+    required this.result,
+    this.inflationAdjusted = false,
+    this.realFinalAmount,
+  });
 
   final CompoundResult result;
+  final bool inflationAdjusted;
+  final double? realFinalAmount;
 
   @override
   Widget build(BuildContext context) {
@@ -249,6 +352,15 @@ class _ResultCard extends StatelessWidget {
             label: 'Juros ganhos',
             value: brl.format(result.totalInterest),
           ),
+          if (inflationAdjusted && realFinalAmount != null) ...<Widget>[
+            const Gap(10),
+            const Divider(height: 1),
+            const Gap(10),
+            _ResultRow(
+              label: 'Poder de compra hoje',
+              value: brl.format(realFinalAmount),
+            ),
+          ],
           const Gap(12),
           // Visual split: invested vs interest bar
           _CompositionBar(
@@ -401,10 +513,12 @@ class _GrowthChart extends StatelessWidget {
   const _GrowthChart({
     required this.result,
     required this.comparisons,
+    this.realTimeline,
   });
 
   final CompoundResult result;
   final List<CompoundResult> comparisons;
+  final List<double>? realTimeline;
 
   @override
   Widget build(BuildContext context) {
@@ -458,6 +572,28 @@ class _GrowthChart extends StatelessWidget {
           color: _compareColors[i].withValues(alpha: 0.8),
           barWidth: 1.5,
           dashArray: <int>[5, 3],
+          dotData: const FlDotData(show: false),
+          belowBarData: BarAreaData(),
+        ),
+      ];
+    }
+
+    if (realTimeline != null) {
+      bars = <LineChartBarData>[
+        ...bars,
+        LineChartBarData(
+          spots: realTimeline!
+              .asMap()
+              .entries
+              .map(
+                (MapEntry<int, double> e) =>
+                    FlSpot(e.key.toDouble(), e.value),
+              )
+              .toList(),
+          isCurved: true,
+          color: AppColors.warning.withValues(alpha: 0.9),
+          barWidth: 1.5,
+          dashArray: <int>[4, 4],
           dotData: const FlDotData(show: false),
           belowBarData: BarAreaData(),
         ),

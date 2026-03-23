@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../domain/usecase/fire_calculator.dart';
+import '../../domain/usecase/inflation_calculator.dart';
 import '../widgets/design_system.dart';
 
 // ─── Preset SWR rates ──────────────────────────────────────────────────────────
@@ -37,8 +38,11 @@ class _FireCalculatorScreenState extends State<FireCalculatorScreen> {
       TextEditingController(text: '2000');
   final TextEditingController _returnCtrl =
       TextEditingController(text: '10');
+  final TextEditingController _inflationCtrl =
+      TextEditingController(text: '4.5');
 
   _FirePreset _preset = _FirePreset.standard;
+  bool _inflationAdjusted = false;
   FireResult? _result;
 
   @override
@@ -53,6 +57,7 @@ class _FireCalculatorScreenState extends State<FireCalculatorScreen> {
     _portfolioCtrl.dispose();
     _savingsCtrl.dispose();
     _returnCtrl.dispose();
+    _inflationCtrl.dispose();
     super.dispose();
   }
 
@@ -78,56 +83,80 @@ class _FireCalculatorScreenState extends State<FireCalculatorScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      leading: BackButton(onPressed: () => context.pop()),
-      title: const Text('Calculadora FIRE'),
-      centerTitle: false,
-    ),
-    body: SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          const _SectionLabel('Estratégia'),
-          const Gap(8),
-          _PresetBar(
-            selected: _preset,
-            onChanged: (_FirePreset p) {
-              setState(() => _preset = p);
-              _calculate();
-            },
-          ),
-          const Gap(16),
-          const _SectionLabel('Entradas'),
-          const Gap(8),
-          _InputCard(
-            expensesCtrl: _expensesCtrl,
-            portfolioCtrl: _portfolioCtrl,
-            savingsCtrl: _savingsCtrl,
-            returnCtrl: _returnCtrl,
-            onChanged: _calculate,
-          ),
-          const Gap(16),
-          if (_result != null) ...<Widget>[
-            const _SectionLabel('Resultado'),
-            const Gap(8),
-            _ResultCard(result: _result!),
-            const Gap(16),
-            const _SectionLabel('Trajetória do Portfólio'),
-            const Gap(8),
-            _GrowthChart(result: _result!),
-            const Gap(8),
-            Text(
-              'Taxa de retirada segura: ${(_preset.swr * 100).toStringAsFixed(0)}% a.a.  ·  '
-              'Projeção até ${DateTime.now().year + 50}',
-              style: AppTextStyles.caption.copyWith(color: AppColors.muted),
-            ),
-          ],
-        ],
+  Widget build(BuildContext context) {
+    final double inflation = _inflationAdjusted
+        ? (double.tryParse(_inflationCtrl.text.replaceAll(',', '.')) ?? 4.5)
+        : 0;
+    final List<double>? realTimeline =
+        (_inflationAdjusted && _result != null)
+            ? InflationCalculator.adjustTimeline(
+                nominalTimeline: _result!.yearlyTimeline,
+                inflationPercent: inflation,
+              )
+            : null;
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: BackButton(onPressed: () => context.pop()),
+        title: const Text('Calculadora FIRE'),
+        centerTitle: false,
       ),
-    ),
-  );
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const _SectionLabel('Estratégia'),
+            const Gap(8),
+            _PresetBar(
+              selected: _preset,
+              onChanged: (_FirePreset p) {
+                setState(() => _preset = p);
+                _calculate();
+              },
+            ),
+            const Gap(16),
+            const _SectionLabel('Entradas'),
+            const Gap(8),
+            _InputCard(
+              expensesCtrl: _expensesCtrl,
+              portfolioCtrl: _portfolioCtrl,
+              savingsCtrl: _savingsCtrl,
+              returnCtrl: _returnCtrl,
+              onChanged: _calculate,
+            ),
+            const Gap(12),
+            _InflationCard(
+              adjusted: _inflationAdjusted,
+              controller: _inflationCtrl,
+              onToggle: (bool v) => setState(() => _inflationAdjusted = v),
+              onChanged: _calculate,
+            ),
+            const Gap(16),
+            if (_result != null) ...<Widget>[
+              const _SectionLabel('Resultado'),
+              const Gap(8),
+              _ResultCard(
+                result: _result!,
+                inflationAdjusted: _inflationAdjusted,
+                inflationPercent: inflation,
+              ),
+              const Gap(16),
+              const _SectionLabel('Trajetória do Portfólio'),
+              const Gap(8),
+              _GrowthChart(result: _result!, realTimeline: realTimeline),
+              const Gap(8),
+              Text(
+                'Taxa de retirada segura: ${(_preset.swr * 100).toStringAsFixed(0)}% a.a.  ·  '
+                'Projeção até ${DateTime.now().year + 50}',
+                style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ─── Preset bar ───────────────────────────────────────────────────────────────
@@ -278,12 +307,77 @@ class _NumField extends StatelessWidget {
   }
 }
 
+// ─── Inflation card ────────────────────────────────────────────────────────────
+
+class _InflationCard extends StatelessWidget {
+  const _InflationCard({
+    required this.adjusted,
+    required this.controller,
+    required this.onToggle,
+    required this.onChanged,
+  });
+
+  final bool adjusted;
+  final TextEditingController controller;
+  final ValueChanged<bool> onToggle;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const Text('Ajuste de Inflação', style: AppTextStyles.label),
+                  const Gap(2),
+                  Text(
+                    'Valores em poder de compra de hoje',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Switch(
+              value: adjusted,
+              onChanged: onToggle,
+              activeThumbColor: AppColors.primary,
+            ),
+          ],
+        ),
+        if (adjusted) ...<Widget>[
+          const Gap(8),
+          _NumField(
+            controller: controller,
+            label: 'Taxa de inflação anual (%)',
+            suffix: '%',
+            onChanged: onChanged,
+          ),
+        ],
+      ],
+    ),
+  );
+}
+
 // ─── Result card ──────────────────────────────────────────────────────────────
 
 class _ResultCard extends StatelessWidget {
-  const _ResultCard({required this.result});
+  const _ResultCard({
+    required this.result,
+    this.inflationAdjusted = false,
+    this.inflationPercent = 0,
+  });
 
   final FireResult result;
+  final bool inflationAdjusted;
+  final double inflationPercent;
 
   @override
   Widget build(BuildContext context) {
@@ -324,6 +418,23 @@ class _ResultCard extends StatelessWidget {
           _ResultRow(label: 'Tempo até FIRE', value: timeLabel),
           const Gap(12),
           _ResultRow(label: 'Data estimada', value: dateLabel),
+          if (inflationAdjusted &&
+              !result.fireNumber.isInfinite &&
+              result.yearsToFire != null) ...<Widget>[
+            const Gap(12),
+            const Divider(height: 1),
+            const Gap(12),
+            _ResultRow(
+              label: 'Valor real hoje',
+              value: brl.format(
+                InflationCalculator.realValue(
+                  nominalValue: result.fireNumber,
+                  inflationPercent: inflationPercent,
+                  years: result.yearsToFire!.toDouble(),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -359,9 +470,10 @@ class _ResultRow extends StatelessWidget {
 // ─── Growth chart ─────────────────────────────────────────────────────────────
 
 class _GrowthChart extends StatelessWidget {
-  const _GrowthChart({required this.result});
+  const _GrowthChart({required this.result, this.realTimeline});
 
   final FireResult result;
+  final List<double>? realTimeline;
 
   @override
   Widget build(BuildContext context) {
@@ -468,6 +580,24 @@ class _GrowthChart extends StatelessWidget {
                   color: AppColors.income.withValues(alpha: 0.08),
                 ),
               ),
+              if (realTimeline != null)
+                LineChartBarData(
+                  spots: realTimeline!
+                      .asMap()
+                      .entries
+                      .map(
+                        (MapEntry<int, double> e) =>
+                            FlSpot(e.key.toDouble(), e.value),
+                      )
+                      .toList(),
+                  isCurved: true,
+                  curveSmoothness: 0.3,
+                  color: AppColors.warning.withValues(alpha: 0.8),
+                  barWidth: 1.5,
+                  dashArray: <int>[5, 3],
+                  dotData: const FlDotData(show: false),
+                  belowBarData: BarAreaData(),
+                ),
             ],
           ),
         ),

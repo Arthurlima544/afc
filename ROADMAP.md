@@ -591,14 +591,14 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
-### US-66 · Inflation-Adjusted Projections ⏳
+### US-66 · Inflation-Adjusted Projections ✅
 **As a** user, **I want** all long-term projections (FIRE, compound interest, goals) to show real (inflation-adjusted) values,
 **so that** I understand what my money will actually buy in the future.
 
-- [ ] Inflation rate input in Settings (default: 4.5% — Brazil IPCA average)
-- [ ] `InflationAdjusted` toggle on FIRE Calculator and Compound Interest Simulator
-- [ ] Real vs nominal value displayed side by side on projection charts
-- [ ] Unit tests for inflation adjustment formula
+- [x] `InflationCalculator` pure use case — `realValue()`, `realAnnualReturnPercent()`, `adjustTimeline()` with default IPCA 4.5%
+- [x] "Ajuste de Inflação" toggle card on FIRE Calculator — inflation rate input (default 4.5%), "Valor real hoje" row in result card, dashed real timeline on chart
+- [x] "Ajuste de Inflação" toggle card on Compound Interest — "Poder de compra hoje" row in result card, dashed real timeline on chart
+- [x] 10 unit tests for `InflationCalculator` (realValue, realAnnualReturnPercent, adjustTimeline)
 
 ---
 
@@ -635,16 +635,16 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
-### US-67 · Financial Independence Score & Milestones ⏳
+### US-67 · Financial Independence Score & Milestones ✅
 **As a** user, **I want** a clear score showing how close I am to financial independence,
 **so that** I have a single motivating number to grow.
 
-- [ ] FI Score (0–100): 0 = no savings, 100 = passive income ≥ expenses (FIRE achieved)
-- [ ] Formula: `(monthly_passive_income / monthly_expenses) * 100`, capped at 100
-- [ ] Milestone badges: 10%, 25%, 50%, 75%, 100% FI — each with a celebration animation
-- [ ] FI Score card on Dashboard replaces or augments the existing financial health score
-- [ ] History sparkline (6 months) showing FI score trend
-- [ ] Unit tests for FI score formula and milestone detection
+- [x] FI Score (0–100): formula `(monthly_passive_income / monthly_expenses) × 100`, capped at 100
+- [x] `FiScoreCubit` — fetches `passive_income` + `transaction` collections; computes score + 6-month sparkline
+- [x] `FiScoreData` — `fiScore`, `passiveIncomeMonthly`, `monthlyExpenses`, `last6Scores`, `achievedMilestones` computed property
+- [x] Milestone badges (10 / 25 / 50 / 75 / 100%) on Dashboard card — filled/highlighted when achieved
+- [x] `_FiScoreCard` on Dashboard augmenting `_HealthScoreCard` — score %, label, sparkline, progress bar, milestone row, passive income vs expenses caption
+- [x] 11 unit tests: `FiScoreData` milestone detection (3) + `FiScoreCubit` (8 — zero data, score formula, 100% cap, income exclusion, userId filter, empty userId)
 
 ---
 
@@ -684,4 +684,4 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 9 (US-38–44) | `feat/us-38-44-ux-polish` | ✅ Merged |
 | Sprint 10 (design system migration) | `feat/sprint10-design-system` | ✅ Merged |
 | Sprint 11 (US-45–59) | `feat/sprint11-polish` | ✅ Merged |
-| Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | 🔄 In Progress (US-60–65, US-68, US-69 ✅) |
+| Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | 🔄 In Progress (US-60–69 all ✅) |
