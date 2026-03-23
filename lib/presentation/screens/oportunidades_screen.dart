@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 
 import '../../domain/entity/market_quote_entity.dart';
 import '../blocs/market/market_opportunity_cubit.dart';
+import '../blocs/watchlist/watchlist_cubit.dart';
+import '../blocs/watchlist/watchlist_item.dart';
 import '../widgets/design_system.dart';
 import '../widgets/error_state.dart';
 import '../widgets/skeleton_list.dart';
@@ -16,7 +18,9 @@ enum _SortMode { highestDy, dyVsCdi, lowestPl }
 // ─── Screen ────────────────────────────────────────────────────────────────────
 
 class OportunidadesScreen extends StatefulWidget {
-  const OportunidadesScreen({super.key});
+  const OportunidadesScreen({required this.userId, super.key});
+
+  final String userId;
 
   @override
   State<OportunidadesScreen> createState() => _OportunidadesScreenState();
@@ -77,25 +81,39 @@ class _OportunidadesScreenState extends State<OportunidadesScreen> {
       leading: BackButton(onPressed: () => context.pop()),
       title: const Text('Oportunidades'),
       centerTitle: false,
+      actions: <Widget>[
+        AppIconButton(
+          icon: const Icon(Icons.bookmark_outline),
+          tooltip: 'Minha Watchlist',
+          onPressed: () => context.push('/watchlist'),
+        ),
+      ],
     ),
-    body: BlocBuilder<MarketOpportunityCubit, MarketOpportunityState>(
-      builder: (BuildContext context, MarketOpportunityState state) =>
-          state.when(
-            initial: () => const SizedBox(),
-            loading: () => const SkeletonList(),
-            error: (String msg) => ErrorState(
-              message: msg,
-              onRetry: () => context
-                  .read<MarketOpportunityCubit>()
-                  .load(forceRefresh: true),
-            ),
-            loaded: (
-              List<MarketQuoteEntity> quotes,
-              double cdiRate,
-              DateTime fetchedAt,
-            ) {
-              final List<MarketQuoteEntity> visible =
-                  _apply(quotes, cdiRate);
+    body: BlocBuilder<WatchlistCubit, WatchlistState>(
+      builder: (BuildContext context, WatchlistState watchlistState) {
+        final Set<String> watchlistTickers = watchlistState.whenOrNull(
+              loaded: (List<WatchlistItem> items, DateTime _) =>
+                  items.map((WatchlistItem i) => i.ticker).toSet(),
+            ) ??
+            <String>{};
+        return BlocBuilder<MarketOpportunityCubit, MarketOpportunityState>(
+          builder: (BuildContext context, MarketOpportunityState state) =>
+              state.when(
+                initial: () => const SizedBox(),
+                loading: () => const SkeletonList(),
+                error: (String msg) => ErrorState(
+                  message: msg,
+                  onRetry: () => context
+                      .read<MarketOpportunityCubit>()
+                      .load(forceRefresh: true),
+                ),
+                loaded: (
+                  List<MarketQuoteEntity> quotes,
+                  double cdiRate,
+                  DateTime fetchedAt,
+                ) {
+                  final List<MarketQuoteEntity> visible =
+                      _apply(quotes, cdiRate);
               return RefreshIndicator(
                 onRefresh: () => context
                     .read<MarketOpportunityCubit>()
@@ -152,14 +170,18 @@ class _OportunidadesScreenState extends State<OportunidadesScreen> {
                               _QuoteCard(
                                 quote: visible[i],
                                 cdiRate: cdiRate,
+                                inWatchlist: watchlistTickers
+                                    .contains(visible[i].ticker),
                               ),
                         ),
                       ),
                   ],
                 ),
               );
-            },
-          ),
+                },
+              ),
+        );
+      },
     ),
   );
 
@@ -303,10 +325,15 @@ class _Chip extends StatelessWidget {
 // ─── Quote card ───────────────────────────────────────────────────────────────
 
 class _QuoteCard extends StatelessWidget {
-  const _QuoteCard({required this.quote, required this.cdiRate});
+  const _QuoteCard({
+    required this.quote,
+    required this.cdiRate,
+    required this.inWatchlist,
+  });
 
   final MarketQuoteEntity quote;
   final double cdiRate;
+  final bool inWatchlist;
 
   @override
   Widget build(BuildContext context) {
@@ -355,6 +382,22 @@ class _QuoteCard extends StatelessWidget {
                 ],
               ),
               const Spacer(),
+              // Bookmark
+              GestureDetector(
+                onTap: () {
+                  if (inWatchlist) {
+                    context.push('/watchlist');
+                  } else {
+                    context.read<WatchlistCubit>().addTicker(quote.ticker);
+                  }
+                },
+                child: Icon(
+                  inWatchlist ? Icons.bookmark : Icons.bookmark_outline,
+                  size: 20,
+                  color: inWatchlist ? AppColors.primary : AppColors.muted,
+                ),
+              ),
+              const Gap(10),
               // Price + change
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,

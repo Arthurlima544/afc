@@ -81,6 +81,42 @@ class BrapiService {
         .toList();
   }
 
+  /// Fetches 5-day daily close prices for [ticker] (for sparklines).
+  ///
+  /// Returns an empty list on any network or parse error — callers should
+  /// treat an empty list as "sparkline unavailable" and hide the chart.
+  Future<List<double>> fetchHistory(String ticker) async {
+    try {
+      final Uri uri =
+          Uri.parse('$_base/quote/$ticker?range=5d&interval=1d');
+      final http.Response response = await _client.get(uri);
+      if (response.statusCode != 200) {
+        return <double>[];
+      }
+      final Map<String, dynamic> body =
+          json.decode(response.body) as Map<String, dynamic>;
+      final List<dynamic> results =
+          body['results'] as List<dynamic>? ?? <dynamic>[];
+      if (results.isEmpty) {
+        return <double>[];
+      }
+      final Map<String, dynamic> first =
+          results.first as Map<String, dynamic>;
+      final List<dynamic> history =
+          first['historicalDataPrice'] as List<dynamic>? ?? <dynamic>[];
+      return history
+          .map(
+            (dynamic h) =>
+                ((h as Map<String, dynamic>)['close'] as num?)?.toDouble() ??
+                0.0,
+          )
+          .where((double v) => v > 0)
+          .toList();
+    } on Exception {
+      return <double>[];
+    }
+  }
+
   /// Returns the current Brazilian CDI annual rate as a percentage
   /// (e.g. 13.65 for 13.65 % p.a.).
   ///

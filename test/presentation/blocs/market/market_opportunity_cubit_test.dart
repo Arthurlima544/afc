@@ -132,7 +132,7 @@ void main() {
         equals(const MarketOpportunityState.loading()),
         isA<MarketOpportunityState>().having(
           (MarketOpportunityState s) => s.whenOrNull(
-            loaded: (List<MarketQuoteEntity> q, double _, DateTime __) =>
+            loaded: (List<MarketQuoteEntity> q, double cdi, DateTime at) =>
                 q.map((MarketQuoteEntity e) => e.ticker).toList(),
           ),
           'tickers in DY order',

@@ -25,6 +25,7 @@ import '../../presentation/blocs/report/report_cubit.dart';
 import '../../presentation/blocs/review_queue/review_queue_cubit.dart';
 import '../../presentation/blocs/settings/settings_cubit.dart';
 import '../../presentation/blocs/transaction/transaction_cubit.dart';
+import '../../presentation/blocs/watchlist/watchlist_cubit.dart';
 import '../../presentation/screens/cadastrar_categoria.dart';
 import '../../presentation/screens/cadastrar_conta.dart';
 import '../../presentation/screens/cadastrar_investimento.dart';
@@ -45,6 +46,7 @@ import '../../presentation/screens/lista_limites.dart';
 import '../../presentation/screens/lista_metas.dart';
 import '../../presentation/screens/lista_recorrentes.dart';
 import '../../presentation/screens/lista_transacoes.dart';
+import '../../presentation/screens/lista_watchlist.dart';
 import '../../presentation/screens/login_screen.dart';
 import '../../presentation/screens/onboarding_screen.dart';
 import '../../presentation/screens/oportunidades_screen.dart';
@@ -472,15 +474,43 @@ final GoRouter router = GoRouter(
           ),
     ),
 
-    // --- Market opportunities ---
+    // --- Market opportunities & watchlist ---
 
     GoRoute(
       path: '/oportunidades',
-      builder: (BuildContext context, GoRouterState state) =>
-          BlocProvider<MarketOpportunityCubit>(
-            create: (_) => MarketOpportunityCubit()..load(),
-            child: const OportunidadesScreen(),
-          ),
+      builder: (BuildContext context, GoRouterState state) {
+        final String userId =
+            context.read<AuthBloc>().state.whenOrNull(
+                  signedIn: (ClerkAuthState s) => s.user?.id,
+                ) ??
+            '';
+        return MultiBlocProvider(
+          providers: <BlocProvider<dynamic>>[
+            BlocProvider<MarketOpportunityCubit>(
+              create: (_) => MarketOpportunityCubit()..load(),
+            ),
+            BlocProvider<WatchlistCubit>(
+              create: (_) => WatchlistCubit()..loadWatchlist(userId),
+            ),
+          ],
+          child: OportunidadesScreen(userId: userId),
+        );
+      },
+    ),
+
+    GoRoute(
+      path: '/watchlist',
+      builder: (BuildContext context, GoRouterState state) {
+        final String userId =
+            context.read<AuthBloc>().state.whenOrNull(
+                  signedIn: (ClerkAuthState s) => s.user?.id,
+                ) ??
+            '';
+        return BlocProvider<WatchlistCubit>(
+          create: (_) => WatchlistCubit()..loadWatchlist(userId),
+          child: ListaWatchlist(userId: userId),
+        );
+      },
     ),
 
     // --- Bill routes ---
