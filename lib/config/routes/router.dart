@@ -33,6 +33,7 @@ import '../../presentation/screens/cadastrar_limites.dart';
 import '../../presentation/screens/cadastrar_meta.dart';
 import '../../presentation/screens/cadastrar_recorrente.dart';
 import '../../presentation/screens/cadastrar_transacao.dart';
+import '../../presentation/screens/compound_interest_screen.dart';
 import '../../presentation/screens/connect_bank_screen.dart';
 import '../../presentation/screens/connected_accounts_screen.dart';
 import '../../presentation/screens/dev_seed_screen.dart';
@@ -475,12 +476,18 @@ final GoRouter router = GoRouter(
           ),
     ),
 
-    // --- FIRE Calculator ---
+    // --- Financial Independence calculators ---
 
     GoRoute(
       path: '/fire-calculadora',
       builder: (BuildContext context, GoRouterState state) =>
           const FireCalculatorScreen(),
+    ),
+
+    GoRoute(
+      path: '/juros-compostos',
+      builder: (BuildContext context, GoRouterState state) =>
+          const CompoundInterestScreen(),
     ),
 
     // --- Market opportunities & watchlist ---

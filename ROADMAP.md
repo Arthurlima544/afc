@@ -526,15 +526,17 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
-### US-61 · Compound Interest Simulator ⏳
+### US-61 · Compound Interest Simulator ✅
 **As a** user, **I want** to simulate how my investments grow over time given a monthly contribution and interest rate,
 **so that** I can see the real impact of investing consistently.
 
-- [ ] Inputs: initial amount, monthly contribution, annual rate (%), period in years
-- [ ] Output: final amount, total invested, total interest earned
-- [ ] Area chart showing balance growth over time (compound curve)
-- [ ] "What if" toggle: compare different rates (e.g. 6%, 10%, 14%)
-- [ ] Unit tests for compound interest formula (with and without monthly contributions)
+- [x] `CompoundInterestCalculator` use case: `calculate()` and `compare()` static methods returning `CompoundResult` (`finalAmount`, `totalInvested`, `totalInterest`, `yearlyTimeline`)
+- [x] Inputs: initial amount, monthly contribution, annual rate %, period in years
+- [x] Results card: final amount, total invested, total interest + visual composition bar (capital vs rendimentos)
+- [x] `fl_chart` LineChart with area fill for primary rate; dashed lines for comparison rates
+- [x] "Comparar taxas" toggle — overlays 6%, 10%, 14% comparison curves with legend
+- [x] `_CompoundInterestCard` on Dashboard linking to `/juros-compostos`
+- [x] 11 unit tests: lump-sum formula, annuity formula, zero-rate, totalInvested/totalInterest invariants, timeline structure, compare ordering
 
 ---
 
@@ -652,7 +654,7 @@ These items are not user stories but are necessary for long-term quality.
 | Item | Priority | Status | Notes |
 |------|----------|--------|-------|
 | Firestore streams (replace `.get()`) | High | ✅ Done | All list screens and dashboard use `.snapshots()` |
-| Widget test coverage for key screens | High | ✅ Done | home_screen, login_screen, scaffold_shell (302 total tests) |
+| Widget test coverage for key screens | High | ✅ Done | home_screen, login_screen, scaffold_shell (313 total tests) |
 | Cloud Functions project setup | High | ✅ Done | Pluggy proxy + webhooks + bill reminders in `functions/src/` |
 | Offline support (`persistenceEnabled`) | Medium | ✅ Done | Both `main_dev.dart` and `main_prod.dart` configure `CACHE_SIZE_UNLIMITED` |
 | CI: separate lint / test / build jobs | Low | ✅ Done | 3 jobs: lint → test (coverage artifact) → build (APK artifact) |
@@ -681,4 +683,4 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 9 (US-38–44) | `feat/us-38-44-ux-polish` | ✅ Merged |
 | Sprint 10 (design system migration) | `feat/sprint10-design-system` | ✅ Merged |
 | Sprint 11 (US-45–59) | `feat/sprint11-polish` | ✅ Merged |
-| Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | 🔄 In Progress (US-60, US-68, US-69 ✅) |
+| Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | 🔄 In Progress (US-60, US-61, US-68, US-69 ✅) |

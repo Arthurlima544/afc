@@ -75,6 +75,8 @@ class _HomeContent extends StatelessWidget {
         const _MarketOpportunitiesCard(),
         const Gap(12),
         const _FireCard(),
+        const Gap(8),
+        const _CompoundInterestCard(),
         const Gap(20),
       ],
     ),
@@ -1412,6 +1414,54 @@ class _FireCard extends StatelessWidget {
         AppIconButton(
           icon: const Icon(Icons.arrow_forward_ios, size: 14),
           onPressed: () => context.push('/fire-calculadora'),
+        ),
+      ],
+    ),
+  );
+}
+
+// ─── Compound Interest card ───────────────────────────────────────────────────
+
+class _CompoundInterestCard extends StatelessWidget {
+  const _CompoundInterestCard();
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.all(14),
+    child: Row(
+      children: <Widget>[
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.trending_up,
+            color: AppColors.primary,
+            size: 22,
+          ),
+        ),
+        const Gap(12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const Text('Simulador de Juros Compostos',
+                  style: AppTextStyles.labelBold),
+              const Gap(2),
+              Text(
+                'Veja o poder dos aportes mensais ao longo do tempo',
+                style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+              ),
+            ],
+          ),
+        ),
+        const Gap(8),
+        AppIconButton(
+          icon: const Icon(Icons.arrow_forward_ios, size: 14),
+          onPressed: () => context.push('/juros-compostos'),
         ),
       ],
     ),
