@@ -52,6 +52,7 @@ import '../../presentation/screens/lista_watchlist.dart';
 import '../../presentation/screens/login_screen.dart';
 import '../../presentation/screens/onboarding_screen.dart';
 import '../../presentation/screens/oportunidades_screen.dart';
+import '../../presentation/screens/portfolio_dashboard_screen.dart';
 import '../../presentation/screens/relatorio.dart';
 import '../../presentation/screens/review_queue_screen.dart';
 import '../../presentation/screens/scaffold_shell.dart';
@@ -488,6 +489,15 @@ final GoRouter router = GoRouter(
       path: '/juros-compostos',
       builder: (BuildContext context, GoRouterState state) =>
           const CompoundInterestScreen(),
+    ),
+
+    GoRoute(
+      path: '/portfolio-dashboard',
+      builder: (BuildContext context, GoRouterState state) =>
+          BlocProvider<InvestmentCubit>(
+            create: (_) => InvestmentCubit(),
+            child: const PortfolioDashboardScreen(),
+          ),
     ),
 
     // --- Market opportunities & watchlist ---

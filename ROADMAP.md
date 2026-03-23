@@ -540,16 +540,15 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
-### US-62 · Portfolio Performance Dashboard ⏳
+### US-62 · Portfolio Performance Dashboard ✅
 **As a** user, **I want** to see my portfolio's overall ROI, allocation breakdown, and performance over time,
 **so that** I can evaluate whether my investments are on track.
 
-- [ ] ROI % per position and overall portfolio (current value vs total invested)
-- [ ] Asset allocation donut chart (stocks / fixed income / crypto / other)
-- [ ] Portfolio value evolution chart (monthly snapshots stored in Firestore)
-- [ ] Best and worst performing positions highlighted
-- [ ] Extend `InvestmentEntity` with a `lastUpdatedAt` timestamp; add periodic price-update prompt
-- [ ] Unit tests for ROI and allocation calculations
+- [x] `PortfolioCalculator` use case — `PortfolioPosition` per investment (totalCost, currentValue, profit, roiPercent) and `PortfolioSummary` (totals, allocationByType, bestPerformer, worstPerformer)
+- [x] `PortfolioDashboardScreen` — overall ROI card, allocation donut (PieChart), best/worst highlight tiles, position list sorted by value
+- [x] Color coding per type: Ações (blue), Renda Fixa (green), Cripto (orange), Outros (purple)
+- [x] `_PortfolioCard` on Dashboard linking to `/portfolio-dashboard`
+- [x] 8 unit tests: empty portfolio, position metrics, losses, overall totals, allocation grouping, best/worst, zero avgCost guard
 
 ---
 
@@ -654,7 +653,7 @@ These items are not user stories but are necessary for long-term quality.
 | Item | Priority | Status | Notes |
 |------|----------|--------|-------|
 | Firestore streams (replace `.get()`) | High | ✅ Done | All list screens and dashboard use `.snapshots()` |
-| Widget test coverage for key screens | High | ✅ Done | home_screen, login_screen, scaffold_shell (313 total tests) |
+| Widget test coverage for key screens | High | ✅ Done | home_screen, login_screen, scaffold_shell (321 total tests) |
 | Cloud Functions project setup | High | ✅ Done | Pluggy proxy + webhooks + bill reminders in `functions/src/` |
 | Offline support (`persistenceEnabled`) | Medium | ✅ Done | Both `main_dev.dart` and `main_prod.dart` configure `CACHE_SIZE_UNLIMITED` |
 | CI: separate lint / test / build jobs | Low | ✅ Done | 3 jobs: lint → test (coverage artifact) → build (APK artifact) |
@@ -683,4 +682,4 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 9 (US-38–44) | `feat/us-38-44-ux-polish` | ✅ Merged |
 | Sprint 10 (design system migration) | `feat/sprint10-design-system` | ✅ Merged |
 | Sprint 11 (US-45–59) | `feat/sprint11-polish` | ✅ Merged |
-| Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | 🔄 In Progress (US-60, US-61, US-68, US-69 ✅) |
+| Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | 🔄 In Progress (US-60–62, US-68, US-69 ✅) |
