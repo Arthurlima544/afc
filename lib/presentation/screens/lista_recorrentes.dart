@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import '../../domain/entity/recurring_entity.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/recurring/recurring_cubit.dart';
+import '../blocs/transaction/transaction_cubit.dart';
 import '../widgets/design_system.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_state.dart';
@@ -50,15 +51,22 @@ class ListaRecorrentes extends StatelessWidget {
                   AppIconButton(
                     onPressed: () => showFormSheet<void>(
                       context,
-                      builder: (BuildContext ctx) => BlocProvider<RecurringCubit>(
-                        create: (_) => RecurringCubit(),
+                      builder: (BuildContext ctx) => MultiBlocProvider(
+                        providers: <BlocProvider<dynamic>>[
+                          BlocProvider<TransactionCubit>(
+                            create: (_) => TransactionCubit()..getCategories(),
+                          ),
+                          BlocProvider<RecurringCubit>(
+                            create: (_) => RecurringCubit(),
+                          ),
+                        ],
                         child: const CadastrarRecorrente(),
                       ),
                     ),
-                  icon: const Icon(Icons.add),
-                ),
-              ],
-            ),
+                    icon: const Icon(Icons.add),
+                  ),
+                ],
+              ),
             const Gap(16),
             BlocBuilder<RecurringCubit, RecurringState>(
               builder: (BuildContext context, RecurringState state) => state.when(
@@ -98,7 +106,7 @@ class ListaRecorrentes extends StatelessWidget {
       ),
     ),
   ),
-);
+  );
 }
 
 class _RecorrenteItem extends StatelessWidget {

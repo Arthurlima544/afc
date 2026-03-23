@@ -42,7 +42,7 @@ class ListaLimites extends StatelessWidget {
                   onPressed: () => showFormSheet<void>(
                     context,
                     builder: (BuildContext ctx) => BlocProvider<LimitCubit>(
-                      create: (_) => LimitCubit(),
+                      create: (_) => LimitCubit()..getCategories(),
                       child: const CadastrarLimites(),
                     ),
                   ),
@@ -119,7 +119,7 @@ class _LimiteItem extends StatelessWidget {
           onPressed: () => showFormSheet<void>(
             context,
             builder: (BuildContext ctx) => BlocProvider<LimitCubit>(
-              create: (_) => LimitCubit(),
+              create: (_) => LimitCubit()..getCategories(),
               child: CadastrarLimites(initialLimit: item.limit),
             ),
           ),

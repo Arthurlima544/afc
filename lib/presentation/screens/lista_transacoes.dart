@@ -62,7 +62,7 @@ class ListaTransacoes extends StatelessWidget {
                   onPressed: () => showFormSheet<void>(
                     context,
                     builder: (BuildContext ctx) => BlocProvider<TransactionCubit>(
-                      create: (_) => TransactionCubit(),
+                      create: (_) => TransactionCubit()..getCategories(),
                       child: const CadastrarTransacao(),
                     ),
                   ),
@@ -145,7 +145,7 @@ class _TransacaoItem extends StatelessWidget {
             onPressed: () => showFormSheet<void>(
               context,
               builder: (BuildContext ctx) => BlocProvider<TransactionCubit>(
-                create: (_) => TransactionCubit(),
+                create: (_) => TransactionCubit()..getCategories(),
                 child: CadastrarTransacao(initialTransaction: tx),
               ),
             ),

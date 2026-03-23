@@ -175,53 +175,35 @@ class StatsWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) => BlocBuilder<HomeBloc, HomeState>(
     builder: (BuildContext context, HomeState state) {
-      List<FlSpot> expenseSpots = <FlSpot>[const FlSpot(0, 0)];
-      List<FlSpot> incomeSpots = <FlSpot>[const FlSpot(0, 0)];
+      double totalIncome = 0;
+      double totalExpenses = 0;
 
       state.statsState.whenOrNull(
         success: (List<StatsEntity> stats) {
-          final List<FlSpot> expenses =
-              stats
-                  .where((StatsEntity s) => s.type == TypeEntity.expense)
-                  .map(
-                    (StatsEntity s) => FlSpot(s.date.index.toDouble(), s.total),
-                  )
-                  .toList()
-                ..sort((FlSpot a, FlSpot b) => a.x.compareTo(b.x));
-
-          final List<FlSpot> income =
-              stats
-                  .where((StatsEntity s) => s.type == TypeEntity.income)
-                  .map(
-                    (StatsEntity s) => FlSpot(s.date.index.toDouble(), s.total),
-                  )
-                  .toList()
-                ..sort((FlSpot a, FlSpot b) => a.x.compareTo(b.x));
-
-          if (expenses.isNotEmpty) {
-            expenseSpots = expenses;
-          }
-          if (income.isNotEmpty) {
-            incomeSpots = income;
-          }
+          totalIncome = stats
+              .where((StatsEntity s) => s.type == TypeEntity.income)
+              .fold(0.0, (double sum, StatsEntity s) => sum + s.total);
+          totalExpenses = stats
+              .where((StatsEntity s) => s.type == TypeEntity.expense)
+              .fold(0.0, (double sum, StatsEntity s) => sum + s.total);
         },
       );
 
-      final double maxY = <FlSpot>[...expenseSpots, ...incomeSpots]
-          .map((FlSpot s) => s.y)
-          .fold(0.0, (double max, double y) => y > max ? y : max);
-      final double yInterval = maxY > 0 ? (maxY / 5).ceilToDouble() : 500;
+      final double savingsRate = totalIncome > 0
+          ? ((totalIncome - totalExpenses) / totalIncome * 100).clamp(0, 100)
+          : 0;
 
       return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              const Text('Estatísticas', style: AppTextStyles.sectionTitle),
+              const Text('Resumo do mês', style: AppTextStyles.sectionTitle),
               TextButton(
-                onPressed: () => context.go('/lista-transacoes'),
+                onPressed: () => context.push('/relatorio'),
                 child: const Text(
-                  'Ver Todas',
+                  'Ver relatório',
                   style: TextStyle(
                     fontSize: AppTextStyle.sizeMd,
                     color: AppColors.link,
@@ -231,156 +213,84 @@ class StatsWidget extends StatelessWidget {
             ],
           ),
           const Gap(10),
-          LineChartSample7(
-            line1Color: AppColors.expense,
-            line2Color: AppColors.income,
-            expenseSpots: expenseSpots,
-            incomeSpots: incomeSpots,
-            yInterval: yInterval,
+          AppCard(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: _StatCell(
+                    label: 'Taxa de poupança',
+                    value: '${savingsRate.toStringAsFixed(0)}%',
+                    valueColor: savingsRate >= 20
+                        ? AppColors.income
+                        : savingsRate >= 10
+                        ? AppColors.warning
+                        : AppColors.expense,
+                  ),
+                ),
+                _divider(),
+                Expanded(
+                  child: _StatCell(
+                    label: 'Receita do mês',
+                    value: convertToCurrencyFormated(totalIncome),
+                    valueColor: AppColors.income,
+                  ),
+                ),
+                _divider(),
+                Expanded(
+                  child: _StatCell(
+                    label: 'Gastos do mês',
+                    value: convertToCurrencyFormated(totalExpenses),
+                    valueColor: AppColors.expense,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       );
     },
   );
+
+  Widget _divider() => Container(
+    width: 1,
+    height: 40,
+    color: const Color(0xFF3A3A3A),
+    margin: const EdgeInsets.symmetric(horizontal: 8),
+  );
 }
 
-class LineChartSample7 extends StatelessWidget {
-  const LineChartSample7({
-    required this.line1Color,
-    required this.line2Color,
-    required this.expenseSpots,
-    required this.incomeSpots,
-    required this.yInterval,
-    super.key,
+class _StatCell extends StatelessWidget {
+  const _StatCell({
+    required this.label,
+    required this.value,
+    required this.valueColor,
   });
 
-  final Color line1Color;
-  final Color line2Color;
-  final List<FlSpot> expenseSpots;
-  final List<FlSpot> incomeSpots;
-  final double yInterval;
-
-  Widget bottomTitleWidgets(double value, TitleMeta meta) {
-    const TextStyle style = AppTextStyles.chartLabelBold;
-    String text;
-    switch (value.toInt()) {
-      case 0:
-        text = 'Jan';
-        break;
-      case 1:
-        text = 'Fev';
-        break;
-      case 2:
-        text = 'Mar';
-        break;
-      case 3:
-        text = 'Abr';
-        break;
-      case 4:
-        text = 'Mai';
-        break;
-      case 5:
-        text = 'Jun';
-        break;
-      case 6:
-        text = 'Jul';
-        break;
-      case 7:
-        text = 'Ago';
-        break;
-      case 8:
-        text = 'Set';
-        break;
-      case 9:
-        text = 'Out';
-        break;
-      case 10:
-        text = 'Nov';
-        break;
-      case 11:
-        text = 'Dez';
-        break;
-      default:
-        return Container();
-    }
-
-    return SideTitleWidget(
-      meta: meta,
-      space: 4,
-      child: Text(text, style: style),
-    );
-  }
-
-  Widget leftTitleWidgets(double value, TitleMeta meta) {
-    const TextStyle style = AppTextStyles.chartLabel;
-
-    String text;
-    if (value >= 1000) {
-      // format like 1k, 1.5k etc
-      text = '${(value / 1000).toStringAsFixed(1)}k';
-    } else {
-      text = value.toInt().toString();
-    }
-
-    return SideTitleWidget(
-      meta: meta,
-      child: Text(text, style: style),
-    );
-  }
+  final String label;
+  final String value;
+  final Color valueColor;
 
   @override
-  Widget build(BuildContext context) => AspectRatio(
-    aspectRatio: 2,
-    child: Padding(
-      padding: const EdgeInsets.only(left: 10, right: 18, top: 10, bottom: 4),
-      child: LineChart(
-        LineChartData(
-          lineTouchData: const LineTouchData(enabled: false),
-          lineBarsData: <LineChartBarData>[
-            LineChartBarData(
-              spots: expenseSpots,
-              color: line1Color,
-              dotData: const FlDotData(show: false),
-            ),
-            LineChartBarData(
-              spots: incomeSpots,
-              color: line2Color,
-              dotData: const FlDotData(show: false),
-            ),
-          ],
-          betweenBarsData: <BetweenBarsData>[
-            // BetweenBarsData(fromIndex: 0, toIndex: 1, color: betweenColor),
-          ],
-          minY: 0,
-          borderData: FlBorderData(show: false),
-          titlesData: FlTitlesData(
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                interval: 1,
-                getTitlesWidget: bottomTitleWidgets,
-              ),
-            ),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                getTitlesWidget: leftTitleWidgets,
-                interval: yInterval,
-                reservedSize: 36,
-              ),
-            ),
-            topTitles: const AxisTitles(),
-            rightTitles: const AxisTitles(),
-          ),
-          gridData: FlGridData(
-            drawVerticalLine: false,
-            horizontalInterval: 1,
-            checkToShowHorizontalLine: (double value) =>
-                value == 1 || value == 6 || value == 4 || value == 5,
-          ),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: <Widget>[
+      Text(
+        value,
+        style: TextStyle(
+          fontSize: AppTextStyle.sizeMd,
+          fontWeight: FontWeight.bold,
+          color: valueColor,
         ),
+        textAlign: TextAlign.center,
       ),
-    ),
+      const Gap(4),
+      Text(
+        label,
+        style: AppTextStyles.caption,
+        textAlign: TextAlign.center,
+      ),
+    ],
   );
 }
 
@@ -635,13 +545,12 @@ class LastTransactionsWidget extends StatelessWidget {
                 children: <Widget>[
                   for (final TransactionEntity tx in transactions)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.only(bottom: 8),
                       child: LastTransactions(
                         category: tx.title,
                         amount: tx.typeUuid == TypeEntity.income.name
                             ? tx.amount
                             : -tx.amount,
-                        icon: Icons.attach_money,
                       ),
                     ),
                 ],
@@ -656,36 +565,50 @@ class LastTransactions extends StatelessWidget {
   const LastTransactions({
     required this.category,
     required this.amount,
-    required this.icon,
     super.key,
   });
 
   final String category;
   final double amount;
-  final IconData icon;
 
   @override
-  Widget build(BuildContext context) => Row(
-    children: <Widget>[
-      AppIconButton.circle(
-        icon: Icon(icon, size: 24, color: AppColors.onPrimary),
-      ),
-      const Gap(15),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(category, style: AppTextStyles.sectionTitle),
-            Text(
-              convertToCurrencyFormated(amount),
-              style: AppTextStyles.body.copyWith(
-                color: amount < 0 ? AppColors.expense : AppColors.income,
-              ),
-            ),
-          ],
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    child: Row(
+      children: <Widget>[
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: amount >= 0
+                ? AppColors.income.withValues(alpha: 0.15)
+                : AppColors.expense.withValues(alpha: 0.15),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            amount >= 0 ? Icons.arrow_downward : Icons.arrow_upward,
+            size: 18,
+            color: amount >= 0 ? AppColors.income : AppColors.expense,
+          ),
         ),
-      ),
-    ],
+        const Gap(12),
+        Expanded(
+          child: Text(
+            category,
+            style: AppTextStyles.title,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Text(
+          convertToCurrencyFormated(amount),
+          style: TextStyle(
+            fontSize: AppTextStyle.sizeMd,
+            fontWeight: FontWeight.w600,
+            color: amount >= 0 ? AppColors.income : AppColors.expense,
+          ),
+        ),
+      ],
+    ),
   );
 }
 

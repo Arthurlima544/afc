@@ -36,13 +36,7 @@ class ListaCategorias extends StatelessWidget {
                     child: Text('Categorias', style: AppTextStyles.heading),
                   ),
                   AppIconButton(
-                    onPressed: () => showFormSheet<void>(
-                    context,
-                    builder: (BuildContext ctx) => BlocProvider<CategoryCubit>(
-                      create: (_) => CategoryCubit(),
-                      child: const CadastrarCategoria(),
-                    ),
-                  ),
+                    onPressed: () => context.push('/cadastro-categoria'),
                     icon: const Icon(Icons.add),
                   ),
                 ],

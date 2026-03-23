@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../domain/entity/bill_entity.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/bill/bill_cubit.dart';
+import '../blocs/category/category_cubit.dart';
 import '../widgets/design_system.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/skeleton_list.dart';
@@ -35,8 +36,13 @@ class ListaContas extends StatelessWidget {
                 AppIconButton(
                   onPressed: () => showFormSheet<void>(
                     context,
-                    builder: (BuildContext ctx) => BlocProvider<BillCubit>(
-                      create: (_) => BillCubit(),
+                    builder: (BuildContext ctx) => MultiBlocProvider(
+                      providers: <BlocProvider<dynamic>>[
+                        BlocProvider<BillCubit>(create: (_) => BillCubit()),
+                        BlocProvider<CategoryCubit>(
+                          create: (_) => CategoryCubit()..loadCategories(),
+                        ),
+                      ],
                       child: const CadastrarConta(),
                     ),
                   ),
@@ -73,7 +79,7 @@ class ListaContas extends StatelessWidget {
       ),
     ),
   ),
-);
+  );
 }
 
 class _BillItem extends StatelessWidget {
@@ -182,8 +188,13 @@ class _BillItem extends StatelessWidget {
                 AppIconButton(
                   onPressed: () => showFormSheet<void>(
                     context,
-                    builder: (BuildContext ctx) => BlocProvider<BillCubit>(
-                      create: (_) => BillCubit(),
+                    builder: (BuildContext ctx) => MultiBlocProvider(
+                      providers: <BlocProvider<dynamic>>[
+                        BlocProvider<BillCubit>(create: (_) => BillCubit()),
+                        BlocProvider<CategoryCubit>(
+                          create: (_) => CategoryCubit()..loadCategories(),
+                        ),
+                      ],
                       child: CadastrarConta(initialBill: bill),
                     ),
                   ),

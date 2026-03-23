@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:clerk_flutter/clerk_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -35,6 +38,13 @@ class _CadastrarRecorrenteState extends State<CadastrarRecorrente> {
   String? _typeError;
   String? _categoryError;
   String? _dateError;
+
+  @override
+  void initState() {
+    super.initState();
+    final TransactionCubit cubit = context.read<TransactionCubit>();
+    Future<void>.microtask(cubit.getCategories);
+  }
 
   @override
   void dispose() {
@@ -79,6 +89,30 @@ class _CadastrarRecorrenteState extends State<CadastrarRecorrente> {
       default:
         return freq;
     }
+  }
+
+  Future<void> _showAddCategoryDialog() async {
+    final String? name = await showInputDialog(
+      context: context,
+      title: 'Nova categoria',
+      hintText: 'Nome da categoria',
+    );
+    if (name == null || name.trim().isEmpty || !mounted) {
+      return;
+    }
+    final CategoryEntity newCat = CategoryEntity(
+      uuid: const Uuid().v1(),
+      name: name.trim(),
+      iconType: 0,
+    );
+    await FirebaseFirestore.instance
+        .collection('category')
+        .add(newCat.toJson());
+    if (!mounted) {
+      return;
+    }
+    unawaited(context.read<TransactionCubit>().getCategories());
+    setState(() => _categoryUuid = newCat.uuid);
   }
 
   @override
@@ -145,23 +179,77 @@ class _CadastrarRecorrenteState extends State<CadastrarRecorrente> {
               ],
               const Gap(16),
 
-              // Category
-              DropdownButtonFormField<String>(
-                initialValue: _categoryUuid,
-                hint: const Text('Categoria'),
-                decoration: const InputDecoration(),
-                onChanged: (String? v) => setState(() {
-                  _categoryUuid = v;
-                  _categoryError = null;
-                }),
-                items: categories
-                    .map(
-                      (CategoryEntity c) => DropdownMenuItem<String>(
-                        value: c.uuid,
-                        child: Text(c.name),
+              // Category chips
+              const Text('Categoria', style: AppTextStyles.labelBold),
+              const Gap(8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: <Widget>[
+                  for (final CategoryEntity cat in categories)
+                    GestureDetector(
+                      onTap: () => setState(() {
+                        _categoryUuid = cat.uuid;
+                        _categoryError = null;
+                      }),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _categoryUuid == cat.uuid
+                              ? AppColors.primary
+                              : AppColors.muted.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: _categoryUuid == cat.uuid
+                                ? AppColors.primary
+                                : AppColors.muted.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Text(
+                          cat.name,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: _categoryUuid == cat.uuid
+                                ? AppColors.onPrimary
+                                : null,
+                          ),
+                        ),
                       ),
-                    )
-                    .toList(),
+                    ),
+                  // "+" chip — inline category creation
+                  GestureDetector(
+                    onTap: _showAddCategoryDialog,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.muted.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Icon(Icons.add, size: 14, color: AppColors.muted),
+                          Gap(4),
+                          Text(
+                            'Nova',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.muted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
               if (_categoryError != null) ...<Widget>[
                 const Gap(4),
