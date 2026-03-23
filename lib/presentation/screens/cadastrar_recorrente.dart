@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:clerk_flutter/clerk_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -79,6 +82,30 @@ class _CadastrarRecorrenteState extends State<CadastrarRecorrente> {
       default:
         return freq;
     }
+  }
+
+  Future<void> _showAddCategoryDialog() async {
+    final String? name = await showInputDialog(
+      context: context,
+      title: 'Nova categoria',
+      hintText: 'Nome da categoria',
+    );
+    if (name == null || name.trim().isEmpty || !mounted) {
+      return;
+    }
+    final CategoryEntity newCat = CategoryEntity(
+      uuid: const Uuid().v1(),
+      name: name.trim(),
+      iconType: 0,
+    );
+    await FirebaseFirestore.instance
+        .collection('category')
+        .add(newCat.toJson());
+    if (!mounted) {
+      return;
+    }
+    unawaited(context.read<TransactionCubit>().getCategories());
+    setState(() => _categoryUuid = newCat.uuid);
   }
 
   @override
@@ -185,6 +212,36 @@ class _CadastrarRecorrenteState extends State<CadastrarRecorrente> {
                         ),
                       ),
                     ),
+                  // "+" chip — inline category creation
+                  GestureDetector(
+                    onTap: _showAddCategoryDialog,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.muted.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Icon(Icons.add, size: 14, color: AppColors.muted),
+                          Gap(4),
+                          Text(
+                            'Nova',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.muted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
               if (_categoryError != null) ...<Widget>[

@@ -49,51 +49,76 @@ Future<String?> showInputDialog({
   required String title,
   required String hintText,
   TextInputType keyboardType = TextInputType.text,
-}) async {
-  final TextEditingController controller = TextEditingController();
+}) => showAppDialog<String>(
+  context: context,
+  builder: (BuildContext dialogContext) => _InputDialog(
+    title: title,
+    hintText: hintText,
+    keyboardType: keyboardType,
+  ),
+);
 
-  final String? result = await showAppDialog<String>(
-    context: context,
-    builder: (BuildContext dialogContext) => AppAlertDialog(
-      title: Text(title),
-      content: Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          autofocus: true,
-          decoration: InputDecoration(
-            hintText: hintText,
-            hintStyle: const TextStyle(color: AppColors.muted),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(
-                color: AppColors.primary,
-                width: 1.5,
-              ),
+class _InputDialog extends StatefulWidget {
+  const _InputDialog({
+    required this.title,
+    required this.hintText,
+    required this.keyboardType,
+  });
+
+  final String title;
+  final String hintText;
+  final TextInputType keyboardType;
+
+  @override
+  State<_InputDialog> createState() => _InputDialogState();
+}
+
+class _InputDialogState extends State<_InputDialog> {
+  final TextEditingController _ctrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AppAlertDialog(
+    title: Text(widget.title),
+    content: Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: TextField(
+        controller: _ctrl,
+        keyboardType: widget.keyboardType,
+        autofocus: true,
+        decoration: InputDecoration(
+          hintText: widget.hintText,
+          hintStyle: const TextStyle(color: AppColors.muted),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(
+              color: AppColors.primary,
+              width: 1.5,
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
           ),
         ),
       ),
-      actions: <Widget>[
-        SecondaryButton(
-          onPressed: () => Navigator.of(dialogContext).pop(),
-          child: const Text('Cancelar'),
-        ),
-        const Gap(8),
-        PrimaryButton(
-          onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-          child: const Text('Confirmar'),
-        ),
-      ],
     ),
+    actions: <Widget>[
+      SecondaryButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('Cancelar'),
+      ),
+      const Gap(8),
+      PrimaryButton(
+        onPressed: () => Navigator.of(context).pop(_ctrl.text),
+        child: const Text('Confirmar'),
+      ),
+    ],
   );
-
-  controller.dispose();
-  return result;
 }
