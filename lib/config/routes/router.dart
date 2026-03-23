@@ -18,6 +18,7 @@ import '../../presentation/blocs/home/home_bloc.dart';
 import '../../presentation/blocs/import/import_cubit.dart';
 import '../../presentation/blocs/investment/investment_cubit.dart';
 import '../../presentation/blocs/limit/limit_cubit.dart';
+import '../../presentation/blocs/market/market_opportunity_cubit.dart';
 import '../../presentation/blocs/open_finance/open_finance_cubit.dart';
 import '../../presentation/blocs/recurring/recurring_cubit.dart';
 import '../../presentation/blocs/report/report_cubit.dart';
@@ -46,6 +47,7 @@ import '../../presentation/screens/lista_recorrentes.dart';
 import '../../presentation/screens/lista_transacoes.dart';
 import '../../presentation/screens/login_screen.dart';
 import '../../presentation/screens/onboarding_screen.dart';
+import '../../presentation/screens/oportunidades_screen.dart';
 import '../../presentation/screens/relatorio.dart';
 import '../../presentation/screens/review_queue_screen.dart';
 import '../../presentation/screens/scaffold_shell.dart';
@@ -467,6 +469,17 @@ final GoRouter router = GoRouter(
             child: CadastrarInvestimento(
               initialInvestment: state.extra as InvestmentEntity?,
             ),
+          ),
+    ),
+
+    // --- Market opportunities ---
+
+    GoRoute(
+      path: '/oportunidades',
+      builder: (BuildContext context, GoRouterState state) =>
+          BlocProvider<MarketOpportunityCubit>(
+            create: (_) => MarketOpportunityCubit()..load(),
+            child: const OportunidadesScreen(),
           ),
     ),
 

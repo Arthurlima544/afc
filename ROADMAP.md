@@ -481,6 +481,168 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 ### US-53 · Fix "Ver Todas" navigation ✅
 - Confirmed `context.go('/lista-transacoes')` correctly switches to the Transactions tab in `StatsWidget`
 
+### US-54 · Fix ProviderNotFoundException in Recorrências and Contas a Pagar ✅
+- `lista_recorrentes.dart` and `lista_contas.dart` converted from `context.push()` to `showFormSheet` with `MultiBlocProvider` supplying required cubits inline
+- `lista_recorrentes` provides `TransactionCubit()..getCategories()` + `RecurringCubit`
+- `lista_contas` provides `BillCubit` + `CategoryCubit()..loadCategories()`
+
+### US-55 · Self-contained form category loading ✅
+- All four form screens (`cadastrar_transacao`, `cadastrar_limites`, `cadastrar_recorrente`, `cadastrar_conta`) trigger category loading in `initState` via lint-safe microtask pattern
+- Forms work correctly regardless of caller (push route, `showFormSheet`, or test harness)
+
+### US-56 · Category chip selector in all form screens ✅
+- Replaced `DropdownButtonFormField` for categories with `Wrap` of tappable chips in all four form screens
+- Matches the QuickAddSheet UX; inline "Nova" chip triggers `_showAddCategoryDialog()` (writes to Firestore, refreshes cubit, auto-selects new category)
+
+### US-57 · Fix showInputDialog use-after-dispose crash ✅
+- `showInputDialog` in `app_dialog.dart` now wraps content in `_InputDialog` (`StatefulWidget`) so `TextEditingController` is owned and disposed by `State.dispose()` — eliminates the "used after dispose" exception triggered by keyboard dismissal after dialog close
+
+### US-58 · Home page "Estatísticas" — remove line chart, add savings summary ✅
+- Removed `LineChartSample7` line chart (not useful to users)
+- Replaced with "Resumo do mês" card: taxa de poupança %, receita do mês, gastos do mês, "Ver relatório" link
+- New `_StatCell` helper widget used for the three stats columns
+
+### US-59 · Recent transaction card styling improvement ✅
+- `LastTransactions` widget redesigned: color-coded direction arrow (green ↓ income / red ↑ expense), category name, formatted amount — wrapped in `AppCard` for consistent surface treatment
+
+---
+
+## Sprint 12 — Financial Independence Engine (US-60–67)
+
+> **Goal**: Elevate AFC from an expense tracker into a financial independence tool. Saving and controlling spending is not enough to build wealth — users need features that actively help them grow their assets, project their trajectory, understand the power of compounding, and spot real market opportunities in the Brazilian market before acting.
+
+### US-60 · FIRE Calculator (Financial Independence, Retire Early) ⏳
+**As a** user, **I want** to know my FIRE number and how long it will take me to reach it,
+**so that** I can understand exactly when I could stop relying on active income.
+
+- [ ] Input: current annual spending (pulled from transactions), expected annual return (default 7%), safe withdrawal rate (default 4%)
+- [ ] Output: FIRE number (`annual_spending / swr`), months to FIRE at current savings rate, projected retirement date
+- [ ] Chart: timeline showing portfolio growth vs FIRE number over years
+- [ ] "Lean FIRE" / "Fat FIRE" presets (SWR 3% and 5%)
+- [ ] Accessible via a new "Independência" section on the Dashboard or Settings
+- [ ] Unit tests for FIRE calculation formula
+
+---
+
+### US-61 · Compound Interest Simulator ⏳
+**As a** user, **I want** to simulate how my investments grow over time given a monthly contribution and interest rate,
+**so that** I can see the real impact of investing consistently.
+
+- [ ] Inputs: initial amount, monthly contribution, annual rate (%), period in years
+- [ ] Output: final amount, total invested, total interest earned
+- [ ] Area chart showing balance growth over time (compound curve)
+- [ ] "What if" toggle: compare different rates (e.g. 6%, 10%, 14%)
+- [ ] Unit tests for compound interest formula (with and without monthly contributions)
+
+---
+
+### US-62 · Portfolio Performance Dashboard ⏳
+**As a** user, **I want** to see my portfolio's overall ROI, allocation breakdown, and performance over time,
+**so that** I can evaluate whether my investments are on track.
+
+- [ ] ROI % per position and overall portfolio (current value vs total invested)
+- [ ] Asset allocation donut chart (stocks / fixed income / crypto / other)
+- [ ] Portfolio value evolution chart (monthly snapshots stored in Firestore)
+- [ ] Best and worst performing positions highlighted
+- [ ] Extend `InvestmentEntity` with a `lastUpdatedAt` timestamp; add periodic price-update prompt
+- [ ] Unit tests for ROI and allocation calculations
+
+---
+
+### US-63 · Passive Income Tracker ⏳
+**As a** user, **I want** to track my passive income streams (dividends, interest, rental income),
+**so that** I can monitor how close I am to covering my expenses with passive income.
+
+- [ ] `PassiveIncomeEntity` — `uuid`, `userId`, `source` (dividend / interest / rent / other), `amount`, `frequency` (monthly/quarterly/annual), `assetUuid?`
+- [ ] `PassiveIncomeCubit` — CRUD
+- [ ] Passive income screen: list of income streams, total monthly equivalent
+- [ ] Dashboard widget: "Renda Passiva vs Despesas" ratio — the key FIRE metric
+- [ ] When passive income ≥ expenses → "Você atingiu a independência financeira!" badge
+- [ ] Unit tests for monthly equivalent calculation across frequencies
+
+---
+
+### US-64 · Net Worth Evolution Chart ⏳
+**As a** user, **I want** to see how my net worth (assets minus liabilities) has grown over time,
+**so that** I can track my wealth-building progress month by month.
+
+- [ ] `NetWorthSnapshotEntity` — `uuid`, `userId`, `date`, `assets: double`, `liabilities: double`, `netWorth: double`
+- [ ] Monthly snapshot automatically captured (or manually triggered) from portfolio + goal balances
+- [ ] Line chart showing net worth over the last 12 months on the Dashboard
+- [ ] Summary: total assets, total liabilities, net worth delta vs last month
+- [ ] Unit tests for snapshot aggregation logic
+
+---
+
+### US-65 · Investment Goal Planner ⏳
+**As a** user, **I want** to set an investment target (e.g. "R$ 1 million by 2040") and see the required monthly contribution,
+**so that** I know exactly how much to invest each month to reach my goal.
+
+- [ ] Extend `GoalEntity` with `goalType: String` (savings / investment), `expectedAnnualReturn: double?`
+- [ ] For investment goals: back-calculate the required monthly contribution given target, deadline, and expected return
+- [ ] Progress bar on the Goals screen reflects compounded growth, not just linear contribution
+- [ ] "On track" / "Off track" badge based on current portfolio contribution rate
+- [ ] Unit tests for required-contribution formula
+
+---
+
+### US-66 · Inflation-Adjusted Projections ⏳
+**As a** user, **I want** all long-term projections (FIRE, compound interest, goals) to show real (inflation-adjusted) values,
+**so that** I understand what my money will actually buy in the future.
+
+- [ ] Inflation rate input in Settings (default: 4.5% — Brazil IPCA average)
+- [ ] `InflationAdjusted` toggle on FIRE Calculator and Compound Interest Simulator
+- [ ] Real vs nominal value displayed side by side on projection charts
+- [ ] Unit tests for inflation adjustment formula
+
+---
+
+### US-68 · Brazilian Market Opportunities Feed ⏳
+**As a** user, **I want** to see top dividend-paying Brazilian stocks and compare their yield against fixed-income benchmarks (CDI, Selic, Tesouro Direto),
+**so that** I can spot attractive investment opportunities without leaving the app.
+
+- [ ] **Data source**: [Brapi](https://brapi.dev) (free tier — 15 req/min, real-time B3 quotes + dividend history + fundamentals). No API key required for basic endpoints.
+- [ ] `MarketOpportunityCubit` — fetches and ranks dividend yield data, cached in memory with 30-min TTL to stay within free tier limits
+- [ ] **Opportunity card**: ticker, company name, current DY% (trailing 12 months), P/L ratio, sector, and a badge comparing yield vs current CDI rate (e.g. "1.8× CDI")
+- [ ] **Benchmarks panel**: CDI (hardcoded monthly update or scraped from Brapi `/api/v2/prime-rate`), Selic, and Tesouro IPCA+ current rate — shown as reference columns so the user sees relative attractiveness at a glance
+- [ ] **Filters**: minimum DY%, sector (FIIs / BDRs / Ações), market cap tier (small/mid/large)
+- [ ] **Sort options**: highest DY%, lowest P/L, best DY vs CDI ratio
+- [ ] Accessible via a "Oportunidades" tab or card on the Dashboard
+- [ ] FII (Fundo de Investimento Imobiliário) section shown separately — DY calculation uses monthly yield × 12
+- [ ] Pull-to-refresh triggers a fresh Brapi fetch; last-updated timestamp shown
+- [ ] Unit tests for DY ranking and CDI comparison logic (mocked Brapi responses)
+
+---
+
+### US-69 · Stock Watchlist with Near Real-Time Quotes ⏳
+**As a** user, **I want** to save a list of Brazilian stocks and track their prices in near real-time,
+**so that** I can monitor opportunities I'm watching without opening a brokerage app.
+
+- [ ] **Data source**: [Brapi](https://brapi.dev) `/api/quote/{tickers}` — supports batch requests (up to ~10 tickers per call on free tier); refreshes every 60 seconds via a `Timer.periodic` in the cubit
+- [ ] `WatchlistEntity` — `uuid`, `userId`, `ticker: String`, `addedAt: DateTime`, `alertThreshold: double?` (optional price alert)
+- [ ] `WatchlistCubit` — CRUD for saved tickers; on `loadQuotes()` calls Brapi in batches and merges results
+- [ ] **Watchlist screen**: card per ticker showing current price, change % (today), 52-week high/low, current DY%, market cap
+- [ ] **Color coding**: green (price up today) / red (price down today) — matching the app's income/expense palette
+- [ ] **Price alert**: optional threshold per ticker; local notification (via `flutter_local_notifications`) fires when price crosses the alert price
+- [ ] **Mini sparkline** (7-day price history) on each card — fetched from Brapi `/api/quote/{ticker}?range=5d&interval=1d`
+- [ ] Tapping a card opens a detail sheet: full quote data, recent dividends, fundamental indicators (P/L, P/VP, ROE)
+- [ ] "Adicionar ao portfólio" shortcut from the watchlist detail sheet → pre-fills `CadastrarInvestimento`
+- [ ] Free-tier guardrails: batch tickers per request, 60-second minimum poll interval, cached last quote shown while waiting
+- [ ] Unit tests for batch-fetch logic and alert threshold detection
+
+---
+
+### US-67 · Financial Independence Score & Milestones ⏳
+**As a** user, **I want** a clear score showing how close I am to financial independence,
+**so that** I have a single motivating number to grow.
+
+- [ ] FI Score (0–100): 0 = no savings, 100 = passive income ≥ expenses (FIRE achieved)
+- [ ] Formula: `(monthly_passive_income / monthly_expenses) * 100`, capped at 100
+- [ ] Milestone badges: 10%, 25%, 50%, 75%, 100% FI — each with a celebration animation
+- [ ] FI Score card on Dashboard replaces or augments the existing financial health score
+- [ ] History sparkline (6 months) showing FI score trend
+- [ ] Unit tests for FI score formula and milestone detection
+
 ---
 
 ## Technical Debt & Cross-cutting
@@ -518,4 +680,5 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 8 (US-33–37) | `feat/us-33-37-brand-identity` | ✅ Merged |
 | Sprint 9 (US-38–44) | `feat/us-38-44-ux-polish` | ✅ Merged |
 | Sprint 10 (design system migration) | `feat/sprint10-design-system` | ✅ Merged |
-| Sprint 11 (US-45–53) | `feat/sprint11-polish` | ⏳ Open |
+| Sprint 11 (US-45–59) | `feat/sprint11-polish` | ✅ Merged |
+| Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | ⏳ Planned |

@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../domain/entity/bill_entity.dart';
 import '../../domain/entity/investment_entity.dart';
+import '../../domain/entity/market_quote_entity.dart';
 import '../../domain/entity/stats_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
@@ -19,6 +20,7 @@ import '../blocs/home/home_bloc.dart';
 import '../blocs/home/stats_state.dart';
 import '../blocs/home/transaction_state.dart';
 import '../blocs/limit/limit_cubit.dart';
+import '../blocs/market/market_opportunity_cubit.dart';
 import '../widgets/design_system.dart';
 import '../widgets/skeleton_list.dart';
 
@@ -69,6 +71,9 @@ class _HomeContent extends StatelessWidget {
         const MonthLimitWidget(),
         const Gap(20),
         const StatsWidget(),
+        const Gap(12),
+        const _MarketOpportunitiesCard(),
+        const Gap(20),
       ],
     ),
   );
@@ -1280,6 +1285,141 @@ class SyncStatusWidget extends StatelessWidget {
                   },
             );
           },
+    );
+  }
+}
+
+// ─── Market Opportunities Card ─────────────────────────────────────────────────
+
+/// Shows the top 3 dividend-paying stocks from Brapi with a link to
+/// the full opportunities screen.
+class _MarketOpportunitiesCard extends StatelessWidget {
+  const _MarketOpportunitiesCard();
+
+  @override
+  Widget build(BuildContext context) => BlocProvider<MarketOpportunityCubit>(
+    create: (_) => MarketOpportunityCubit()..load(),
+    child: BlocBuilder<MarketOpportunityCubit, MarketOpportunityState>(
+      builder: (BuildContext ctx, MarketOpportunityState state) => state.when(
+        initial: () => const SizedBox(),
+        loading: () => const AppCard(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                'Oportunidades do Mercado',
+                style: AppTextStyles.title,
+              ),
+              Gap(12),
+              Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ],
+          ),
+        ),
+        error: (_) => const SizedBox(),
+        loaded: (
+          List<MarketQuoteEntity> quotes,
+          double cdiRate,
+          DateTime _,
+        ) {
+          final List<MarketQuoteEntity> top = quotes.take(3).toList();
+          return AppCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    const Text(
+                      'Oportunidades do Mercado',
+                      style: AppTextStyles.title,
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => context.push('/oportunidades'),
+                      child: Text(
+                        'Ver todas',
+                        style: AppTextStyles.label.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Gap(4),
+                Text(
+                  'CDI: ${cdiRate.toStringAsFixed(2)}% a.a.',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.muted,
+                  ),
+                ),
+                const Gap(12),
+                for (final MarketQuoteEntity q in top) ...<Widget>[
+                  _MiniQuoteRow(quote: q, cdiRate: cdiRate),
+                  const Gap(8),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    ),
+  );
+}
+
+class _MiniQuoteRow extends StatelessWidget {
+  const _MiniQuoteRow({required this.quote, required this.cdiRate});
+
+  final MarketQuoteEntity quote;
+  final double cdiRate;
+
+  @override
+  Widget build(BuildContext context) {
+    final double ratio = quote.dyVsCdi(cdiRate);
+    final bool isUp = quote.changePercent >= 0;
+    return Row(
+      children: <Widget>[
+        Text(quote.ticker, style: AppTextStyles.labelBold),
+        const Gap(6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+          decoration: BoxDecoration(
+            color: quote.isFii
+                ? AppColors.primaryLight.withValues(alpha: 0.15)
+                : AppColors.income.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: Text(
+            quote.isFii ? 'FII' : 'Ação',
+            style: AppTextStyles.caption.copyWith(
+              color: quote.isFii ? AppColors.primaryLight : AppColors.income,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const Spacer(),
+        Text(
+          'DY ${quote.dividendYield.toStringAsFixed(1)}%',
+          style: AppTextStyles.labelBold.copyWith(
+            color: quote.dividendYield > cdiRate
+                ? AppColors.income
+                : AppColors.muted,
+          ),
+        ),
+        const Gap(8),
+        Text(
+          '${ratio.toStringAsFixed(1)}× CDI',
+          style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+        ),
+        const Gap(8),
+        Icon(
+          isUp ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+          size: 16,
+          color: isUp ? AppColors.income : AppColors.expense,
+        ),
+      ],
     );
   }
 }
