@@ -37,7 +37,7 @@ class InflationCalculator {
 
   /// Adjusts an entire yearly timeline of nominal values to real values.
   ///
-  /// Each value at position [i] represents the end of year [i+1].
+  /// Each value at position `i` represents the end of year `i + 1`.
   static List<double> adjustTimeline({
     required List<double> nominalTimeline,
     required double inflationPercent,

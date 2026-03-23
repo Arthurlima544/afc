@@ -1226,7 +1226,6 @@ class _FiSparkline extends StatelessWidget {
               spots: spots,
               isCurved: true,
               color: AppColors.primary,
-              barWidth: 2,
               dotData: FlDotData(
                 getDotPainter:
                     (

@@ -66,8 +66,7 @@ void main() {
         ),
       ],
       verify: (FiScoreCubit c) {
-        final FiScoreState state = c.state;
-        state.whenOrNull(
+        c.state.whenOrNull(
           success: (FiScoreData data) {
             expect(data.fiScore, equals(0.0));
             expect(data.passiveIncomeMonthly, equals(0.0));
