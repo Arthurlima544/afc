@@ -405,6 +405,12 @@ class _DataCard extends StatelessWidget {
         ),
         const Divider(),
         _ActionRow(
+          icon: Icons.category_outlined,
+          label: 'Gerenciar categorias',
+          onTap: () => context.push('/lista-categorias'),
+        ),
+        const Divider(),
+        _ActionRow(
           icon: AppIcons.bank,
           label: 'Contas conectadas',
           onTap: () => context.push('/contas-conectadas'),

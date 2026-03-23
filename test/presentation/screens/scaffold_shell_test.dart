@@ -23,7 +23,7 @@ class MockClerkAuthState extends Mock implements ClerkAuthState {}
 // ---------------------------------------------------------------------------
 
 /// Builds a GoRouter with a [StatefulShellRoute] that hosts [ScaffoldShell].
-/// Six stub branches give the shell its six tabs.
+/// Four stub branches give the shell its four tabs.
 GoRouter _buildRouter({
   required MockAuthBloc authBloc,
   required RecurringCubit recurringCubit,
@@ -77,22 +77,6 @@ GoRouter _buildRouter({
                 ),
               ],
             ),
-            StatefulShellBranch(
-              routes: <GoRoute>[
-                GoRoute(
-                  path: '/tab4',
-                  builder: (_, _) => const Scaffold(body: Text('Tab 4')),
-                ),
-              ],
-            ),
-            StatefulShellBranch(
-              routes: <GoRoute>[
-                GoRoute(
-                  path: '/tab5',
-                  builder: (_, _) => const Scaffold(body: Text('Tab 5')),
-                ),
-              ],
-            ),
           ],
         ),
       ],
@@ -122,7 +106,7 @@ void main() {
 
   group('ScaffoldShell (US-15 — bottom navigation tab switching)', () {
     testWidgets(
-      'renders NavigationBar with 6 destinations',
+      'renders NavigationBar with 4 destinations',
       (WidgetTester tester) async {
         final GoRouter router = _buildRouter(
           authBloc: mockAuthBloc,
@@ -133,7 +117,7 @@ void main() {
         await tester.pump();
 
         expect(find.byType(NavigationBar), findsOneWidget);
-        expect(find.byType(NavigationDestination), findsNWidgets(6));
+        expect(find.byType(NavigationDestination), findsNWidgets(4));
       },
     );
 
@@ -150,9 +134,7 @@ void main() {
 
         expect(find.text('Início'), findsOneWidget);
         expect(find.text('Transações'), findsOneWidget);
-        expect(find.text('Categorias'), findsOneWidget);
         expect(find.text('Limites'), findsOneWidget);
-        expect(find.text('Recorrências'), findsOneWidget);
         expect(find.text('Metas'), findsOneWidget);
       },
     );
@@ -211,7 +193,7 @@ void main() {
     );
 
     testWidgets(
-      'tapping Metas tab (index 5) switches to last tab',
+      'tapping Metas tab (index 3) switches to last tab',
       (WidgetTester tester) async {
         final GoRouter router = _buildRouter(
           authBloc: mockAuthBloc,
@@ -226,7 +208,7 @@ void main() {
 
         final NavigationBar navBar =
             tester.widget<NavigationBar>(find.byType(NavigationBar));
-        expect(navBar.selectedIndex, 5);
+        expect(navBar.selectedIndex, 3);
       },
     );
   });

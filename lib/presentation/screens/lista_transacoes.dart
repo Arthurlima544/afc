@@ -42,6 +42,12 @@ class ListaTransacoes extends StatelessWidget {
                   child: Text('Transações', style: AppTextStyles.heading),
                 ),
                 AppIconButton(
+                  onPressed: () => context.push('/lista-recorrentes'),
+                  icon: const Icon(Icons.repeat_outlined),
+                  tooltip: 'Recorrências',
+                ),
+                const Gap(8),
+                AppIconButton(
                   onPressed: () => context.push('/relatorio'),
                   icon: const Icon(Icons.analytics_outlined),
                 ),

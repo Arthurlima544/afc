@@ -13,27 +13,33 @@ class ListaCategorias extends StatelessWidget {
   const ListaCategorias({super.key});
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: RefreshIndicator(
-      color: AppColors.primary,
-      onRefresh: () async => context.read<CategoryCubit>().loadCategories(),
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                const Expanded(
-                  child: Text('Categorias', style: AppTextStyles.heading),
-                ),
-                AppIconButton(
-                  onPressed: () => context.push('/cadastro-categoria'),
-                  icon: const Icon(Icons.add),
-                ),
-              ],
-            ),
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      child: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () async => context.read<CategoryCubit>().loadCategories(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  AppIconButton(
+                    onPressed: () => context.pop(),
+                    icon: const Icon(Icons.arrow_back),
+                  ),
+                  const Gap(8),
+                  const Expanded(
+                    child: Text('Categorias', style: AppTextStyles.heading),
+                  ),
+                  AppIconButton(
+                    onPressed: () => context.push('/cadastro-categoria'),
+                    icon: const Icon(Icons.add),
+                  ),
+                ],
+              ),
             const Gap(16),
             BlocBuilder<CategoryCubit, CategoryState>(
               builder: (BuildContext context, CategoryState state) => state.when(
@@ -65,7 +71,8 @@ class ListaCategorias extends StatelessWidget {
         ),
       ),
     ),
-  );
+  ),
+);
 }
 
 class _CategoriaItem extends StatelessWidget {
