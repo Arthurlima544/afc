@@ -73,6 +73,8 @@ class _HomeContent extends StatelessWidget {
         const StatsWidget(),
         const Gap(12),
         const _MarketOpportunitiesCard(),
+        const Gap(12),
+        const _FireCard(),
         const Gap(20),
       ],
     ),
@@ -1365,6 +1367,53 @@ class _MarketOpportunitiesCard extends StatelessWidget {
           );
         },
       ),
+    ),
+  );
+}
+
+// ─── FIRE card ────────────────────────────────────────────────────────────────
+
+class _FireCard extends StatelessWidget {
+  const _FireCard();
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.all(14),
+    child: Row(
+      children: <Widget>[
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.income.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.savings_outlined,
+            color: AppColors.income,
+            size: 22,
+          ),
+        ),
+        const Gap(12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const Text('Calculadora FIRE', style: AppTextStyles.labelBold),
+              const Gap(2),
+              Text(
+                'Descubra seu número para aposentadoria antecipada',
+                style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+              ),
+            ],
+          ),
+        ),
+        const Gap(8),
+        AppIconButton(
+          icon: const Icon(Icons.arrow_forward_ios, size: 14),
+          onPressed: () => context.push('/fire-calculadora'),
+        ),
+      ],
     ),
   );
 }

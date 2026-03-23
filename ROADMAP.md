@@ -511,16 +511,18 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 > **Goal**: Elevate AFC from an expense tracker into a financial independence tool. Saving and controlling spending is not enough to build wealth — users need features that actively help them grow their assets, project their trajectory, understand the power of compounding, and spot real market opportunities in the Brazilian market before acting.
 
-### US-60 · FIRE Calculator (Financial Independence, Retire Early) ⏳
+### US-60 · FIRE Calculator (Financial Independence, Retire Early) ✅
 **As a** user, **I want** to know my FIRE number and how long it will take me to reach it,
 **so that** I can understand exactly when I could stop relying on active income.
 
-- [ ] Input: current annual spending (pulled from transactions), expected annual return (default 7%), safe withdrawal rate (default 4%)
-- [ ] Output: FIRE number (`annual_spending / swr`), months to FIRE at current savings rate, projected retirement date
-- [ ] Chart: timeline showing portfolio growth vs FIRE number over years
-- [ ] "Lean FIRE" / "Fat FIRE" presets (SWR 3% and 5%)
-- [ ] Accessible via a new "Independência" section on the Dashboard or Settings
-- [ ] Unit tests for FIRE calculation formula
+- [x] Pure `FireCalculator` use case with `FireResult` output: `fireNumber`, `monthsToFire?`, `retirementDate?`, `yearlyTimeline`
+- [x] Formula: `fireNumber = (monthlyExpenses × 12) / SWR`; month-by-month compound growth loop to find crossing point
+- [x] `FireCalculatorScreen` — inputs: monthly expenses, current portfolio, monthly savings, annual return %
+- [x] Presets: Lean FIRE (3%), Padrão (4%), Fat FIRE (5%) — preset chips
+- [x] Results card: FIRE number in BRL, time to FIRE ("X anos e Y meses"), estimated retirement date
+- [x] `fl_chart` LineChart showing portfolio growth curve vs FIRE number (dashed horizontal reference line)
+- [x] `_FireCard` on Dashboard home page linking to `/fire-calculadora`
+- [x] 11 unit tests: FIRE number formula, SWR edge cases, months-to-FIRE, unreachable scenario, yearlyTimeline structure, retirementDate
 
 ---
 
@@ -597,38 +599,36 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
-### US-68 · Brazilian Market Opportunities Feed ⏳
+### US-68 · Brazilian Market Opportunities Feed ✅
 **As a** user, **I want** to see top dividend-paying Brazilian stocks and compare their yield against fixed-income benchmarks (CDI, Selic, Tesouro Direto),
 **so that** I can spot attractive investment opportunities without leaving the app.
 
-- [ ] **Data source**: [Brapi](https://brapi.dev) (free tier — 15 req/min, real-time B3 quotes + dividend history + fundamentals). No API key required for basic endpoints.
-- [ ] `MarketOpportunityCubit` — fetches and ranks dividend yield data, cached in memory with 30-min TTL to stay within free tier limits
-- [ ] **Opportunity card**: ticker, company name, current DY% (trailing 12 months), P/L ratio, sector, and a badge comparing yield vs current CDI rate (e.g. "1.8× CDI")
-- [ ] **Benchmarks panel**: CDI (hardcoded monthly update or scraped from Brapi `/api/v2/prime-rate`), Selic, and Tesouro IPCA+ current rate — shown as reference columns so the user sees relative attractiveness at a glance
-- [ ] **Filters**: minimum DY%, sector (FIIs / BDRs / Ações), market cap tier (small/mid/large)
-- [ ] **Sort options**: highest DY%, lowest P/L, best DY vs CDI ratio
-- [ ] Accessible via a "Oportunidades" tab or card on the Dashboard
-- [ ] FII (Fundo de Investimento Imobiliário) section shown separately — DY calculation uses monthly yield × 12
-- [ ] Pull-to-refresh triggers a fresh Brapi fetch; last-updated timestamp shown
-- [ ] Unit tests for DY ranking and CDI comparison logic (mocked Brapi responses)
+- [x] **Data source**: [Brapi](https://brapi.dev) free tier — `/api/quote/{tickers}?fundamental=true` for DY/P/L, `/api/v2/prime-rate?country=brazil` for CDI rate. No API key required.
+- [x] `BrapiService` — `fetchQuotes(List<String>)`, `fetchCdiRate()`, `fetchHistory(String)` with graceful fallbacks on error
+- [x] `MarketQuoteEntity` — plain Dart class (display-only, not stored in Firestore): `ticker`, `name`, `price`, `changePercent`, `dividendYield`, `isFii`, `priceEarnings?`, `sector`; factory `fromJson` detects FII via `quoteType == 'MUTUALFUND'`; `dyVsCdi(double cdiRate)` helper
+- [x] `MarketOpportunityCubit` — fetches 15 curated equities + 12 curated FIIs sequentially; fetches CDI rate; sorts by DY descending; 30-min in-memory TTL; `forceRefresh` flag for pull-to-refresh
+- [x] `OportunidadesScreen` — filter chips (Todos / Ações / FIIs) + sort chips (Maior DY / DY vs CDI / Menor P/L)
+- [x] `_QuoteCard` — ticker, type badge (Ação/FII), price, change% with arrow icon, DY%, DY×CDI ratio, P/L, sector
+- [x] `_BenchmarkBanner` — CDI % and Selic approximation (CDI + 0.1) as reference
+- [x] Pull-to-refresh triggers `forceRefresh`; "Atualizado X min atrás" timestamp shown
+- [x] Dashboard card (`_MarketOpportunitiesCard`) — top 3 DY stocks with "Ver todas" link; own `BlocProvider`
+- [x] 10 unit tests: `fromJson` parsing, FII detection, name fallbacks, `dyVsCdi`, zero CDI, load/sort, cache TTL, `forceRefresh`, error state
 
 ---
 
-### US-69 · Stock Watchlist with Near Real-Time Quotes ⏳
+### US-69 · Stock Watchlist with Near Real-Time Quotes ✅
 **As a** user, **I want** to save a list of Brazilian stocks and track their prices in near real-time,
 **so that** I can monitor opportunities I'm watching without opening a brokerage app.
 
-- [ ] **Data source**: [Brapi](https://brapi.dev) `/api/quote/{tickers}` — supports batch requests (up to ~10 tickers per call on free tier); refreshes every 60 seconds via a `Timer.periodic` in the cubit
-- [ ] `WatchlistEntity` — `uuid`, `userId`, `ticker: String`, `addedAt: DateTime`, `alertThreshold: double?` (optional price alert)
-- [ ] `WatchlistCubit` — CRUD for saved tickers; on `loadQuotes()` calls Brapi in batches and merges results
-- [ ] **Watchlist screen**: card per ticker showing current price, change % (today), 52-week high/low, current DY%, market cap
-- [ ] **Color coding**: green (price up today) / red (price down today) — matching the app's income/expense palette
-- [ ] **Price alert**: optional threshold per ticker; local notification (via `flutter_local_notifications`) fires when price crosses the alert price
-- [ ] **Mini sparkline** (7-day price history) on each card — fetched from Brapi `/api/quote/{ticker}?range=5d&interval=1d`
-- [ ] Tapping a card opens a detail sheet: full quote data, recent dividends, fundamental indicators (P/L, P/VP, ROE)
-- [ ] "Adicionar ao portfólio" shortcut from the watchlist detail sheet → pre-fills `CadastrarInvestimento`
-- [ ] Free-tier guardrails: batch tickers per request, 60-second minimum poll interval, cached last quote shown while waiting
-- [ ] Unit tests for batch-fetch logic and alert threshold detection
+- [x] **Data source**: Brapi `/api/quote/{tickers}?fundamental=true` (batch ≤10) + `/api/quote/{ticker}?range=5d&interval=1d` for sparklines; 60-second `Timer.periodic` poll
+- [x] `WatchlistEntity` (Freezed + Firestore) — `uuid`, `userId`, `ticker`, `addedAt`, `alertThreshold?`
+- [x] `WatchlistItem` — plain Dart class combining entity + live `MarketQuoteEntity?` + `sparkline: List<double>`; `alertTriggered` computed property; manual `copyWith`
+- [x] `WatchlistCubit` — `loadWatchlist`, `addTicker`, `removeTicker`, `setAlert`, `refresh`; batched quote fetching; background sparkline loading with 600ms inter-request delay; `isClosed` guard; timer cancelled in `close()`
+- [x] `ListaWatchlist` — swipe-to-delete (`Dismissible`), alert bell icon when threshold triggered, 36px `fl_chart` sparkline (green/red), DY%/P/L metrics, `_AlertChip` showing threshold price
+- [x] Bookmark icon on `OportunidadesScreen` cards — filled if already in watchlist; tap adds ticker or navigates to watchlist
+- [x] `/watchlist` route added to `router.dart`; `/oportunidades` upgraded to `MultiBlocProvider` (both cubits)
+- [x] Free-tier guardrails: batches of 10, 60s poll, 600ms sparkline delay
+- [x] 13 unit tests: `WatchlistItem` behavior, load/filter by userId, add/remove/setAlert CRUD, no-op refresh
 
 ---
 
@@ -652,7 +652,7 @@ These items are not user stories but are necessary for long-term quality.
 | Item | Priority | Status | Notes |
 |------|----------|--------|-------|
 | Firestore streams (replace `.get()`) | High | ✅ Done | All list screens and dashboard use `.snapshots()` |
-| Widget test coverage for key screens | High | ✅ Done | home_screen, login_screen, scaffold_shell (268 total tests) |
+| Widget test coverage for key screens | High | ✅ Done | home_screen, login_screen, scaffold_shell (302 total tests) |
 | Cloud Functions project setup | High | ✅ Done | Pluggy proxy + webhooks + bill reminders in `functions/src/` |
 | Offline support (`persistenceEnabled`) | Medium | ✅ Done | Both `main_dev.dart` and `main_prod.dart` configure `CACHE_SIZE_UNLIMITED` |
 | CI: separate lint / test / build jobs | Low | ✅ Done | 3 jobs: lint → test (coverage artifact) → build (APK artifact) |
@@ -681,4 +681,4 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 9 (US-38–44) | `feat/us-38-44-ux-polish` | ✅ Merged |
 | Sprint 10 (design system migration) | `feat/sprint10-design-system` | ✅ Merged |
 | Sprint 11 (US-45–59) | `feat/sprint11-polish` | ✅ Merged |
-| Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | ⏳ Planned |
+| Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | 🔄 In Progress (US-60, US-68, US-69 ✅) |

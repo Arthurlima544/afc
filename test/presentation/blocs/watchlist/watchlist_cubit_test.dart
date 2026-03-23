@@ -4,6 +4,7 @@ import 'package:afc/domain/usecase/brapi_service.dart';
 import 'package:afc/presentation/blocs/watchlist/watchlist_cubit.dart';
 import 'package:afc/presentation/blocs/watchlist/watchlist_item.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -135,7 +136,7 @@ void main() {
         await c.addTicker('VALE3');
       },
       verify: (_) async {
-        final docs = await fakeFirestore
+        final QuerySnapshot<Map<String, Object?>> docs = await fakeFirestore
             .collection('watchlist')
             .where('userId', isEqualTo: 'user-1')
             .get();
@@ -153,7 +154,8 @@ void main() {
         await c.addTicker('  vale3  ');
       },
       verify: (_) async {
-        final docs = await fakeFirestore.collection('watchlist').get();
+        final QuerySnapshot<Map<String, Object?>> docs =
+            await fakeFirestore.collection('watchlist').get();
         expect(docs.docs.first.data()['ticker'], 'VALE3');
       },
     );
@@ -165,7 +167,7 @@ void main() {
       setUp: () async {
         await fakeFirestore
             .collection('watchlist')
-            .add(_entity(uuid: 'uuid-1', ticker: 'PETR4').toJson());
+            .add(_entity().toJson());
         await fakeFirestore
             .collection('watchlist')
             .add(_entity(uuid: 'uuid-2', ticker: 'VALE3').toJson());
@@ -177,7 +179,7 @@ void main() {
         await c.removeTicker('uuid-1');
       },
       verify: (_) async {
-        final docs = await fakeFirestore
+        final QuerySnapshot<Map<String, Object?>> docs = await fakeFirestore
             .collection('watchlist')
             .where('userId', isEqualTo: 'user-1')
             .get();
@@ -193,7 +195,7 @@ void main() {
       setUp: () async {
         await fakeFirestore
             .collection('watchlist')
-            .add(_entity(uuid: 'uuid-1').toJson());
+            .add(_entity().toJson());
       },
       build: () =>
           WatchlistCubit(firestore: fakeFirestore, service: service),
@@ -202,7 +204,7 @@ void main() {
         await c.setAlert('uuid-1', 45.0);
       },
       verify: (_) async {
-        final docs = await fakeFirestore
+        final QuerySnapshot<Map<String, Object?>> docs = await fakeFirestore
             .collection('watchlist')
             .where('uuid', isEqualTo: 'uuid-1')
             .get();

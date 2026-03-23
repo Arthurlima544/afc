@@ -36,6 +36,7 @@ import '../../presentation/screens/cadastrar_transacao.dart';
 import '../../presentation/screens/connect_bank_screen.dart';
 import '../../presentation/screens/connected_accounts_screen.dart';
 import '../../presentation/screens/dev_seed_screen.dart';
+import '../../presentation/screens/fire_calculator_screen.dart';
 import '../../presentation/screens/home_page.dart';
 import '../../presentation/screens/home_screen.dart';
 import '../../presentation/screens/importar_extrato.dart';
@@ -472,6 +473,14 @@ final GoRouter router = GoRouter(
               initialInvestment: state.extra as InvestmentEntity?,
             ),
           ),
+    ),
+
+    // --- FIRE Calculator ---
+
+    GoRoute(
+      path: '/fire-calculadora',
+      builder: (BuildContext context, GoRouterState state) =>
+          const FireCalculatorScreen(),
     ),
 
     // --- Market opportunities & watchlist ---
