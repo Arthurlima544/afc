@@ -43,6 +43,7 @@ import '../../presentation/screens/fire_calculator_screen.dart';
 import '../../presentation/screens/home_page.dart';
 import '../../presentation/screens/home_screen.dart';
 import '../../presentation/screens/importar_extrato.dart';
+import '../../presentation/screens/investment_goal_screen.dart';
 import '../../presentation/screens/lista_categorias.dart';
 import '../../presentation/screens/lista_contas.dart';
 import '../../presentation/screens/lista_investimentos.dart';
@@ -517,6 +518,12 @@ final GoRouter router = GoRouter(
           child: PassiveIncomeScreen(userId: userId),
         );
       },
+    ),
+
+    GoRoute(
+      path: '/meta-investimento',
+      builder: (BuildContext context, GoRouterState state) =>
+          const InvestmentGoalScreen(),
     ),
 
     GoRoute(

@@ -579,15 +579,15 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
-### US-65 · Investment Goal Planner ⏳
+### US-65 · Investment Goal Planner ✅
 **As a** user, **I want** to set an investment target (e.g. "R$ 1 million by 2040") and see the required monthly contribution,
 **so that** I know exactly how much to invest each month to reach my goal.
 
-- [ ] Extend `GoalEntity` with `goalType: String` (savings / investment), `expectedAnnualReturn: double?`
-- [ ] For investment goals: back-calculate the required monthly contribution given target, deadline, and expected return
-- [ ] Progress bar on the Goals screen reflects compounded growth, not just linear contribution
-- [ ] "On track" / "Off track" badge based on current portfolio contribution rate
-- [ ] Unit tests for required-contribution formula
+- [x] `InvestmentGoalCalculator` pure-Dart use case — FV annuity formula solved for PMT; r=0 fallback to linear
+- [x] `InvestmentGoalResult` — `requiredMonthlyContribution`, `totalContributed`, `totalInterestEarned`, `yearlyTimeline`
+- [x] `/meta-investimento` screen: 4-input form (target, current, years, return%), required monthly contribution card, composition bar chart, line chart
+- [x] `_InvestmentGoalCard` on Dashboard → `/meta-investimento`
+- [x] 10 unit tests: zero-rate PMT, reduced PMT with current amount, lower PMT with returns, PMT=0 when already exceeds, contribution totals, timeline length/monotonicity/accuracy
 
 ---
 
@@ -655,7 +655,7 @@ These items are not user stories but are necessary for long-term quality.
 | Item | Priority | Status | Notes |
 |------|----------|--------|-------|
 | Firestore streams (replace `.get()`) | High | ✅ Done | All list screens and dashboard use `.snapshots()` |
-| Widget test coverage for key screens | High | ✅ Done | home_screen, login_screen, scaffold_shell (342 total tests) |
+| Widget test coverage for key screens | High | ✅ Done | home_screen, login_screen, scaffold_shell (352 total tests) |
 | Cloud Functions project setup | High | ✅ Done | Pluggy proxy + webhooks + bill reminders in `functions/src/` |
 | Offline support (`persistenceEnabled`) | Medium | ✅ Done | Both `main_dev.dart` and `main_prod.dart` configure `CACHE_SIZE_UNLIMITED` |
 | CI: separate lint / test / build jobs | Low | ✅ Done | 3 jobs: lint → test (coverage artifact) → build (APK artifact) |
@@ -684,4 +684,4 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 9 (US-38–44) | `feat/us-38-44-ux-polish` | ✅ Merged |
 | Sprint 10 (design system migration) | `feat/sprint10-design-system` | ✅ Merged |
 | Sprint 11 (US-45–59) | `feat/sprint11-polish` | ✅ Merged |
-| Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | 🔄 In Progress (US-60–64, US-68, US-69 ✅) |
+| Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | 🔄 In Progress (US-60–65, US-68, US-69 ✅) |

@@ -83,6 +83,8 @@ class _HomeContent extends StatelessWidget {
         const _PassiveIncomeCard(),
         const Gap(8),
         const _PatrimonioCard(),
+        const Gap(8),
+        const _InvestmentGoalCard(),
         const Gap(20),
       ],
     ),
@@ -1608,6 +1610,54 @@ class _PatrimonioCard extends StatelessWidget {
         AppIconButton(
           icon: const Icon(Icons.arrow_forward_ios, size: 14),
           onPressed: () => context.push('/patrimonio'),
+        ),
+      ],
+    ),
+  );
+}
+
+class _InvestmentGoalCard extends StatelessWidget {
+  const _InvestmentGoalCard();
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.all(14),
+    child: Row(
+      children: <Widget>[
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.income.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.flag_outlined,
+            color: AppColors.income,
+            size: 22,
+          ),
+        ),
+        const Gap(12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const Text(
+                'Planejador de Meta',
+                style: AppTextStyles.labelBold,
+              ),
+              const Gap(2),
+              Text(
+                'Calcule o aporte mensal para atingir sua meta',
+                style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+              ),
+            ],
+          ),
+        ),
+        const Gap(8),
+        AppIconButton(
+          icon: const Icon(Icons.arrow_forward_ios, size: 14),
+          onPressed: () => context.push('/meta-investimento'),
         ),
       ],
     ),
