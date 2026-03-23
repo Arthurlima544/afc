@@ -566,15 +566,16 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
-### US-64 · Net Worth Evolution Chart ⏳
+### US-64 · Net Worth Evolution Chart ✅
 **As a** user, **I want** to see how my net worth (assets minus liabilities) has grown over time,
 **so that** I can track my wealth-building progress month by month.
 
-- [ ] `NetWorthSnapshotEntity` — `uuid`, `userId`, `date`, `assets: double`, `liabilities: double`, `netWorth: double`
-- [ ] Monthly snapshot automatically captured (or manually triggered) from portfolio + goal balances
-- [ ] Line chart showing net worth over the last 12 months on the Dashboard
-- [ ] Summary: total assets, total liabilities, net worth delta vs last month
-- [ ] Unit tests for snapshot aggregation logic
+- [x] `NetWorthSnapshotEntity` — `uuid`, `userId`, `date`, `assets: double`, `liabilities: double`, `netWorth: double` (Freezed + JSON)
+- [x] `NetWorthCubit` — `loadSnapshots`, `recordSnapshot` (upserts by month), `delete`; snapshots sorted by date asc
+- [x] `/patrimonio` screen: line chart (fl_chart) showing last 13 months, summary card with assets/liabilities/monthly delta, history list
+- [x] `_RecordSnapshotSheet` bottom sheet to manually enter assets and liabilities
+- [x] `_PatrimonioCard` on Dashboard → `/patrimonio`
+- [x] 8 unit tests: initial state, load/filter/sort, recordSnapshot persists and upserts, delete
 
 ---
 
@@ -654,7 +655,7 @@ These items are not user stories but are necessary for long-term quality.
 | Item | Priority | Status | Notes |
 |------|----------|--------|-------|
 | Firestore streams (replace `.get()`) | High | ✅ Done | All list screens and dashboard use `.snapshots()` |
-| Widget test coverage for key screens | High | ✅ Done | home_screen, login_screen, scaffold_shell (334 total tests) |
+| Widget test coverage for key screens | High | ✅ Done | home_screen, login_screen, scaffold_shell (342 total tests) |
 | Cloud Functions project setup | High | ✅ Done | Pluggy proxy + webhooks + bill reminders in `functions/src/` |
 | Offline support (`persistenceEnabled`) | Medium | ✅ Done | Both `main_dev.dart` and `main_prod.dart` configure `CACHE_SIZE_UNLIMITED` |
 | CI: separate lint / test / build jobs | Low | ✅ Done | 3 jobs: lint → test (coverage artifact) → build (APK artifact) |
@@ -683,4 +684,4 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 9 (US-38–44) | `feat/us-38-44-ux-polish` | ✅ Merged |
 | Sprint 10 (design system migration) | `feat/sprint10-design-system` | ✅ Merged |
 | Sprint 11 (US-45–59) | `feat/sprint11-polish` | ✅ Merged |
-| Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | 🔄 In Progress (US-60–63, US-68, US-69 ✅) |
+| Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | 🔄 In Progress (US-60–64, US-68, US-69 ✅) |

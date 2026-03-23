@@ -40,7 +40,7 @@ void main() {
       frequency: 'monthly',
     );
 
-    PassiveIncomeEntity _entity({
+    PassiveIncomeEntity entity({
       String uuid = 'pi-1',
       String userId = 'user-1',
       String name = 'Dividendos PETR4',
@@ -102,7 +102,7 @@ void main() {
         'does not include streams for other users',
         setUp: () async {
           await fakeFirestore.collection('passive_income').add(
-            _entity(userId: 'other-user').toJson(),
+            entity(userId: 'other-user').toJson(),
           );
         },
         build: () => PassiveIncomeCubit(firestore: fakeFirestore),
@@ -117,10 +117,10 @@ void main() {
         'sorts streams by amount descending',
         setUp: () async {
           await fakeFirestore.collection('passive_income').add(
-            _entity(uuid: 'pi-low', name: 'Low', amount: 100.0).toJson(),
+            entity(uuid: 'pi-low', name: 'Low', amount: 100.0).toJson(),
           );
           await fakeFirestore.collection('passive_income').add(
-            _entity(uuid: 'pi-high', name: 'High', amount: 900.0).toJson(),
+            entity(uuid: 'pi-high', name: 'High', amount: 900.0).toJson(),
           );
         },
         build: () => PassiveIncomeCubit(firestore: fakeFirestore),
