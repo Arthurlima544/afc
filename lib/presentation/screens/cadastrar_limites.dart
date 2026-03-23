@@ -35,6 +35,8 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
   @override
   void initState() {
     super.initState();
+    final LimitCubit cubit = context.read<LimitCubit>();
+    Future<void>.microtask(cubit.getCategories);
     if (widget.initialLimit != null) {
       final LimitEntity limit = widget.initialLimit!;
       _amountController.text = limit.limitAmount.toString();

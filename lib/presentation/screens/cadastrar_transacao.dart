@@ -46,6 +46,8 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
   @override
   void initState() {
     super.initState();
+    final TransactionCubit cubit = context.read<TransactionCubit>();
+    Future<void>.microtask(cubit.getCategories);
     final TransactionEntity? tx = widget.initialTransaction;
     if (tx != null) {
       _titleController.text = tx.title;

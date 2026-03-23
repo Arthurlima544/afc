@@ -40,6 +40,13 @@ class _CadastrarRecorrenteState extends State<CadastrarRecorrente> {
   String? _dateError;
 
   @override
+  void initState() {
+    super.initState();
+    final TransactionCubit cubit = context.read<TransactionCubit>();
+    Future<void>.microtask(cubit.getCategories);
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _amountController.dispose();

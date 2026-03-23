@@ -38,6 +38,8 @@ class _CadastrarContaState extends State<CadastrarConta> {
   @override
   void initState() {
     super.initState();
+    final CategoryCubit cubit = context.read<CategoryCubit>();
+    Future<void>.microtask(cubit.loadCategories);
     if (widget.initialBill != null) {
       final BillEntity bill = widget.initialBill!;
       _nameController.text = bill.name;
