@@ -8,17 +8,20 @@ import 'package:intl/intl.dart';
 
 import '../../domain/entity/bill_entity.dart';
 import '../../domain/entity/investment_entity.dart';
+import '../../domain/entity/market_quote_entity.dart';
 import '../../domain/entity/stats_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
 import '../../domain/usecase/health_score.dart';
 import '../../utils/flavors.dart';
 import '../blocs/auth/auth_bloc.dart';
+import '../blocs/fi_score/fi_score_cubit.dart';
 import '../blocs/health_score/health_score_cubit.dart';
 import '../blocs/home/home_bloc.dart';
 import '../blocs/home/stats_state.dart';
 import '../blocs/home/transaction_state.dart';
 import '../blocs/limit/limit_cubit.dart';
+import '../blocs/market/market_opportunity_cubit.dart';
 import '../widgets/design_system.dart';
 import '../widgets/skeleton_list.dart';
 
@@ -64,11 +67,28 @@ class _HomeContent extends StatelessWidget {
         const _BillsCard(),
         const Gap(12),
         const _HealthScoreCard(),
+        const Gap(12),
+        const _FiScoreCard(),
         const Gap(20),
         const LastTransactionsWidget(),
         const MonthLimitWidget(),
         const Gap(20),
         const StatsWidget(),
+        const Gap(12),
+        const _MarketOpportunitiesCard(),
+        const Gap(12),
+        const _FireCard(),
+        const Gap(8),
+        const _CompoundInterestCard(),
+        const Gap(8),
+        const _PortfolioCard(),
+        const Gap(8),
+        const _PassiveIncomeCard(),
+        const Gap(8),
+        const _PatrimonioCard(),
+        const Gap(8),
+        const _InvestmentGoalCard(),
+        const Gap(20),
       ],
     ),
   );
@@ -992,6 +1012,242 @@ class _HealthSparkline extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// FI Score card
+// ---------------------------------------------------------------------------
+
+class _FiScoreCard extends StatelessWidget {
+  const _FiScoreCard();
+
+  @override
+  Widget build(BuildContext context) =>
+      BlocBuilder<FiScoreCubit, FiScoreState>(
+        builder: (BuildContext context, FiScoreState state) => state.when(
+          initial: () => const SizedBox(),
+          loading: () => const AppCard(
+            padding: EdgeInsets.all(20),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (String msg) => AppCard(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Erro ao carregar score IF: $msg',
+              style: const TextStyle(
+                fontSize: AppTextStyle.sizeSm,
+                color: AppColors.expense,
+              ),
+            ),
+          ),
+          success: (FiScoreData data) => AppCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                // Header
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          const Text(
+                            'Independência Financeira',
+                            style: AppTextStyles.sectionTitle,
+                          ),
+                          const Gap(2),
+                          Text(
+                            _fiLabel(data.fiScore),
+                            style: TextStyle(
+                              fontSize: AppTextStyle.sizeSm,
+                              color: _fiColor(data.fiScore),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '${data.fiScore.toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                        color: _fiColor(data.fiScore),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const Gap(12),
+
+                // Sparkline
+                _FiSparkline(scores: data.last6Scores),
+
+                const Gap(12),
+
+                // Progress bar
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: (data.fiScore / 100).clamp(0.0, 1.0),
+                    minHeight: 8,
+                    backgroundColor:
+                        AppColors.muted.withValues(alpha: 0.2),
+                    color: _fiColor(data.fiScore),
+                  ),
+                ),
+
+                const Gap(8),
+
+                // Income vs expenses caption
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Text(
+                      'Renda passiva: ${NumberFormat.compactCurrency(locale: 'pt_BR', symbol: 'R\$', decimalDigits: 0).format(data.passiveIncomeMonthly)}/mês',
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.muted),
+                    ),
+                    Text(
+                      'Despesas: ${NumberFormat.compactCurrency(locale: 'pt_BR', symbol: 'R\$', decimalDigits: 0).format(data.monthlyExpenses)}/mês',
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.muted),
+                    ),
+                  ],
+                ),
+
+                const Gap(12),
+
+                // Milestone badges
+                Row(
+                  children: <int>[10, 25, 50, 75, 100]
+                      .map<Widget>(
+                        (int m) => _MilestoneBadge(
+                          value: m,
+                          achieved: data.fiScore >= m,
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+Color _fiColor(double score) {
+  if (score >= 75) {
+    return AppColors.income;
+  }
+  if (score >= 25) {
+    return AppColors.warning;
+  }
+  return AppColors.expense;
+}
+
+String _fiLabel(double score) {
+  if (score >= 100) {
+    return 'FIRE Atingido';
+  }
+  if (score >= 75) {
+    return 'Próximo do FIRE';
+  }
+  if (score >= 50) {
+    return 'Metade do caminho';
+  }
+  if (score >= 25) {
+    return 'Em progresso';
+  }
+  return 'Início da jornada';
+}
+
+class _MilestoneBadge extends StatelessWidget {
+  const _MilestoneBadge({required this.value, required this.achieved});
+
+  final int value;
+  final bool achieved;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.only(right: 6),
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: achieved
+          ? AppColors.primary.withValues(alpha: 0.12)
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: achieved
+            ? AppColors.primary
+            : AppColors.muted.withValues(alpha: 0.3),
+        width: achieved ? 1.5 : 1,
+      ),
+    ),
+    child: Text(
+      '$value%',
+      style: AppTextStyles.caption.copyWith(
+        color: achieved ? AppColors.primary : AppColors.muted,
+        fontWeight: achieved ? FontWeight.w600 : FontWeight.normal,
+      ),
+    ),
+  );
+}
+
+class _FiSparkline extends StatelessWidget {
+  const _FiSparkline({required this.scores});
+
+  final List<double> scores;
+
+  @override
+  Widget build(BuildContext context) {
+    if (scores.isEmpty) {
+      return const SizedBox();
+    }
+    final List<FlSpot> spots = <FlSpot>[
+      for (int i = 0; i < scores.length; i++)
+        FlSpot(i.toDouble(), scores[i]),
+    ];
+    return SizedBox(
+      height: 40,
+      child: LineChart(
+        LineChartData(
+          lineTouchData: const LineTouchData(enabled: false),
+          borderData: FlBorderData(show: false),
+          gridData: const FlGridData(show: false),
+          titlesData: const FlTitlesData(
+            bottomTitles: AxisTitles(),
+            leftTitles: AxisTitles(),
+            topTitles: AxisTitles(),
+            rightTitles: AxisTitles(),
+          ),
+          minY: 0,
+          maxY: 100,
+          lineBarsData: <LineChartBarData>[
+            LineChartBarData(
+              spots: spots,
+              isCurved: true,
+              color: AppColors.primary,
+              dotData: FlDotData(
+                getDotPainter:
+                    (
+                      FlSpot spot,
+                      double xPercentage,
+                      LineChartBarData bar,
+                      int index,
+                    ) => FlDotCirclePainter(
+                      radius: 3,
+                      color: _fiColor(spot.y),
+                      strokeColor: _fiColor(spot.y),
+                    ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _BillsCard extends StatefulWidget {
   const _BillsCard();
@@ -1280,6 +1536,424 @@ class SyncStatusWidget extends StatelessWidget {
                   },
             );
           },
+    );
+  }
+}
+
+// ─── Market Opportunities Card ─────────────────────────────────────────────────
+
+/// Shows the top 3 dividend-paying stocks from Brapi with a link to
+/// the full opportunities screen.
+class _MarketOpportunitiesCard extends StatelessWidget {
+  const _MarketOpportunitiesCard();
+
+  @override
+  Widget build(BuildContext context) => BlocProvider<MarketOpportunityCubit>(
+    create: (_) => MarketOpportunityCubit()..load(),
+    child: BlocBuilder<MarketOpportunityCubit, MarketOpportunityState>(
+      builder: (BuildContext ctx, MarketOpportunityState state) => state.when(
+        initial: () => const SizedBox(),
+        loading: () => const AppCard(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                'Oportunidades do Mercado',
+                style: AppTextStyles.title,
+              ),
+              Gap(12),
+              Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ],
+          ),
+        ),
+        error: (_) => const SizedBox(),
+        loaded: (
+          List<MarketQuoteEntity> quotes,
+          double cdiRate,
+          DateTime _,
+        ) {
+          final List<MarketQuoteEntity> top = quotes.take(3).toList();
+          return AppCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    const Text(
+                      'Oportunidades do Mercado',
+                      style: AppTextStyles.title,
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => context.push('/oportunidades'),
+                      child: Text(
+                        'Ver todas',
+                        style: AppTextStyles.label.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Gap(4),
+                Text(
+                  'CDI: ${cdiRate.toStringAsFixed(2)}% a.a.',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.muted,
+                  ),
+                ),
+                const Gap(12),
+                for (final MarketQuoteEntity q in top) ...<Widget>[
+                  _MiniQuoteRow(quote: q, cdiRate: cdiRate),
+                  const Gap(8),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    ),
+  );
+}
+
+// ─── FIRE card ────────────────────────────────────────────────────────────────
+
+class _FireCard extends StatelessWidget {
+  const _FireCard();
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.all(14),
+    child: Row(
+      children: <Widget>[
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.income.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.savings_outlined,
+            color: AppColors.income,
+            size: 22,
+          ),
+        ),
+        const Gap(12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const Text('Calculadora FIRE', style: AppTextStyles.labelBold),
+              const Gap(2),
+              Text(
+                'Descubra seu número para aposentadoria antecipada',
+                style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+              ),
+            ],
+          ),
+        ),
+        const Gap(8),
+        AppIconButton(
+          icon: const Icon(Icons.arrow_forward_ios, size: 14),
+          onPressed: () => context.push('/fire-calculadora'),
+        ),
+      ],
+    ),
+  );
+}
+
+// ─── Compound Interest card ───────────────────────────────────────────────────
+
+class _CompoundInterestCard extends StatelessWidget {
+  const _CompoundInterestCard();
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.all(14),
+    child: Row(
+      children: <Widget>[
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.trending_up,
+            color: AppColors.primary,
+            size: 22,
+          ),
+        ),
+        const Gap(12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const Text('Simulador de Juros Compostos',
+                  style: AppTextStyles.labelBold),
+              const Gap(2),
+              Text(
+                'Veja o poder dos aportes mensais ao longo do tempo',
+                style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+              ),
+            ],
+          ),
+        ),
+        const Gap(8),
+        AppIconButton(
+          icon: const Icon(Icons.arrow_forward_ios, size: 14),
+          onPressed: () => context.push('/juros-compostos'),
+        ),
+      ],
+    ),
+  );
+}
+
+// ─── Portfolio performance card ───────────────────────────────────────────────
+
+class _PortfolioCard extends StatelessWidget {
+  const _PortfolioCard();
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.all(14),
+    child: Row(
+      children: <Widget>[
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: const Color(0xFF42A5F5).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.pie_chart_outline,
+            color: Color(0xFF42A5F5),
+            size: 22,
+          ),
+        ),
+        const Gap(12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const Text('Performance do Portfólio',
+                  style: AppTextStyles.labelBold),
+              const Gap(2),
+              Text(
+                'ROI, alocação e destaques de rentabilidade',
+                style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+              ),
+            ],
+          ),
+        ),
+        const Gap(8),
+        AppIconButton(
+          icon: const Icon(Icons.arrow_forward_ios, size: 14),
+          onPressed: () => context.push('/portfolio-dashboard'),
+        ),
+      ],
+    ),
+  );
+}
+
+// ─── Passive income card ──────────────────────────────────────────────────────
+
+class _PassiveIncomeCard extends StatelessWidget {
+  const _PassiveIncomeCard();
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.all(14),
+    child: Row(
+      children: <Widget>[
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.income.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.account_balance_wallet_outlined,
+            color: AppColors.income,
+            size: 22,
+          ),
+        ),
+        const Gap(12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const Text('Renda Passiva', style: AppTextStyles.labelBold),
+              const Gap(2),
+              Text(
+                'Dividendos, juros e outras fontes mensais',
+                style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+              ),
+            ],
+          ),
+        ),
+        const Gap(8),
+        AppIconButton(
+          icon: const Icon(Icons.arrow_forward_ios, size: 14),
+          onPressed: () => context.push('/renda-passiva'),
+        ),
+      ],
+    ),
+  );
+}
+
+class _PatrimonioCard extends StatelessWidget {
+  const _PatrimonioCard();
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.all(14),
+    child: Row(
+      children: <Widget>[
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.show_chart,
+            color: AppColors.primary,
+            size: 22,
+          ),
+        ),
+        const Gap(12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const Text('Patrimônio Líquido', style: AppTextStyles.labelBold),
+              const Gap(2),
+              Text(
+                'Evolução mensal de ativos e passivos',
+                style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+              ),
+            ],
+          ),
+        ),
+        const Gap(8),
+        AppIconButton(
+          icon: const Icon(Icons.arrow_forward_ios, size: 14),
+          onPressed: () => context.push('/patrimonio'),
+        ),
+      ],
+    ),
+  );
+}
+
+class _InvestmentGoalCard extends StatelessWidget {
+  const _InvestmentGoalCard();
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.all(14),
+    child: Row(
+      children: <Widget>[
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.income.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.flag_outlined,
+            color: AppColors.income,
+            size: 22,
+          ),
+        ),
+        const Gap(12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const Text(
+                'Planejador de Meta',
+                style: AppTextStyles.labelBold,
+              ),
+              const Gap(2),
+              Text(
+                'Calcule o aporte mensal para atingir sua meta',
+                style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+              ),
+            ],
+          ),
+        ),
+        const Gap(8),
+        AppIconButton(
+          icon: const Icon(Icons.arrow_forward_ios, size: 14),
+          onPressed: () => context.push('/meta-investimento'),
+        ),
+      ],
+    ),
+  );
+}
+
+class _MiniQuoteRow extends StatelessWidget {
+  const _MiniQuoteRow({required this.quote, required this.cdiRate});
+
+  final MarketQuoteEntity quote;
+  final double cdiRate;
+
+  @override
+  Widget build(BuildContext context) {
+    final double ratio = quote.dyVsCdi(cdiRate);
+    final bool isUp = quote.changePercent >= 0;
+    return Row(
+      children: <Widget>[
+        Text(quote.ticker, style: AppTextStyles.labelBold),
+        const Gap(6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+          decoration: BoxDecoration(
+            color: quote.isFii
+                ? AppColors.primaryLight.withValues(alpha: 0.15)
+                : AppColors.income.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: Text(
+            quote.isFii ? 'FII' : 'Ação',
+            style: AppTextStyles.caption.copyWith(
+              color: quote.isFii ? AppColors.primaryLight : AppColors.income,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const Spacer(),
+        Text(
+          'DY ${quote.dividendYield.toStringAsFixed(1)}%',
+          style: AppTextStyles.labelBold.copyWith(
+            color: quote.dividendYield > cdiRate
+                ? AppColors.income
+                : AppColors.muted,
+          ),
+        ),
+        const Gap(8),
+        Text(
+          '${ratio.toStringAsFixed(1)}× CDI',
+          style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+        ),
+        const Gap(8),
+        Icon(
+          isUp ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+          size: 16,
+          color: isUp ? AppColors.income : AppColors.expense,
+        ),
+      ],
     );
   }
 }

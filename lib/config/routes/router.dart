@@ -12,18 +12,23 @@ import '../../domain/entity/transaction_entity.dart';
 import '../../presentation/blocs/auth/auth_bloc.dart';
 import '../../presentation/blocs/bill/bill_cubit.dart';
 import '../../presentation/blocs/category/category_cubit.dart';
+import '../../presentation/blocs/fi_score/fi_score_cubit.dart';
 import '../../presentation/blocs/goal/goal_cubit.dart';
 import '../../presentation/blocs/health_score/health_score_cubit.dart';
 import '../../presentation/blocs/home/home_bloc.dart';
 import '../../presentation/blocs/import/import_cubit.dart';
 import '../../presentation/blocs/investment/investment_cubit.dart';
 import '../../presentation/blocs/limit/limit_cubit.dart';
+import '../../presentation/blocs/market/market_opportunity_cubit.dart';
+import '../../presentation/blocs/net_worth/net_worth_cubit.dart';
 import '../../presentation/blocs/open_finance/open_finance_cubit.dart';
+import '../../presentation/blocs/passive_income/passive_income_cubit.dart';
 import '../../presentation/blocs/recurring/recurring_cubit.dart';
 import '../../presentation/blocs/report/report_cubit.dart';
 import '../../presentation/blocs/review_queue/review_queue_cubit.dart';
 import '../../presentation/blocs/settings/settings_cubit.dart';
 import '../../presentation/blocs/transaction/transaction_cubit.dart';
+import '../../presentation/blocs/watchlist/watchlist_cubit.dart';
 import '../../presentation/screens/cadastrar_categoria.dart';
 import '../../presentation/screens/cadastrar_conta.dart';
 import '../../presentation/screens/cadastrar_investimento.dart';
@@ -31,12 +36,15 @@ import '../../presentation/screens/cadastrar_limites.dart';
 import '../../presentation/screens/cadastrar_meta.dart';
 import '../../presentation/screens/cadastrar_recorrente.dart';
 import '../../presentation/screens/cadastrar_transacao.dart';
+import '../../presentation/screens/compound_interest_screen.dart';
 import '../../presentation/screens/connect_bank_screen.dart';
 import '../../presentation/screens/connected_accounts_screen.dart';
 import '../../presentation/screens/dev_seed_screen.dart';
+import '../../presentation/screens/fire_calculator_screen.dart';
 import '../../presentation/screens/home_page.dart';
 import '../../presentation/screens/home_screen.dart';
 import '../../presentation/screens/importar_extrato.dart';
+import '../../presentation/screens/investment_goal_screen.dart';
 import '../../presentation/screens/lista_categorias.dart';
 import '../../presentation/screens/lista_contas.dart';
 import '../../presentation/screens/lista_investimentos.dart';
@@ -44,8 +52,13 @@ import '../../presentation/screens/lista_limites.dart';
 import '../../presentation/screens/lista_metas.dart';
 import '../../presentation/screens/lista_recorrentes.dart';
 import '../../presentation/screens/lista_transacoes.dart';
+import '../../presentation/screens/lista_watchlist.dart';
 import '../../presentation/screens/login_screen.dart';
+import '../../presentation/screens/net_worth_screen.dart';
 import '../../presentation/screens/onboarding_screen.dart';
+import '../../presentation/screens/oportunidades_screen.dart';
+import '../../presentation/screens/passive_income_screen.dart';
+import '../../presentation/screens/portfolio_dashboard_screen.dart';
 import '../../presentation/screens/relatorio.dart';
 import '../../presentation/screens/review_queue_screen.dart';
 import '../../presentation/screens/scaffold_shell.dart';
@@ -160,6 +173,9 @@ final GoRouter router = GoRouter(
                     BlocProvider<HealthScoreCubit>(
                       create: (_) =>
                           HealthScoreCubit()..loadScore(uuidOrNull),
+                    ),
+                    BlocProvider<FiScoreCubit>(
+                      create: (_) => FiScoreCubit()..load(uuidOrNull),
                     ),
                   ],
                   child: const HomePage(),
@@ -468,6 +484,104 @@ final GoRouter router = GoRouter(
               initialInvestment: state.extra as InvestmentEntity?,
             ),
           ),
+    ),
+
+    // --- Financial Independence calculators ---
+
+    GoRoute(
+      path: '/fire-calculadora',
+      builder: (BuildContext context, GoRouterState state) =>
+          const FireCalculatorScreen(),
+    ),
+
+    GoRoute(
+      path: '/juros-compostos',
+      builder: (BuildContext context, GoRouterState state) =>
+          const CompoundInterestScreen(),
+    ),
+
+    GoRoute(
+      path: '/portfolio-dashboard',
+      builder: (BuildContext context, GoRouterState state) =>
+          BlocProvider<InvestmentCubit>(
+            create: (_) => InvestmentCubit(),
+            child: const PortfolioDashboardScreen(),
+          ),
+    ),
+
+    GoRoute(
+      path: '/renda-passiva',
+      builder: (BuildContext context, GoRouterState state) {
+        final String userId =
+            context.read<AuthBloc>().state.whenOrNull(
+                  signedIn: (ClerkAuthState s) => s.user?.id,
+                ) ??
+            '';
+        return BlocProvider<PassiveIncomeCubit>(
+          create: (_) => PassiveIncomeCubit()..loadStreams(userId),
+          child: PassiveIncomeScreen(userId: userId),
+        );
+      },
+    ),
+
+    GoRoute(
+      path: '/meta-investimento',
+      builder: (BuildContext context, GoRouterState state) =>
+          const InvestmentGoalScreen(),
+    ),
+
+    GoRoute(
+      path: '/patrimonio',
+      builder: (BuildContext context, GoRouterState state) {
+        final String userId =
+            context.read<AuthBloc>().state.whenOrNull(
+                  signedIn: (ClerkAuthState s) => s.user?.id,
+                ) ??
+            '';
+        return BlocProvider<NetWorthCubit>(
+          create: (_) => NetWorthCubit()..loadSnapshots(userId),
+          child: NetWorthScreen(userId: userId),
+        );
+      },
+    ),
+
+    // --- Market opportunities & watchlist ---
+
+    GoRoute(
+      path: '/oportunidades',
+      builder: (BuildContext context, GoRouterState state) {
+        final String userId =
+            context.read<AuthBloc>().state.whenOrNull(
+                  signedIn: (ClerkAuthState s) => s.user?.id,
+                ) ??
+            '';
+        return MultiBlocProvider(
+          providers: <BlocProvider<dynamic>>[
+            BlocProvider<MarketOpportunityCubit>(
+              create: (_) => MarketOpportunityCubit()..load(),
+            ),
+            BlocProvider<WatchlistCubit>(
+              create: (_) => WatchlistCubit()..loadWatchlist(userId),
+            ),
+          ],
+          child: OportunidadesScreen(userId: userId),
+        );
+      },
+    ),
+
+    GoRoute(
+      path: '/watchlist',
+      builder: (BuildContext context, GoRouterState state) {
+        final String userId =
+            context.read<AuthBloc>().state.whenOrNull(
+                  signedIn: (ClerkAuthState s) => s.user?.id,
+                ) ??
+            '';
+        return BlocProvider<WatchlistCubit>(
+          create: (_) => WatchlistCubit()..loadWatchlist(userId),
+          child: ListaWatchlist(userId: userId),
+        );
+      },
     ),
 
     // --- Bill routes ---

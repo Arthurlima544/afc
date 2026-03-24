@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'utils/flavors.dart';
 import 'utils/logger.dart';
@@ -8,6 +9,7 @@ import 'utils/my_app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('pt_BR');
 
   Flavor.flavorType = FlavorTypes.prod;
 

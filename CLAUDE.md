@@ -225,13 +225,13 @@ Clerk OAuth via `clerk_flutter` package. Configuration:
 GoRouter (`go_router`) with 31 routes. Routes defined in `lib/config/routes/router.dart`.
 
 **Bottom navigation** (`ScaffoldShell`):
-- `StatefulShellRoute.indexedStack` with 6 branches
+- `StatefulShellRoute.indexedStack` with **4 branches** (reduced from 6 in Sprint 11)
 - Tab 0: Dashboard (`/home`) — HomeBloc + LimitCubit + HealthScoreCubit
 - Tab 1: Transactions (`/lista-transacoes`) — TransactionCubit
-- Tab 2: Categories (`/lista-categorias`) — CategoryCubit
-- Tab 3: Limits (`/lista-limites`) — LimitCubit
-- Tab 4: Recurring (`/lista-recorrentes`) — RecurringCubit
-- Tab 5: Goals (`/lista-metas`) — GoalCubit
+- Tab 2: Limits (`/lista-limites`) — LimitCubit
+- Tab 3: Goals (`/lista-metas`) — GoalCubit
+- Categories → accessible via Settings screen ("Gerenciar categorias" tile → `/lista-categorias`)
+- Recurring → accessible via Transactions header icon button (`→ /lista-recorrentes`)
 
 **Modal/form routes** (pushed over tabs):
 ```
@@ -242,13 +242,30 @@ GoRouter (`go_router`) with 31 routes. Routes defined in `lib/config/routes/rout
 /cadastro-recorrente
 /cadastro-investimento, /editar-investimento, /lista-investimentos
 /cadastro-conta,        /editar-conta,        /lista-contas
+/lista-categorias,      /lista-recorrentes     (now push routes, not shell branches)
 /importar-extrato, /revisar-transacoes
 /relatorio
 /contas-conectadas, /connect-bank
 /seed   (dev only — test data seeder)
 ```
 
-BLoC providers are injected at the route level:
+**Primary UX path for create/edit forms**: `showFormSheet<T>()` — draggable bottom sheet.
+Router entries are kept for deep linking but the primary path uses the bottom sheet.
+
+```dart
+// Showing a form as a bottom sheet with its own cubit
+await showFormSheet<void>(
+  context,
+  builder: (ctx) => MultiBlocProvider(
+    providers: [
+      BlocProvider(create: (_) => LimitCubit()..getCategories()),
+    ],
+    child: const CadastrarLimites(),
+  ),
+);
+```
+
+BLoC providers are also injected at the route level (for deep links):
 ```dart
 GoRoute(
   path: '/cadastro-transacao',
@@ -269,10 +286,10 @@ GoRoute(
 | Login | `login_screen.dart` | — |
 | Dashboard | `home_page.dart` | 0 (Início) |
 | Transaction List | `lista_transacoes.dart` | 1 (Transações) |
-| Category List | `lista_categorias.dart` | 2 (Categorias) |
-| Limit List | `lista_limites.dart` | 3 (Limites) |
-| Recurring List | `lista_recorrentes.dart` | 4 (Recorrências) |
-| Goals List | `lista_metas.dart` | 5 (Metas) |
+| Limit List | `lista_limites.dart` | 2 (Limites) |
+| Goals List | `lista_metas.dart` | 3 (Metas) |
+| Category List | `lista_categorias.dart` | push route (via Settings) |
+| Recurring List | `lista_recorrentes.dart` | push route (via Transactions header) |
 | Add/Edit Transaction | `cadastrar_transacao.dart` | — |
 | Add/Edit Category | `cadastrar_categoria.dart` | — |
 | Add/Edit Limit | `cadastrar_limites.dart` | — |
@@ -295,9 +312,13 @@ GoRoute(
 
 ## UI Framework
 
-- **Design system**: `shadcn_flutter` (Shadcn components)
-  - **Important**: Hide conflicting symbols from `flutter/material.dart` when importing shadcn:
-    `import 'package:flutter/material.dart' hide AlertDialog, Column, Expanded, Row, TextButton, showDialog;`
+- **Design system**: Custom Material 3 system — import via the barrel file:
+  ```dart
+  import '../widgets/design_system.dart';
+  ```
+  Exports: `AppColors`, `AppTextStyles`, `AppSpacing`, `AppButton`/`PrimaryButton`/`SecondaryButton`,
+  `AppCard`, `AppDialog`/`showAppDialog`/`showInputDialog`, `AppIconButton`, `AppTextField`,
+  `showFormSheet`, `Gap`
 - **Charts**: `fl_chart` (PieChart, BarChart, LineChart, SparkLine)
 - **Icons**: `cupertino_icons` + Material `Icons`
 - **PDF**: `pdf` + `printing` packages for report export
@@ -531,7 +552,6 @@ dart run flutter_launcher_icons -f flutter_launcher_icons-prod.yaml
 ## Gotchas & Notes
 
 - **No repository layer**: BLoCs/Cubits access Firestore directly. If you add a repository layer, be consistent across all features.
-- **Shadcn import conflicts**: `showDialog`, `AlertDialog`, `TextButton`, `Column`, `Expanded`, `Row` are defined in both `flutter/material.dart` and `shadcn_flutter`. Always hide from material: `import 'package:flutter/material.dart' hide AlertDialog, Column, Expanded, Row, TextButton, showDialog;`
 - **Freezed union states**: Always handle all variants in `.when()` — the linter will catch missing cases.
 - **Clerk beta**: `clerk_flutter` is `^0.0.12-beta` — API may change on updates.
 - **Generated files**: Never manually edit `*.freezed.dart` or `*.g.dart` — always regenerate.
@@ -540,6 +560,19 @@ dart run flutter_launcher_icons -f flutter_launcher_icons-prod.yaml
 - **`@JsonSerializable(explicitToJson: true)`** is required on `RecurringEntity` (nested `TransactionEntity`); add `// ignore: invalid_annotation_target` comment above it.
 - **`always_put_control_body_on_new_line`**: All `if` bodies must be on a new line — no single-line `if (x) return;`.
 - **`sort_pub_dependencies`**: `pubspec.yaml` dependencies must be alphabetically ordered; analyzer enforces this.
-- **`unawaited_futures`**: Always `await` async calls like `HapticFeedback.mediumImpact()`.
+- **`unawaited_futures`**: Fire-and-forget futures (e.g. cubit refreshes inside `async` methods) must be wrapped: `unawaited(cubit.loadCategories())`. Add `import 'dart:async';`.
 - **Modal navigation in `StatefulShellRoute`**: Use `onClose` callback pattern (capture `sheetContext` from `showModalBottomSheet` builder) instead of `Navigator.of(context).pop()` to avoid branch-navigator issues.
 - **Wildcard parameters in Dart 3.9+**: Use `(_, _) => ...` (two `_`) instead of `(_, __) => ...` — `unnecessary_underscores` lint enforces this.
+- **`use_build_context_synchronously`**: Never use `context.read<X>()` after an `await` inside `initState`. Capture the cubit reference synchronously first:
+  ```dart
+  @override
+  void initState() {
+    super.initState();
+    final MyCubit cubit = context.read<MyCubit>(); // captured before async gap
+    Future<void>.microtask(cubit.loadData);         // no context across gap
+  }
+  ```
+- **`showFormSheet` — always provide cubits inline**: Each form opened via `showFormSheet` must supply its own `BlocProvider`/`MultiBlocProvider` in the `builder:` param. The form's `initState` also triggers its own category load via the microtask pattern above, making forms self-contained regardless of caller.
+- **`showInputDialog` — StatefulWidget owns the controller**: `app_dialog.dart` wraps the dialog content in `_InputDialog` (a `StatefulWidget`) so the `TextEditingController` is disposed in `State.dispose()` — never create a controller outside the widget tree for a dialog.
+- **`StatefulShellRoute` branch count must match `NavigationDestination` count**: The number of branches in `router.dart` must exactly equal the number of `NavigationDestination` entries in `scaffold_shell.dart`. Mismatches cause index-out-of-range crashes at runtime.
+- **Category chip selector pattern**: All form screens use a `Wrap` of tappable chips (not `DropdownButtonFormField`) for category selection, matching the QuickAddSheet UX. The last chip is always "Nova" to trigger inline category creation via `_showAddCategoryDialog()`.

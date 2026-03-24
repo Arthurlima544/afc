@@ -481,6 +481,171 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 ### US-53 · Fix "Ver Todas" navigation ✅
 - Confirmed `context.go('/lista-transacoes')` correctly switches to the Transactions tab in `StatsWidget`
 
+### US-54 · Fix ProviderNotFoundException in Recorrências and Contas a Pagar ✅
+- `lista_recorrentes.dart` and `lista_contas.dart` converted from `context.push()` to `showFormSheet` with `MultiBlocProvider` supplying required cubits inline
+- `lista_recorrentes` provides `TransactionCubit()..getCategories()` + `RecurringCubit`
+- `lista_contas` provides `BillCubit` + `CategoryCubit()..loadCategories()`
+
+### US-55 · Self-contained form category loading ✅
+- All four form screens (`cadastrar_transacao`, `cadastrar_limites`, `cadastrar_recorrente`, `cadastrar_conta`) trigger category loading in `initState` via lint-safe microtask pattern
+- Forms work correctly regardless of caller (push route, `showFormSheet`, or test harness)
+
+### US-56 · Category chip selector in all form screens ✅
+- Replaced `DropdownButtonFormField` for categories with `Wrap` of tappable chips in all four form screens
+- Matches the QuickAddSheet UX; inline "Nova" chip triggers `_showAddCategoryDialog()` (writes to Firestore, refreshes cubit, auto-selects new category)
+
+### US-57 · Fix showInputDialog use-after-dispose crash ✅
+- `showInputDialog` in `app_dialog.dart` now wraps content in `_InputDialog` (`StatefulWidget`) so `TextEditingController` is owned and disposed by `State.dispose()` — eliminates the "used after dispose" exception triggered by keyboard dismissal after dialog close
+
+### US-58 · Home page "Estatísticas" — remove line chart, add savings summary ✅
+- Removed `LineChartSample7` line chart (not useful to users)
+- Replaced with "Resumo do mês" card: taxa de poupança %, receita do mês, gastos do mês, "Ver relatório" link
+- New `_StatCell` helper widget used for the three stats columns
+
+### US-59 · Recent transaction card styling improvement ✅
+- `LastTransactions` widget redesigned: color-coded direction arrow (green ↓ income / red ↑ expense), category name, formatted amount — wrapped in `AppCard` for consistent surface treatment
+
+---
+
+## Sprint 12 — Financial Independence Engine (US-60–67)
+
+> **Goal**: Elevate AFC from an expense tracker into a financial independence tool. Saving and controlling spending is not enough to build wealth — users need features that actively help them grow their assets, project their trajectory, understand the power of compounding, and spot real market opportunities in the Brazilian market before acting.
+
+### US-60 · FIRE Calculator (Financial Independence, Retire Early) ✅
+**As a** user, **I want** to know my FIRE number and how long it will take me to reach it,
+**so that** I can understand exactly when I could stop relying on active income.
+
+- [x] Pure `FireCalculator` use case with `FireResult` output: `fireNumber`, `monthsToFire?`, `retirementDate?`, `yearlyTimeline`
+- [x] Formula: `fireNumber = (monthlyExpenses × 12) / SWR`; month-by-month compound growth loop to find crossing point
+- [x] `FireCalculatorScreen` — inputs: monthly expenses, current portfolio, monthly savings, annual return %
+- [x] Presets: Lean FIRE (3%), Padrão (4%), Fat FIRE (5%) — preset chips
+- [x] Results card: FIRE number in BRL, time to FIRE ("X anos e Y meses"), estimated retirement date
+- [x] `fl_chart` LineChart showing portfolio growth curve vs FIRE number (dashed horizontal reference line)
+- [x] `_FireCard` on Dashboard home page linking to `/fire-calculadora`
+- [x] 11 unit tests: FIRE number formula, SWR edge cases, months-to-FIRE, unreachable scenario, yearlyTimeline structure, retirementDate
+
+---
+
+### US-61 · Compound Interest Simulator ✅
+**As a** user, **I want** to simulate how my investments grow over time given a monthly contribution and interest rate,
+**so that** I can see the real impact of investing consistently.
+
+- [x] `CompoundInterestCalculator` use case: `calculate()` and `compare()` static methods returning `CompoundResult` (`finalAmount`, `totalInvested`, `totalInterest`, `yearlyTimeline`)
+- [x] Inputs: initial amount, monthly contribution, annual rate %, period in years
+- [x] Results card: final amount, total invested, total interest + visual composition bar (capital vs rendimentos)
+- [x] `fl_chart` LineChart with area fill for primary rate; dashed lines for comparison rates
+- [x] "Comparar taxas" toggle — overlays 6%, 10%, 14% comparison curves with legend
+- [x] `_CompoundInterestCard` on Dashboard linking to `/juros-compostos`
+- [x] 11 unit tests: lump-sum formula, annuity formula, zero-rate, totalInvested/totalInterest invariants, timeline structure, compare ordering
+
+---
+
+### US-62 · Portfolio Performance Dashboard ✅
+**As a** user, **I want** to see my portfolio's overall ROI, allocation breakdown, and performance over time,
+**so that** I can evaluate whether my investments are on track.
+
+- [x] `PortfolioCalculator` use case — `PortfolioPosition` per investment (totalCost, currentValue, profit, roiPercent) and `PortfolioSummary` (totals, allocationByType, bestPerformer, worstPerformer)
+- [x] `PortfolioDashboardScreen` — overall ROI card, allocation donut (PieChart), best/worst highlight tiles, position list sorted by value
+- [x] Color coding per type: Ações (blue), Renda Fixa (green), Cripto (orange), Outros (purple)
+- [x] `_PortfolioCard` on Dashboard linking to `/portfolio-dashboard`
+- [x] 8 unit tests: empty portfolio, position metrics, losses, overall totals, allocation grouping, best/worst, zero avgCost guard
+
+---
+
+### US-63 · Passive Income Tracker ✅
+**As a** user, **I want** to track my passive income streams (dividends, interest, rental income),
+**so that** I can monitor how close I am to covering my expenses with passive income.
+
+- [x] `PassiveIncomeEntity` — `uuid`, `userId`, `source` (dividend / interest / rent / other), `amount`, `frequency` (monthly/quarterly/annual), `assetUuid?` (Freezed + JSON)
+- [x] `PassiveIncomeCubit` — `loadStreams`, `add`, `create`, `update`, `delete`; sorted by amount desc
+- [x] Passive income screen: swipe-to-delete stream cards, total monthly equivalent summary card
+- [x] `_AddStreamSheet` bottom sheet form with source and frequency dropdowns
+- [x] `_PassiveIncomeCard` on Dashboard → `/renda-passiva`
+- [x] `monthlyEquivalent()` helper: monthly×1, quarterly÷3, annual÷12
+- [x] 13 unit tests: `monthlyEquivalent` (4 cases) + `PassiveIncomeCubit` (9 cases — load/filter/sort/add/delete/update)
+
+---
+
+### US-64 · Net Worth Evolution Chart ✅
+**As a** user, **I want** to see how my net worth (assets minus liabilities) has grown over time,
+**so that** I can track my wealth-building progress month by month.
+
+- [x] `NetWorthSnapshotEntity` — `uuid`, `userId`, `date`, `assets: double`, `liabilities: double`, `netWorth: double` (Freezed + JSON)
+- [x] `NetWorthCubit` — `loadSnapshots`, `recordSnapshot` (upserts by month), `delete`; snapshots sorted by date asc
+- [x] `/patrimonio` screen: line chart (fl_chart) showing last 13 months, summary card with assets/liabilities/monthly delta, history list
+- [x] `_RecordSnapshotSheet` bottom sheet to manually enter assets and liabilities
+- [x] `_PatrimonioCard` on Dashboard → `/patrimonio`
+- [x] 8 unit tests: initial state, load/filter/sort, recordSnapshot persists and upserts, delete
+
+---
+
+### US-65 · Investment Goal Planner ✅
+**As a** user, **I want** to set an investment target (e.g. "R$ 1 million by 2040") and see the required monthly contribution,
+**so that** I know exactly how much to invest each month to reach my goal.
+
+- [x] `InvestmentGoalCalculator` pure-Dart use case — FV annuity formula solved for PMT; r=0 fallback to linear
+- [x] `InvestmentGoalResult` — `requiredMonthlyContribution`, `totalContributed`, `totalInterestEarned`, `yearlyTimeline`
+- [x] `/meta-investimento` screen: 4-input form (target, current, years, return%), required monthly contribution card, composition bar chart, line chart
+- [x] `_InvestmentGoalCard` on Dashboard → `/meta-investimento`
+- [x] 10 unit tests: zero-rate PMT, reduced PMT with current amount, lower PMT with returns, PMT=0 when already exceeds, contribution totals, timeline length/monotonicity/accuracy
+
+---
+
+### US-66 · Inflation-Adjusted Projections ✅
+**As a** user, **I want** all long-term projections (FIRE, compound interest, goals) to show real (inflation-adjusted) values,
+**so that** I understand what my money will actually buy in the future.
+
+- [x] `InflationCalculator` pure use case — `realValue()`, `realAnnualReturnPercent()`, `adjustTimeline()` with default IPCA 4.5%
+- [x] "Ajuste de Inflação" toggle card on FIRE Calculator — inflation rate input (default 4.5%), "Valor real hoje" row in result card, dashed real timeline on chart
+- [x] "Ajuste de Inflação" toggle card on Compound Interest — "Poder de compra hoje" row in result card, dashed real timeline on chart
+- [x] 10 unit tests for `InflationCalculator` (realValue, realAnnualReturnPercent, adjustTimeline)
+
+---
+
+### US-68 · Brazilian Market Opportunities Feed ✅
+**As a** user, **I want** to see top dividend-paying Brazilian stocks and compare their yield against fixed-income benchmarks (CDI, Selic, Tesouro Direto),
+**so that** I can spot attractive investment opportunities without leaving the app.
+
+- [x] **Data source**: [Brapi](https://brapi.dev) free tier — `/api/quote/{tickers}?fundamental=true` for DY/P/L, `/api/v2/prime-rate?country=brazil` for CDI rate. No API key required.
+- [x] `BrapiService` — `fetchQuotes(List<String>)`, `fetchCdiRate()`, `fetchHistory(String)` with graceful fallbacks on error
+- [x] `MarketQuoteEntity` — plain Dart class (display-only, not stored in Firestore): `ticker`, `name`, `price`, `changePercent`, `dividendYield`, `isFii`, `priceEarnings?`, `sector`; factory `fromJson` detects FII via `quoteType == 'MUTUALFUND'`; `dyVsCdi(double cdiRate)` helper
+- [x] `MarketOpportunityCubit` — fetches 15 curated equities + 12 curated FIIs sequentially; fetches CDI rate; sorts by DY descending; 30-min in-memory TTL; `forceRefresh` flag for pull-to-refresh
+- [x] `OportunidadesScreen` — filter chips (Todos / Ações / FIIs) + sort chips (Maior DY / DY vs CDI / Menor P/L)
+- [x] `_QuoteCard` — ticker, type badge (Ação/FII), price, change% with arrow icon, DY%, DY×CDI ratio, P/L, sector
+- [x] `_BenchmarkBanner` — CDI % and Selic approximation (CDI + 0.1) as reference
+- [x] Pull-to-refresh triggers `forceRefresh`; "Atualizado X min atrás" timestamp shown
+- [x] Dashboard card (`_MarketOpportunitiesCard`) — top 3 DY stocks with "Ver todas" link; own `BlocProvider`
+- [x] 10 unit tests: `fromJson` parsing, FII detection, name fallbacks, `dyVsCdi`, zero CDI, load/sort, cache TTL, `forceRefresh`, error state
+
+---
+
+### US-69 · Stock Watchlist with Near Real-Time Quotes ✅
+**As a** user, **I want** to save a list of Brazilian stocks and track their prices in near real-time,
+**so that** I can monitor opportunities I'm watching without opening a brokerage app.
+
+- [x] **Data source**: Brapi `/api/quote/{tickers}?fundamental=true` (batch ≤10) + `/api/quote/{ticker}?range=5d&interval=1d` for sparklines; 60-second `Timer.periodic` poll
+- [x] `WatchlistEntity` (Freezed + Firestore) — `uuid`, `userId`, `ticker`, `addedAt`, `alertThreshold?`
+- [x] `WatchlistItem` — plain Dart class combining entity + live `MarketQuoteEntity?` + `sparkline: List<double>`; `alertTriggered` computed property; manual `copyWith`
+- [x] `WatchlistCubit` — `loadWatchlist`, `addTicker`, `removeTicker`, `setAlert`, `refresh`; batched quote fetching; background sparkline loading with 600ms inter-request delay; `isClosed` guard; timer cancelled in `close()`
+- [x] `ListaWatchlist` — swipe-to-delete (`Dismissible`), alert bell icon when threshold triggered, 36px `fl_chart` sparkline (green/red), DY%/P/L metrics, `_AlertChip` showing threshold price
+- [x] Bookmark icon on `OportunidadesScreen` cards — filled if already in watchlist; tap adds ticker or navigates to watchlist
+- [x] `/watchlist` route added to `router.dart`; `/oportunidades` upgraded to `MultiBlocProvider` (both cubits)
+- [x] Free-tier guardrails: batches of 10, 60s poll, 600ms sparkline delay
+- [x] 13 unit tests: `WatchlistItem` behavior, load/filter by userId, add/remove/setAlert CRUD, no-op refresh
+
+---
+
+### US-67 · Financial Independence Score & Milestones ✅
+**As a** user, **I want** a clear score showing how close I am to financial independence,
+**so that** I have a single motivating number to grow.
+
+- [x] FI Score (0–100): formula `(monthly_passive_income / monthly_expenses) × 100`, capped at 100
+- [x] `FiScoreCubit` — fetches `passive_income` + `transaction` collections; computes score + 6-month sparkline
+- [x] `FiScoreData` — `fiScore`, `passiveIncomeMonthly`, `monthlyExpenses`, `last6Scores`, `achievedMilestones` computed property
+- [x] Milestone badges (10 / 25 / 50 / 75 / 100%) on Dashboard card — filled/highlighted when achieved
+- [x] `_FiScoreCard` on Dashboard augmenting `_HealthScoreCard` — score %, label, sparkline, progress bar, milestone row, passive income vs expenses caption
+- [x] 11 unit tests: `FiScoreData` milestone detection (3) + `FiScoreCubit` (8 — zero data, score formula, 100% cap, income exclusion, userId filter, empty userId)
+
 ---
 
 ## Technical Debt & Cross-cutting
@@ -490,7 +655,7 @@ These items are not user stories but are necessary for long-term quality.
 | Item | Priority | Status | Notes |
 |------|----------|--------|-------|
 | Firestore streams (replace `.get()`) | High | ✅ Done | All list screens and dashboard use `.snapshots()` |
-| Widget test coverage for key screens | High | ✅ Done | home_screen, login_screen, scaffold_shell (268 total tests) |
+| Widget test coverage for key screens | High | ✅ Done | home_screen, login_screen, scaffold_shell (352 total tests) |
 | Cloud Functions project setup | High | ✅ Done | Pluggy proxy + webhooks + bill reminders in `functions/src/` |
 | Offline support (`persistenceEnabled`) | Medium | ✅ Done | Both `main_dev.dart` and `main_prod.dart` configure `CACHE_SIZE_UNLIMITED` |
 | CI: separate lint / test / build jobs | Low | ✅ Done | 3 jobs: lint → test (coverage artifact) → build (APK artifact) |
@@ -518,4 +683,5 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 8 (US-33–37) | `feat/us-33-37-brand-identity` | ✅ Merged |
 | Sprint 9 (US-38–44) | `feat/us-38-44-ux-polish` | ✅ Merged |
 | Sprint 10 (design system migration) | `feat/sprint10-design-system` | ✅ Merged |
-| Sprint 11 (US-45–53) | `feat/sprint11-polish` | ⏳ Open |
+| Sprint 11 (US-45–59) | `feat/sprint11-polish` | ✅ Merged |
+| Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | 🔄 In Progress (US-60–69 all ✅) |
