@@ -413,6 +413,9 @@ class _ResultCard extends StatelessWidget {
             label: 'Número FIRE',
             value: fireLabel,
             highlight: true,
+            tooltip:
+                'Portfólio total necessário para se aposentar. '
+                'Calculado como gastos anuais ÷ taxa de retirada segura.',
           ),
           const Gap(12),
           _ResultRow(label: 'Tempo até FIRE', value: timeLabel),
@@ -433,6 +436,9 @@ class _ResultCard extends StatelessWidget {
                   years: result.yearsToFire!.toDouble(),
                 ),
               ),
+              tooltip:
+                  'O seu Número FIRE ajustado pela inflação estimada '
+                  '— o que esse valor representaria em poder de compra hoje.',
             ),
           ],
         ],
@@ -446,17 +452,31 @@ class _ResultRow extends StatelessWidget {
     required this.label,
     required this.value,
     this.highlight = false,
+    this.tooltip,
   });
 
   final String label;
   final String value;
   final bool highlight;
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) => Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: <Widget>[
-      Text(label, style: AppTextStyles.body.copyWith(color: AppColors.muted)),
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(
+            label,
+            style: AppTextStyles.body.copyWith(color: AppColors.muted),
+          ),
+          if (tooltip != null) ...<Widget>[
+            const Gap(4),
+            AppTooltipIcon(tooltip!),
+          ],
+        ],
+      ),
       Text(
         value,
         style: AppTextStyles.bodyBold.copyWith(

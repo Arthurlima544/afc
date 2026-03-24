@@ -648,6 +648,61 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
+## Sprint 13 — Bug Fixes & State Stability (US-70–76)
+
+> **Goal**: Fix regressions and state bugs accumulated during Sprint 12: snackbar feedback, goal/bill reload after mutations, form sheets not closing on success, login flicker, and skeleton sizing.
+
+### US-70 · Snackbar error feedback on cubit failures ✅
+- [x] `GoalCubit`, `BillCubit`, `RecurringCubit` listeners show `SnackBar` on error state
+
+### US-71 · Goal list reloads after contribute/delete ✅
+- [x] `GoalCubit.contribute` and `delete` call `loadGoals` after Firestore write
+
+### US-72 · Form sheet closes on success (CadastrarMeta, CadastrarConta) ✅
+- [x] `BlocConsumer` listener calls `context.pop()` on `success` state in goal and bill forms
+
+### US-73 · Form sheet closes on success (CadastrarRecorrente, CadastrarTransacao, CadastrarLimites, CadastrarCategoria) ✅
+- [x] All remaining form screens updated to use `BlocConsumer` with `success` → `context.pop()`
+
+### US-74 · Bill list reloads after delete ✅
+- [x] `BillCubit.delete` calls `loadBills` after Firestore write
+
+### US-75 · Login screen no longer flickers on startup ✅
+- [x] `_ClerkAuthObserver` guards `signOut` dispatch behind `!authState.isNotAvailable`
+
+### US-76 · Dashboard auto-refreshes on auth state change ✅
+- [x] `ScaffoldShell.initState` reloads cubits when `AuthBloc` emits `signedIn`
+
+---
+
+## Sprint 14 — Privacy Mode & Financial Tooltips (US-77–78)
+
+> **Goal**: Add a privacy toggle to hide sensitive monetary values on the dashboard, and surface educational tooltips on financial calculators so users understand the numbers they're looking at.
+
+### US-77 · Privacy mode toggle ✅
+**As a** user, **I want** to hide sensitive monetary values with a single tap,
+**so that** I can use the app in public without exposing my finances.
+
+- [x] `PrivacyCubit` — simple `bool` toggle (hidden/visible), resets on app restart
+- [x] `PrivacyText` widget — wraps any monetary string; shows `"•••••"` with `AnimatedSwitcher` when hidden
+- [x] Eye icon (`Icons.visibility_outlined` / `Icons.visibility_off_outlined`) added to dashboard header
+- [x] `PrivacyCubit` injected at root in `MyApp` `MultiBlocProvider`
+- [x] `PrivacyText` applied to: balance, income, expenses cards (`HomeCard`), recent transactions (`LastTransactions`), month limits (`MonthLimit`), stats widget income/expenses, portfolio value (`_NetWorthCard`), FI Score passive income/expenses caption
+
+### US-78 · Financial concept tooltips on calculators ✅
+**As a** user, **I want** to see a brief explanation of unfamiliar financial terms,
+**so that** I can understand what each number means without leaving the app.
+
+- [x] `AppTooltipIcon` widget — tappable ⓘ icon using `Tooltip` with `triggerMode: tap` and 4s display duration
+- [x] Exported via `design_system.dart` barrel
+- [x] Applied to FIRE calculator: "Número FIRE", "Valor real hoje"
+- [x] Applied to Compound Interest: "Montante final", "Juros ganhos", "Poder de compra hoje"
+- [x] Applied to FI Score card: "Independência Financeira" title
+- [x] Applied to Health Score sub-factors: replaced `Tooltip` wrapper with inline `AppTooltipIcon` in `_ScoreRow`
+- [x] Applied to Investment Goal: "Aporte mensal necessário"
+
+---
+
 ## Technical Debt & Cross-cutting
 
 These items are not user stories but are necessary for long-term quality.
@@ -684,4 +739,6 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 9 (US-38–44) | `feat/us-38-44-ux-polish` | ✅ Merged |
 | Sprint 10 (design system migration) | `feat/sprint10-design-system` | ✅ Merged |
 | Sprint 11 (US-45–59) | `feat/sprint11-polish` | ✅ Merged |
-| Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | 🔄 In Progress (US-60–69 all ✅) |
+| Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | ✅ Merged |
+| Sprint 13 (bug fixes US-70–76) | `fix/sprint13-bugs-state` | ⏳ Open PR |
+| Sprint 14 (US-77–78) | `feat/sprint14-privacy-tooltips` | 🔄 In Progress |

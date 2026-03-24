@@ -966,21 +966,21 @@ class _ScoreRow extends StatelessWidget {
   final String tooltip;
 
   @override
-  Widget build(BuildContext context) => Tooltip(
-    message: tooltip,
-    child: Row(
-      children: <Widget>[
-        Expanded(child: Text(label, style: AppTextStyles.bodyBold)),
-        Text(
-          '$points / 25',
-          style: TextStyle(
-            fontSize: AppTextStyle.sizeSm,
-            fontWeight: FontWeight.w600,
-            color: _scoreColor(points * 4),
-          ),
+  Widget build(BuildContext context) => Row(
+    children: <Widget>[
+      Text(label, style: AppTextStyles.bodyBold),
+      const Gap(4),
+      AppTooltipIcon(tooltip),
+      const Spacer(),
+      Text(
+        '$points / 25',
+        style: TextStyle(
+          fontSize: AppTextStyle.sizeSm,
+          fontWeight: FontWeight.w600,
+          color: _scoreColor(points * 4),
         ),
-      ],
-    ),
+      ),
+    ],
   );
 }
 
@@ -1079,9 +1079,18 @@ class _FiScoreCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          const Text(
-                            'Independência Financeira',
-                            style: AppTextStyles.sectionTitle,
+                          const Row(
+                            children: <Widget>[
+                              Text(
+                                'Independência Financeira',
+                                style: AppTextStyles.sectionTitle,
+                              ),
+                              Gap(6),
+                              AppTooltipIcon(
+                                'Renda passiva ÷ despesas mensais × 100. '
+                                '100% significa que sua renda passiva cobre todas as despesas.',
+                              ),
+                            ],
                           ),
                           const Gap(2),
                           Text(
