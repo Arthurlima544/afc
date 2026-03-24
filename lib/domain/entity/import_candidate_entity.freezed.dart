@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ImportCandidateEntity {
 
- String get title; double get amount; DateTime get date; String get typeUuid; String? get categoryUUid; ImportStatus get status; bool get isDuplicate;
+ String get title; double get amount; DateTime get date; String get typeUuid; String? get categoryUUid; ImportStatus get status; bool get isDuplicate; double get categoryConfidence;
 /// Create a copy of ImportCandidateEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $ImportCandidateEntityCopyWith<ImportCandidateEntity> get copyWith => _$ImportCa
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ImportCandidateEntity&&(identical(other.title, title) || other.title == title)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.date, date) || other.date == date)&&(identical(other.typeUuid, typeUuid) || other.typeUuid == typeUuid)&&(identical(other.categoryUUid, categoryUUid) || other.categoryUUid == categoryUUid)&&(identical(other.status, status) || other.status == status)&&(identical(other.isDuplicate, isDuplicate) || other.isDuplicate == isDuplicate));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ImportCandidateEntity&&(identical(other.title, title) || other.title == title)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.date, date) || other.date == date)&&(identical(other.typeUuid, typeUuid) || other.typeUuid == typeUuid)&&(identical(other.categoryUUid, categoryUUid) || other.categoryUUid == categoryUUid)&&(identical(other.status, status) || other.status == status)&&(identical(other.isDuplicate, isDuplicate) || other.isDuplicate == isDuplicate)&&(identical(other.categoryConfidence, categoryConfidence) || other.categoryConfidence == categoryConfidence));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,title,amount,date,typeUuid,categoryUUid,status,isDuplicate);
+int get hashCode => Object.hash(runtimeType,title,amount,date,typeUuid,categoryUUid,status,isDuplicate,categoryConfidence);
 
 @override
 String toString() {
-  return 'ImportCandidateEntity(title: $title, amount: $amount, date: $date, typeUuid: $typeUuid, categoryUUid: $categoryUUid, status: $status, isDuplicate: $isDuplicate)';
+  return 'ImportCandidateEntity(title: $title, amount: $amount, date: $date, typeUuid: $typeUuid, categoryUUid: $categoryUUid, status: $status, isDuplicate: $isDuplicate, categoryConfidence: $categoryConfidence)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $ImportCandidateEntityCopyWith<$Res>  {
   factory $ImportCandidateEntityCopyWith(ImportCandidateEntity value, $Res Function(ImportCandidateEntity) _then) = _$ImportCandidateEntityCopyWithImpl;
 @useResult
 $Res call({
- String title, double amount, DateTime date, String typeUuid, String? categoryUUid, ImportStatus status, bool isDuplicate
+ String title, double amount, DateTime date, String typeUuid, String? categoryUUid, ImportStatus status, bool isDuplicate, double categoryConfidence
 });
 
 
@@ -62,7 +62,7 @@ class _$ImportCandidateEntityCopyWithImpl<$Res>
 
 /// Create a copy of ImportCandidateEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? title = null,Object? amount = null,Object? date = null,Object? typeUuid = null,Object? categoryUUid = freezed,Object? status = null,Object? isDuplicate = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? title = null,Object? amount = null,Object? date = null,Object? typeUuid = null,Object? categoryUUid = freezed,Object? status = null,Object? isDuplicate = null,Object? categoryConfidence = null,}) {
   return _then(_self.copyWith(
 title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
@@ -71,7 +71,8 @@ as DateTime,typeUuid: null == typeUuid ? _self.typeUuid : typeUuid // ignore: ca
 as String,categoryUUid: freezed == categoryUUid ? _self.categoryUUid : categoryUUid // ignore: cast_nullable_to_non_nullable
 as String?,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as ImportStatus,isDuplicate: null == isDuplicate ? _self.isDuplicate : isDuplicate // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,categoryConfidence: null == categoryConfidence ? _self.categoryConfidence : categoryConfidence // ignore: cast_nullable_to_non_nullable
+as double,
   ));
 }
 
@@ -153,10 +154,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String title,  double amount,  DateTime date,  String typeUuid,  String? categoryUUid,  ImportStatus status,  bool isDuplicate)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String title,  double amount,  DateTime date,  String typeUuid,  String? categoryUUid,  ImportStatus status,  bool isDuplicate,  double categoryConfidence)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ImportCandidateEntity() when $default != null:
-return $default(_that.title,_that.amount,_that.date,_that.typeUuid,_that.categoryUUid,_that.status,_that.isDuplicate);case _:
+return $default(_that.title,_that.amount,_that.date,_that.typeUuid,_that.categoryUUid,_that.status,_that.isDuplicate,_that.categoryConfidence);case _:
   return orElse();
 
 }
@@ -174,10 +175,10 @@ return $default(_that.title,_that.amount,_that.date,_that.typeUuid,_that.categor
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String title,  double amount,  DateTime date,  String typeUuid,  String? categoryUUid,  ImportStatus status,  bool isDuplicate)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String title,  double amount,  DateTime date,  String typeUuid,  String? categoryUUid,  ImportStatus status,  bool isDuplicate,  double categoryConfidence)  $default,) {final _that = this;
 switch (_that) {
 case _ImportCandidateEntity():
-return $default(_that.title,_that.amount,_that.date,_that.typeUuid,_that.categoryUUid,_that.status,_that.isDuplicate);}
+return $default(_that.title,_that.amount,_that.date,_that.typeUuid,_that.categoryUUid,_that.status,_that.isDuplicate,_that.categoryConfidence);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -191,10 +192,10 @@ return $default(_that.title,_that.amount,_that.date,_that.typeUuid,_that.categor
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String title,  double amount,  DateTime date,  String typeUuid,  String? categoryUUid,  ImportStatus status,  bool isDuplicate)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String title,  double amount,  DateTime date,  String typeUuid,  String? categoryUUid,  ImportStatus status,  bool isDuplicate,  double categoryConfidence)?  $default,) {final _that = this;
 switch (_that) {
 case _ImportCandidateEntity() when $default != null:
-return $default(_that.title,_that.amount,_that.date,_that.typeUuid,_that.categoryUUid,_that.status,_that.isDuplicate);case _:
+return $default(_that.title,_that.amount,_that.date,_that.typeUuid,_that.categoryUUid,_that.status,_that.isDuplicate,_that.categoryConfidence);case _:
   return null;
 
 }
@@ -206,7 +207,7 @@ return $default(_that.title,_that.amount,_that.date,_that.typeUuid,_that.categor
 
 
 class _ImportCandidateEntity implements ImportCandidateEntity {
-  const _ImportCandidateEntity({required this.title, required this.amount, required this.date, required this.typeUuid, this.categoryUUid, this.status = ImportStatus.pending, this.isDuplicate = false});
+  const _ImportCandidateEntity({required this.title, required this.amount, required this.date, required this.typeUuid, this.categoryUUid, this.status = ImportStatus.pending, this.isDuplicate = false, this.categoryConfidence = 0.0});
   
 
 @override final  String title;
@@ -216,6 +217,7 @@ class _ImportCandidateEntity implements ImportCandidateEntity {
 @override final  String? categoryUUid;
 @override@JsonKey() final  ImportStatus status;
 @override@JsonKey() final  bool isDuplicate;
+@override@JsonKey() final  double categoryConfidence;
 
 /// Create a copy of ImportCandidateEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -227,16 +229,16 @@ _$ImportCandidateEntityCopyWith<_ImportCandidateEntity> get copyWith => __$Impor
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ImportCandidateEntity&&(identical(other.title, title) || other.title == title)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.date, date) || other.date == date)&&(identical(other.typeUuid, typeUuid) || other.typeUuid == typeUuid)&&(identical(other.categoryUUid, categoryUUid) || other.categoryUUid == categoryUUid)&&(identical(other.status, status) || other.status == status)&&(identical(other.isDuplicate, isDuplicate) || other.isDuplicate == isDuplicate));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ImportCandidateEntity&&(identical(other.title, title) || other.title == title)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.date, date) || other.date == date)&&(identical(other.typeUuid, typeUuid) || other.typeUuid == typeUuid)&&(identical(other.categoryUUid, categoryUUid) || other.categoryUUid == categoryUUid)&&(identical(other.status, status) || other.status == status)&&(identical(other.isDuplicate, isDuplicate) || other.isDuplicate == isDuplicate)&&(identical(other.categoryConfidence, categoryConfidence) || other.categoryConfidence == categoryConfidence));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,title,amount,date,typeUuid,categoryUUid,status,isDuplicate);
+int get hashCode => Object.hash(runtimeType,title,amount,date,typeUuid,categoryUUid,status,isDuplicate,categoryConfidence);
 
 @override
 String toString() {
-  return 'ImportCandidateEntity(title: $title, amount: $amount, date: $date, typeUuid: $typeUuid, categoryUUid: $categoryUUid, status: $status, isDuplicate: $isDuplicate)';
+  return 'ImportCandidateEntity(title: $title, amount: $amount, date: $date, typeUuid: $typeUuid, categoryUUid: $categoryUUid, status: $status, isDuplicate: $isDuplicate, categoryConfidence: $categoryConfidence)';
 }
 
 
@@ -247,7 +249,7 @@ abstract mixin class _$ImportCandidateEntityCopyWith<$Res> implements $ImportCan
   factory _$ImportCandidateEntityCopyWith(_ImportCandidateEntity value, $Res Function(_ImportCandidateEntity) _then) = __$ImportCandidateEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String title, double amount, DateTime date, String typeUuid, String? categoryUUid, ImportStatus status, bool isDuplicate
+ String title, double amount, DateTime date, String typeUuid, String? categoryUUid, ImportStatus status, bool isDuplicate, double categoryConfidence
 });
 
 
@@ -264,7 +266,7 @@ class __$ImportCandidateEntityCopyWithImpl<$Res>
 
 /// Create a copy of ImportCandidateEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? title = null,Object? amount = null,Object? date = null,Object? typeUuid = null,Object? categoryUUid = freezed,Object? status = null,Object? isDuplicate = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? title = null,Object? amount = null,Object? date = null,Object? typeUuid = null,Object? categoryUUid = freezed,Object? status = null,Object? isDuplicate = null,Object? categoryConfidence = null,}) {
   return _then(_ImportCandidateEntity(
 title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
@@ -273,7 +275,8 @@ as DateTime,typeUuid: null == typeUuid ? _self.typeUuid : typeUuid // ignore: ca
 as String,categoryUUid: freezed == categoryUUid ? _self.categoryUUid : categoryUUid // ignore: cast_nullable_to_non_nullable
 as String?,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as ImportStatus,isDuplicate: null == isDuplicate ? _self.isDuplicate : isDuplicate // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,categoryConfidence: null == categoryConfidence ? _self.categoryConfidence : categoryConfidence // ignore: cast_nullable_to_non_nullable
+as double,
   ));
 }
 

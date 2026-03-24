@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../config/theme/app_icons.dart';
+import '../../domain/usecase/category_seeder.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/recurring/recurring_cubit.dart';
 import 'quick_add_sheet.dart';
@@ -50,6 +51,7 @@ class _ScaffoldShellState extends State<ScaffoldShell>
           '';
       if (userId.isNotEmpty) {
         context.read<RecurringCubit>().checkAndMaterialise(userId);
+        unawaited(CategorySeeder().seedIfNeeded(userId));
       }
     });
   }

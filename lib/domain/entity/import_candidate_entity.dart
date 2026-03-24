@@ -14,5 +14,6 @@ sealed class ImportCandidateEntity with _$ImportCandidateEntity {
     String? categoryUUid,
     @Default(ImportStatus.pending) ImportStatus status,
     @Default(false) bool isDuplicate,
+    @Default(0.0) double categoryConfidence,
   }) = _ImportCandidateEntity;
 }
