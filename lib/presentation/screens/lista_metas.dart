@@ -42,19 +42,36 @@ class ListaMetas extends StatelessWidget {
                   child: Text('Metas', style: AppTextStyles.heading),
                 ),
                 AppIconButton(
-                  onPressed: () => showFormSheet<void>(
-                    context,
-                    builder: (BuildContext ctx) => BlocProvider<GoalCubit>(
-                      create: (_) => GoalCubit(),
-                      child: const CadastrarMeta(),
-                    ),
-                  ),
+                  onPressed: () async {
+                    final GoalCubit goals = context.read<GoalCubit>();
+                    final String userId =
+                        context.read<AuthBloc>().state.whenOrNull(
+                          signedIn: (ClerkAuthState s) => s.user?.id,
+                        ) ??
+                        '';
+                    await showFormSheet<void>(
+                      context,
+                      builder: (BuildContext ctx) => BlocProvider<GoalCubit>(
+                        create: (_) => GoalCubit(),
+                        child: const CadastrarMeta(),
+                      ),
+                    );
+                    unawaited(goals.loadGoals(userId));
+                  },
                   icon: const Icon(Icons.add),
                 ),
               ],
             ),
             const Gap(16),
-            BlocBuilder<GoalCubit, GoalState>(
+            BlocConsumer<GoalCubit, GoalState>(
+              listener: (BuildContext context, GoalState state) {
+                state.whenOrNull(
+                  error: (String msg) =>
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(msg)),
+                      ),
+                );
+              },
               builder: (BuildContext context, GoalState state) => state.when(
                 initial: () => const SizedBox(),
                 loading: () => const SkeletonList(),
@@ -69,7 +86,7 @@ class ListaMetas extends StatelessWidget {
                     context.read<GoalCubit>().loadGoals(userId);
                   },
                 ),
-                success: (_) => const SizedBox(),
+                success: (_) => const SkeletonList(),
                 listed: (List<GoalEntity> goals) => goals.isEmpty
                     ? const EmptyState(
                         message: 'Nenhuma meta ainda.\nToque em + para criar.',
@@ -142,17 +159,35 @@ class _MetaItem extends StatelessWidget {
               const Gap(12),
               Expanded(child: Text(goal.name, style: AppTextStyles.title)),
               AppIconButton(
-                onPressed: () => showFormSheet<void>(
-                  context,
-                  builder: (BuildContext ctx) => BlocProvider<GoalCubit>(
-                    create: (_) => GoalCubit(),
-                    child: CadastrarMeta(initialGoal: goal),
-                  ),
-                ),
+                onPressed: () async {
+                  final GoalCubit goals = context.read<GoalCubit>();
+                  final String userId =
+                      context.read<AuthBloc>().state.whenOrNull(
+                        signedIn: (ClerkAuthState s) => s.user?.id,
+                      ) ??
+                      '';
+                  await showFormSheet<void>(
+                    context,
+                    builder: (BuildContext ctx) => BlocProvider<GoalCubit>(
+                      create: (_) => GoalCubit(),
+                      child: CadastrarMeta(initialGoal: goal),
+                    ),
+                  );
+                  unawaited(goals.loadGoals(userId));
+                },
                 icon: const Icon(Icons.edit, size: 18),
               ),
               AppIconButton(
-                onPressed: () => context.read<GoalCubit>().delete(goal.uuid),
+                onPressed: () async {
+                  final GoalCubit goals = context.read<GoalCubit>();
+                  final String userId =
+                      context.read<AuthBloc>().state.whenOrNull(
+                        signedIn: (ClerkAuthState s) => s.user?.id,
+                      ) ??
+                      '';
+                  await goals.delete(goal.uuid);
+                  unawaited(goals.loadGoals(userId));
+                },
                 icon: const Icon(Icons.delete, size: 18),
               ),
             ],
@@ -199,6 +234,12 @@ class _MetaItem extends StatelessWidget {
   }
 
   Future<void> _showContributeDialog(BuildContext context) async {
+    final GoalCubit goals = context.read<GoalCubit>();
+    final String userId =
+        context.read<AuthBloc>().state.whenOrNull(
+          signedIn: (ClerkAuthState s) => s.user?.id,
+        ) ??
+        '';
     final String? result = await showInputDialog(
       context: context,
       title: 'Adicionar contribuição',
@@ -210,8 +251,8 @@ class _MetaItem extends StatelessWidget {
     }
     final double? amount = double.tryParse(result.replaceAll(',', '.'));
     if (amount != null && amount > 0) {
-      // ignore: use_build_context_synchronously
-      await context.read<GoalCubit>().contribute(goal.uuid, amount);
+      await goals.contribute(goal.uuid, amount);
+      unawaited(goals.loadGoals(userId));
     }
   }
 }

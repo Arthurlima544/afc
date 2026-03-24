@@ -107,7 +107,13 @@ class _ClerkAuthObserver extends StatelessWidget {
       return child;
     },
     signedOutBuilder: (BuildContext context, ClerkAuthState authState) {
-      context.read<AuthBloc>().add(const AuthEvent.signOut());
+      // Only dispatch signOut once Clerk has finished initialising.
+      // isNotAvailable is true while the env/client are still loading,
+      // so dispatching signOut in that window causes a login-screen flicker
+      // for users who are already authenticated.
+      if (!authState.isNotAvailable) {
+        context.read<AuthBloc>().add(const AuthEvent.signOut());
+      }
       return child;
     },
   );

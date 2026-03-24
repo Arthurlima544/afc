@@ -322,7 +322,13 @@ class _CadastrarContaState extends State<CadastrarConta> {
           const Gap(24),
           BlocConsumer<BillCubit, BillState>(
             listener: (BuildContext context, BillState state) {
-              state.whenOrNull(success: (_) => context.pop());
+              state.whenOrNull(
+                success: (_) => context.pop(),
+                error: (String msg) =>
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(msg)),
+                    ),
+              );
             },
             builder: (BuildContext context, BillState state) {
               final bool isLoading = state == const BillState.loading();

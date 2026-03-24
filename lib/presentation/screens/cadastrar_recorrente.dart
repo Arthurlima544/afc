@@ -118,7 +118,16 @@ class _CadastrarRecorrenteState extends State<CadastrarRecorrente> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(leading: BackButton(onPressed: () => context.pop())),
-    body: SafeArea(
+    body: BlocListener<RecurringCubit, RecurringState>(
+      listener: (BuildContext context, RecurringState state) {
+        state.whenOrNull(
+          success: (_) => context.pop(),
+          error: (String msg) => ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(msg)),
+          ),
+        );
+      },
+      child: SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: BlocBuilder<TransactionCubit, TransactionState>(
@@ -344,6 +353,7 @@ class _CadastrarRecorrenteState extends State<CadastrarRecorrente> {
           ),
         ),
       ),
+    ),
     ),
   ),
   );

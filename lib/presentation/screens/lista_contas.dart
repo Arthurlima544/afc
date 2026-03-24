@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -34,30 +36,47 @@ class ListaContas extends StatelessWidget {
                   child: Text('Contas a Pagar', style: AppTextStyles.heading),
                 ),
                 AppIconButton(
-                  onPressed: () => showFormSheet<void>(
-                    context,
-                    builder: (BuildContext ctx) => MultiBlocProvider(
-                      providers: <BlocProvider<dynamic>>[
-                        BlocProvider<BillCubit>(create: (_) => BillCubit()),
-                        BlocProvider<CategoryCubit>(
-                          create: (_) => CategoryCubit()..loadCategories(),
-                        ),
-                      ],
-                      child: const CadastrarConta(),
-                    ),
-                  ),
+                  onPressed: () async {
+                    final BillCubit bills = context.read<BillCubit>();
+                    final String userId =
+                        context.read<AuthBloc>().state.whenOrNull(
+                          signedIn: (ClerkAuthState s) => s.user?.id,
+                        ) ??
+                        '';
+                    await showFormSheet<void>(
+                      context,
+                      builder: (BuildContext ctx) => MultiBlocProvider(
+                        providers: <BlocProvider<dynamic>>[
+                          BlocProvider<BillCubit>(create: (_) => BillCubit()),
+                          BlocProvider<CategoryCubit>(
+                            create: (_) => CategoryCubit()..loadCategories(),
+                          ),
+                        ],
+                        child: const CadastrarConta(),
+                      ),
+                    );
+                    unawaited(bills.loadBills(userId));
+                  },
                   icon: const Icon(Icons.add),
                 ),
               ],
             ),
           const Gap(16),
-          BlocBuilder<BillCubit, BillState>(
+          BlocConsumer<BillCubit, BillState>(
+            listener: (BuildContext context, BillState state) {
+              state.whenOrNull(
+                error: (String msg) =>
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(msg)),
+                    ),
+              );
+            },
             builder: (BuildContext context, BillState state) => state.when(
               initial: () => const SizedBox(),
               loading: () => const SkeletonList(),
               error: (String msg) =>
                   EmptyState(message: msg, icon: Icons.error_outline),
-              success: (_) => const SizedBox(),
+              success: (_) => const SkeletonList(),
               listed: (List<BillEntity> bills) => bills.isEmpty
                   ? const EmptyState(
                       message:
@@ -186,18 +205,27 @@ class _BillItem extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: <Widget>[
                 AppIconButton(
-                  onPressed: () => showFormSheet<void>(
-                    context,
-                    builder: (BuildContext ctx) => MultiBlocProvider(
-                      providers: <BlocProvider<dynamic>>[
-                        BlocProvider<BillCubit>(create: (_) => BillCubit()),
-                        BlocProvider<CategoryCubit>(
-                          create: (_) => CategoryCubit()..loadCategories(),
-                        ),
-                      ],
-                      child: CadastrarConta(initialBill: bill),
-                    ),
-                  ),
+                  onPressed: () async {
+                    final BillCubit bills = context.read<BillCubit>();
+                    final String userId =
+                        context.read<AuthBloc>().state.whenOrNull(
+                          signedIn: (ClerkAuthState s) => s.user?.id,
+                        ) ??
+                        '';
+                    await showFormSheet<void>(
+                      context,
+                      builder: (BuildContext ctx) => MultiBlocProvider(
+                        providers: <BlocProvider<dynamic>>[
+                          BlocProvider<BillCubit>(create: (_) => BillCubit()),
+                          BlocProvider<CategoryCubit>(
+                            create: (_) => CategoryCubit()..loadCategories(),
+                          ),
+                        ],
+                        child: CadastrarConta(initialBill: bill),
+                      ),
+                    );
+                    unawaited(bills.loadBills(userId));
+                  },
                   icon: const Icon(Icons.edit, size: 18),
                 ),
                 const Gap(8),
