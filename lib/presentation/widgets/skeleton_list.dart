@@ -3,29 +3,93 @@ import 'package:flutter/material.dart';
 import 'design_system.dart';
 
 class SkeletonList extends StatelessWidget {
-  const SkeletonList({this.itemCount = 4, super.key});
+  const SkeletonList({this.itemCount = 4, this.itemHeight, super.key});
 
   final int itemCount;
+
+  /// Fixed card height in logical pixels.
+  ///
+  /// When provided the card occupies exactly this height, filled with
+  /// proportionally-sized shimmer rows so it matches the real item.
+  /// When null a compact 3-row layout is used (suitable for simple cards).
+  final double? itemHeight;
 
   @override
   Widget build(BuildContext context) => Column(
     children: <Widget>[
       for (int i = 0; i < itemCount; i++)
-        const Padding(
-          padding: EdgeInsets.only(bottom: 12),
-          child: AppCard(
-            padding: EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                _SkeletonBox(width: 160, height: 14),
-                Gap(8),
-                _SkeletonBox(width: 100, height: 12),
-              ],
-            ),
-          ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: itemHeight != null
+              ? _TallSkeletonCard(height: itemHeight!)
+              : const _CompactSkeletonCard(),
         ),
     ],
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Compact card — 3-row layout matching simple list items (e.g. transactions)
+// ---------------------------------------------------------------------------
+
+class _CompactSkeletonCard extends StatelessWidget {
+  const _CompactSkeletonCard();
+
+  @override
+  Widget build(BuildContext context) => const AppCard(
+    padding: EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        _SkeletonBox(width: 180, height: 14),
+        Gap(8),
+        _SkeletonBox(width: 120, height: 12),
+        Gap(6),
+        _SkeletonBox(width: 80, height: 12),
+      ],
+    ),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tall card — fixed height with proportional shimmer rows
+// ---------------------------------------------------------------------------
+
+class _TallSkeletonCard extends StatelessWidget {
+  const _TallSkeletonCard({required this.height});
+
+  final double height;
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.all(16),
+    child: SizedBox(
+      height: height,
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          // Title row
+          Row(
+            children: <Widget>[
+              _SkeletonBox(width: 28, height: 28),
+              Gap(12),
+              Expanded(child: _SkeletonBox(width: double.infinity, height: 16)),
+            ],
+          ),
+          Gap(12),
+          // Secondary line
+          _SkeletonBox(width: 200, height: 13),
+          Gap(8),
+          // Tertiary line
+          _SkeletonBox(width: 140, height: 13),
+          Spacer(),
+          // Bottom bar (simulates progress bar or action button)
+          _SkeletonBox(width: double.infinity, height: 8),
+          Gap(10),
+          _SkeletonBox(width: 100, height: 34),
+        ],
+      ),
+    ),
   );
 }
 

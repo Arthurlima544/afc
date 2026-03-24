@@ -83,7 +83,12 @@ class _CadastrarMetaState extends State<CadastrarMeta> {
     appBar: AppBar(leading: BackButton(onPressed: () => context.pop())),
     body: BlocListener<GoalCubit, GoalState>(
     listener: (BuildContext context, GoalState state) {
-      state.whenOrNull(success: (_) => context.pop());
+      state.whenOrNull(
+        success: (_) => context.pop(),
+        error: (String msg) => ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg)),
+        ),
+      );
     },
     child: SafeArea(
       child: SingleChildScrollView(
