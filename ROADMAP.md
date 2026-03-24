@@ -648,40 +648,87 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
-## Sprint 13 — Bug Fixes & State Stability (US-70–76)
+## Sprint 13 — Bug Fixes & State Management (US-70–76) ✅
 
-> **Goal**: Fix regressions and state bugs accumulated during Sprint 12: snackbar feedback, goal/bill reload after mutations, form sheets not closing on success, login flicker, and skeleton sizing.
+> **Goal**: Eliminate the most impactful bugs that make the app feel unreliable. Every write operation must give clear feedback, every list must stay live, and no screen should silently fail.
 
-### US-70 · Snackbar error feedback on cubit failures ✅
+### US-70 · Success/error feedback on all write operations ✅
+**As a** user, **I want** to see a confirmation or error message after every create, update, or delete action,
+**so that** I know whether my action was recorded or whether I need to retry.
+
 - [x] `GoalCubit`, `BillCubit`, `RecurringCubit` listeners show `SnackBar` on error state
-
-### US-71 · Goal list reloads after contribute/delete ✅
-- [x] `GoalCubit.contribute` and `delete` call `loadGoals` after Firestore write
-
-### US-72 · Form sheet closes on success (CadastrarMeta, CadastrarConta) ✅
-- [x] `BlocConsumer` listener calls `context.pop()` on `success` state in goal and bill forms
-
-### US-73 · Form sheet closes on success (CadastrarRecorrente, CadastrarTransacao, CadastrarLimites, CadastrarCategoria) ✅
-- [x] All remaining form screens updated to use `BlocConsumer` with `success` → `context.pop()`
-
-### US-74 · Bill list reloads after delete ✅
-- [x] `BillCubit.delete` calls `loadBills` after Firestore write
-
-### US-75 · Login screen no longer flickers on startup ✅
-- [x] `_ClerkAuthObserver` guards `signOut` dispatch behind `!authState.isNotAvailable`
-
-### US-76 · Dashboard auto-refreshes on auth state change ✅
-- [x] `ScaffoldShell.initState` reloads cubits when `AuthBloc` emits `signedIn`
+- [x] Unit tests: verify success and error snackbar triggers on state transitions
 
 ---
 
-## Sprint 14 — Privacy Mode & Financial Tooltips (US-77–78)
+### US-71 · Fix goal card disappearing after contribution ✅
+**As a** user, **I want** the goal card to remain visible immediately after I add a contribution,
+**so that** I can see the updated progress without restarting the app.
 
-> **Goal**: Add a privacy toggle to hide sensitive monetary values on the dashboard, and surface educational tooltips on financial calculators so users understand the numbers they're looking at.
+- [x] Root cause: after `contribute`/`edit`/`delete`, the list cubit was never reloaded
+- [x] Fix: capture `GoalCubit` and `userId` refs before the async gap, then call `loadGoals(userId)` after each mutation
+- [x] `success` state in list screen now shows `SkeletonList` (transient) while reload is in flight
+- [x] Regression tests in `sprint13_regression_test.dart`
 
-### US-77 · Privacy mode toggle ✅
-**As a** user, **I want** to hide sensitive monetary values with a single tap,
-**so that** I can use the app in public without exposing my finances.
+---
+
+### US-72 · Fix recurring transactions not being saved ✅
+**As a** user, **I want** recurring rules I create to be persisted so they materialise on schedule,
+**so that** my automatic expenses are actually logged.
+
+- [x] Root cause: `CadastrarRecorrente` had no `BlocListener` on `RecurringCubit` — the form never closed after save, making it look like nothing was saved
+- [x] Fix: added `BlocListener<RecurringCubit, RecurringState>` wrapping the form body; pops on `success`
+- [x] `RecurringCubit.create` already wrote to Firestore correctly — the issue was purely UI (form not closing)
+
+---
+
+### US-73 · Fix bottom sheets not closing after save ✅
+**As a** user, **I want** form bottom sheets to dismiss automatically when I tap Save,
+**so that** I don't have to manually swipe them away after a successful action.
+
+- [x] `CadastrarRecorrente` was the only form missing a `BlocListener` — fixed by adding `BlocListener<RecurringCubit, RecurringState>` with `success: (_) => context.pop()`
+- [x] All other forms (`CadastrarMeta`, `CadastrarConta`, etc.) already had close-on-success listeners
+
+---
+
+### US-74 · Fix contas (bills) list not refreshing after save ✅
+**As a** user, **I want** the bills list to update immediately when I add or edit a bill,
+**so that** I don't have to close and reopen the screen to see changes.
+
+- [x] Fix: capture `BillCubit` and `userId` refs before `await showFormSheet`; call `loadBills(userId)` after sheet closes
+- [x] Applied to both the "add" button in `ListaContas` and the "edit" button in `_BillItem`
+- [x] `BlocBuilder` → `BlocConsumer` to show error snackbar on `error` state
+- [x] Regression tests in `sprint13_regression_test.dart`
+
+---
+
+### US-75 · Fix login flicker (Clerk UI shown briefly when already authenticated) ✅
+**As a** user, **I want** the app to go directly to the home screen when I'm already logged in,
+**so that** I never see the Clerk login form flash on screen unexpectedly.
+
+- [x] Root cause: `_ClerkAuthObserver.signedOutBuilder` dispatched `AuthEvent.signOut` while Clerk was still initialising (before env/client were loaded)
+- [x] Fix: guard dispatch with `if (!authState.isNotAvailable)` — only signOut when Clerk has fully resolved its state
+
+---
+
+### US-76 · Auto-refresh all lists after any mutation ✅
+**As a** user, **I want** every list screen to reflect changes immediately after a create, update, or delete,
+**so that** I never need to pull-to-refresh or navigate away to see updated data.
+
+- [x] Goal list: reloads after contribute, edit, delete (US-71)
+- [x] Bill list: reloads after add and edit sheet closes (US-74)
+- [x] Transaction list and Recurring list already use `.snapshots()` streams — self-updating ✅
+- [x] All regression tests added to `sprint13_regression_test.dart`
+
+---
+
+## Sprint 14 — Privacy & Discoverability (US-77–78) ✅
+
+> **Goal**: Give users control over what they expose in public, and make complex financial concepts approachable for users who aren't finance experts.
+
+### US-77 · Privacy mode — hide sensitive values ✅
+**As a** user, **I want** to tap an eye icon to instantly hide all monetary values on screen,
+**so that** I can use the app in public without showing my financial data to bystanders.
 
 - [x] `PrivacyCubit` — simple `bool` toggle (hidden/visible), resets on app restart
 - [x] `PrivacyText` widget — wraps any monetary string; shows `"•••••"` with `AnimatedSwitcher` when hidden
@@ -689,9 +736,11 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 - [x] `PrivacyCubit` injected at root in `MyApp` `MultiBlocProvider`
 - [x] `PrivacyText` applied to: balance, income, expenses cards (`HomeCard`), recent transactions (`LastTransactions`), month limits (`MonthLimit`), stats widget income/expenses, portfolio value (`_NetWorthCard`), FI Score passive income/expenses caption
 
-### US-78 · Financial concept tooltips on calculators ✅
-**As a** user, **I want** to see a brief explanation of unfamiliar financial terms,
-**so that** I can understand what each number means without leaving the app.
+---
+
+### US-78 · Tooltips for complex financial concepts ✅
+**As a** user, **I want** a help icon next to terms I don't understand (FIRE, FI Score, taxa de poupança),
+**so that** I can learn what they mean without leaving the app.
 
 - [x] `AppTooltipIcon` widget — tappable ⓘ icon using `Tooltip` with `triggerMode: tap` and 4s display duration
 - [x] Exported via `design_system.dart` barrel
@@ -703,6 +752,174 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
+## Sprint 15 — Smart Data & Defaults (US-79–81)
+
+> **Goal**: Reduce friction for new users and improve data quality by providing sensible defaults and smarter automatic categorisation.
+
+### US-79 · Default categories seeded on first login ⏳
+**As a** new user, **I want** to see a useful set of categories already available when I open the app,
+**so that** I can start logging transactions immediately without configuring anything.
+
+- [ ] On first successful sign-in, check Firestore `category` collection; if empty, write a default set:
+  Alimentação, Transporte, Moradia, Saúde, Lazer, Educação, Vestuário, Assinaturas, Restaurantes, Viagem, Investimentos, Salário, Freelance, Outros
+- [ ] Each default category has a pre-assigned `iconType` matching existing icon constants
+- [ ] Seeding is idempotent: guarded by a `user_meta/seeded_categories` flag in Firestore so it runs only once per account
+- [ ] Unit test: seeding logic writes exactly N documents when collection is empty, writes 0 when flag already set
+
+---
+
+### US-80 · Transaction grouping on list screens ⏳
+**As a** user, **I want** my transaction list to group similar entries (e.g. all PIX transfers, all supermarket purchases),
+**so that** I can quickly see patterns and totals for each type of spending.
+
+- [ ] `TransactionGroup` — `label: String`, `transactions: List<TransactionEntity>`, `total: double`
+- [ ] `TransactionGrouper` use case — rule-based pattern matching on `title` field:
+  - `PIX` → "Transferências PIX"
+  - `TED` / `DOC` → "Transferências bancárias"
+  - `UBER` / `99` / `CABIFY` → "Transporte por app"
+  - `IFOOD` / `RAPPI` / `DELIVERY` → "Delivery"
+  - `MERCADO` / `SUPERMERCADO` / `PÃO DE AÇÚCAR` / `CARREFOUR` → "Supermercado"
+  - `NETFLIX` / `SPOTIFY` / `AMAZON` / `APPLE` → "Assinaturas"
+  - Remaining → grouped by category name
+- [ ] Toggle in `ListaTransacoes` header: "Por data" ↔ "Por grupo"
+- [ ] Group header shows label + count + total amount for the group
+- [ ] Unit tests for `TransactionGrouper` pattern matching (≥ 10 cases)
+
+---
+
+### US-81 · Smarter CSV/OFX import auto-categorisation ⏳
+**As a** user, **I want** imported bank transactions to be automatically assigned to the right category based on their description,
+**so that** I spend less time manually re-categorising after an import.
+
+- [ ] Expand `categorisation_rule` keyword bank with 50+ common Brazilian merchant patterns (Nubank, Bradesco, Itaú descriptions)
+- [ ] Add confidence score to `ImportCandidateEntity`: `categoryConfidence: double` (0–1)
+- [ ] In review screen, show confidence badge: green ≥ 0.8, amber 0.5–0.8, red < 0.5
+- [ ] Low-confidence rows are pre-selected for manual review; high-confidence are pre-checked for bulk confirm
+- [ ] User corrections always write a new `categorisation_rule` (learning loop)
+- [ ] Unit tests: keyword matcher coverage for top 20 patterns
+
+---
+
+## Sprint 16 — Offline-First Architecture (US-82–83)
+
+> **Goal**: Make the app fully usable without internet and keep users clearly informed when a feature needs connectivity, rather than silently failing or showing a spinner forever.
+
+### US-82 · Offline indicator and local operation queue ⏳
+**As a** user, **I want** to create and modify data even when I have no internet connection,
+**so that** I can log expenses on the go and trust they'll sync when I'm back online.
+
+- [ ] Add `connectivity_plus` package; `ConnectivityService` singleton (via GetIt) exposes `Stream<bool> isOnline`
+- [ ] `OfflineBanner` widget — amber sticky banner "Sem conexão — dados serão sincronizados quando a internet voltar"; shown at top of `ScaffoldShell` when offline
+- [ ] `PendingOperationEntity` — `uuid`, `userId`, `type` (create/update/delete), `collection`, `payload: Map`, `createdAt`, `retries: int`; stored in `SharedPreferences` (local, not Firestore)
+- [ ] `SyncQueue` service — `enqueue(op)`, `flush()` (replays ops against Firestore when online), `clear()`
+- [ ] All cubit write operations: when offline → enqueue op + optimistically update local state; when online → write directly to Firestore
+- [ ] Features that are **read-only and require internet** (BrapiService quotes, Watchlist live prices, Open Finance sync): show a `_OfflineUnavailableCard` placeholder instead of a loading spinner
+- [ ] `ConnectivityService` triggers `SyncQueue.flush()` automatically when transitioning offline → online
+- [ ] Unit tests: enqueue, flush (applies ops in order), idempotency guard (skip if Firestore doc already up-to-date)
+
+---
+
+### US-83 · Pending sync notifications page ⏳
+**As a** user, **I want** to see a list of operations waiting to sync and be notified when they complete,
+**so that** I always know the state of my data and can trust the app.
+
+- [ ] `flutter_local_notifications` package; `LocalNotificationService` initialised in both entry points
+- [ ] When `SyncQueue` has ≥ 1 pending op: schedule a persistent local notification "X operações aguardando sincronização — toque para ver"
+- [ ] When `SyncQueue.flush()` completes successfully: show "Dados sincronizados com sucesso" notification + clear the persistent one
+- [ ] When flush fails after 3 retries: show "Falha ao sincronizar X operações — verifique sua conexão" notification
+- [ ] `PendingOpsScreen` (`/pendencias`) — list of queued operations grouped by collection (e.g. "3 transações", "1 meta"), each showing description + timestamp + retry button
+- [ ] Badge on Settings icon when pending ops > 0
+- [ ] Unit tests: notification scheduling on enqueue, clear on flush success, retry increment on flush failure
+
+---
+
+## Sprint 17 — Benefits & Sub-accounts (US-84–85)
+
+> **Goal**: Support the financial reality of both CLT employees (who receive non-cash benefits like VA/VT) and PJ contractors (who manage company expenses separately from personal finances).
+
+### US-84 · Benefits wallet (CLT — VA, VT, VR) ⏳
+**As a** CLT employee, **I want** to track my Vale Alimentação, Vale Transporte, and Vale Refeição balances separately from my main account,
+**so that** I know how much benefit credit I've used and what's left this month.
+
+- [ ] `BenefitEntity` — `uuid`, `userId`, `name`, `type` (va / vt / vr / other), `monthlyCredit: double`, `balance: double`, `color: int`
+- [ ] `BenefitCubit` — CRUD + `deduct(amount)` to record a benefit expense
+- [ ] Transactions can be optionally tagged `benefitUuid` (nullable) to link to a benefit wallet
+- [ ] `BenefitWalletScreen` (`/carteiras`) — card per benefit showing balance bar, monthly credit, deductions list
+- [ ] `_BenefitsCard` on Dashboard — total benefit balance + quick deduct FAB
+- [ ] Unit tests for balance deduction and monthly reset logic
+
+---
+
+### US-85 · Company / sub-account tracking (PJ) ⏳
+**As a** PJ contractor or anyone managing multiple spending contexts, **I want** to tag expenses to different "accounts" (e.g. Pessoal, Empresa, Cartão PJ),
+**so that** I can see separate totals per context without mixing personal and business finances.
+
+- [ ] `SubAccountEntity` — `uuid`, `userId`, `name`, `type` (personal / company / benefit), `color: int`, `icon: int`
+- [ ] `TransactionEntity` extended with optional `subAccountUuid` field (nullable, backwards-compatible)
+- [ ] Sub-account selector chip row in `CadastrarTransacao` and `QuickAddSheet` (only shown when ≥ 1 sub-account exists)
+- [ ] `SubAccountsScreen` (`/sub-contas`) — list with per-account totals (income, expenses, balance); accessible from Settings
+- [ ] `SubAccountCubit` — CRUD + aggregate totals per account
+- [ ] Filter chip in `ListaTransacoes` to filter by sub-account
+- [ ] Unit tests for per-account aggregation
+
+---
+
+## Sprint 18 — Quality, Reporting & Growth (US-86–89)
+
+> **Goal**: Make the app production-ready: richer reports users actually want to export, stability monitoring via Crashlytics, and a feedback loop to drive future improvements.
+
+### US-86 · Enhanced PDF spending report ⏳
+**As a** user, **I want** my exported PDF to contain all the financial data I care about in one place,
+**so that** I can share it with an accountant or review it away from the app.
+
+- [ ] PDF cover page: period, user name, generation date, summary table (income / expenses / savings rate / balance)
+- [ ] Section 1 — Top expenses: ranked list of categories with amount + % of total + bar chart
+- [ ] Section 2 — Full transaction list: sorted by date, grouped by category, with running total per category
+- [ ] Section 3 — Goals snapshot: each goal name, target, current amount, progress %, days remaining
+- [ ] Section 4 — Month-over-month comparison table: last 3 months side-by-side (income, expenses, savings rate)
+- [ ] Section 5 — Investment summary: total invested, current value, overall gain/loss %
+- [ ] Page numbers, header with AFC logo text, footer with generation timestamp
+- [ ] Unit tests: PDF builder produces correct section count and non-zero byte output
+
+---
+
+### US-87 · In-app user feedback ⏳
+**As a** user, **I want** to send feedback about the app directly from within it,
+**so that** I can report problems or suggest improvements without leaving the app.
+
+- [ ] `FeedbackEntity` — `uuid`, `userId`, `rating: int` (1–5), `message: String?`, `appVersion`, `platform`, `createdAt`
+- [ ] `FeedbackCubit` — `submit(rating, message)` → writes to Firestore `feedback` collection
+- [ ] `FeedbackSheet` — star rating row (1–5) + optional text field + submit button; accessible from Settings ("Enviar feedback")
+- [ ] NPS-style prompt: after 7 days since first login (stored in `SharedPreferences`), show a one-time bottom sheet "Está gostando do AFC? ⭐"
+- [ ] Unit test: submit writes correct document, prompt shows only once
+
+---
+
+### US-88 · Firebase Crashlytics ⏳
+**As a** developer, **I want** all unhandled exceptions and fatal crashes automatically reported,
+**so that** I can identify and fix stability issues before users stop using the app.
+
+- [ ] Add `firebase_crashlytics` to `pubspec.yaml`
+- [ ] In both `main_dev.dart` and `main_prod.dart`: wrap `runApp` with `runZonedGuarded`, set `FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError`
+- [ ] In each cubit `catch` block: call `FirebaseCrashlytics.instance.recordError(e, stack, fatal: false)` in addition to `logger.e`
+- [ ] Crashlytics disabled in dev flavor (`FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode)`)
+- [ ] Test: throw a test exception in dev and verify it appears in the Firebase Crashlytics console
+
+---
+
+### US-89 · Firestore Security Rules ⏳
+**As a** developer, **I want** Firestore to enforce that users can only read and write their own documents,
+**so that** no user can access another user's financial data even if they call the API directly.
+
+- [ ] Upgrade auth from `signInAnonymously()` to `signInWithCustomToken(clerkToken)` — Cloud Function `getFirebaseToken` exchanges a Clerk session token for a Firebase custom token; `auth.uid` then equals the Clerk user ID
+- [ ] `firestore.rules` — `isOwner(userId)` helper checks `request.auth.uid == userId`; applied to all per-user collections (transaction, limit, goal, investment, bill, recurring, template, passive\_income, net\_worth\_snapshot, watchlist, connected\_account, raw\_transaction, categorisation\_rule, pending\_operation, feedback)
+- [ ] `category` collection: authenticated read (global), authenticated write (global — categories are shared)
+- [ ] Cloud Functions continue to use Admin SDK (bypasses rules)
+- [ ] `firebase.json` updated to include `firestore.rules` and `firestore.indexes.json`
+- [ ] Deploy rules to both dev and prod projects
+
+---
+
 ## Technical Debt & Cross-cutting
 
 These items are not user stories but are necessary for long-term quality.
@@ -710,15 +927,16 @@ These items are not user stories but are necessary for long-term quality.
 | Item | Priority | Status | Notes |
 |------|----------|--------|-------|
 | Firestore streams (replace `.get()`) | High | ✅ Done | All list screens and dashboard use `.snapshots()` |
-| Widget test coverage for key screens | High | ✅ Done | home_screen, login_screen, scaffold_shell (352 total tests) |
+| Widget test coverage for key screens | High | ✅ Done | home_screen, login_screen, scaffold_shell (373 total tests) |
 | Cloud Functions project setup | High | ✅ Done | Pluggy proxy + webhooks + bill reminders in `functions/src/` |
-| Offline support (`persistenceEnabled`) | Medium | ✅ Done | Both `main_dev.dart` and `main_prod.dart` configure `CACHE_SIZE_UNLIMITED` |
+| Offline persistence (`persistenceEnabled`) | Medium | ✅ Done | Both entry points configure `CACHE_SIZE_UNLIMITED` |
 | CI: separate lint / test / build jobs | Low | ✅ Done | 3 jobs: lint → test (coverage artifact) → build (APK artifact) |
+| `initializeDateFormatting('pt_BR')` | High | ✅ Done | Called in both entry points before `runApp()` |
 | Pluggy sandbox account & API keys | High | ⏳ Pending | Register at pluggy.ai; add API keys to Cloud Functions env |
+| Firestore security rules + custom token auth | High | ⏳ Pending | Tracked as US-89 in Sprint 18 |
 | Integration tests (golden tests) | Medium | ⏳ Pending | Catch regressions on UI redesign; complex setup required |
-| Repository layer abstraction | Medium | ⏳ Pending | BLoCs call Firestore directly — major refactor, risky |
+| Repository layer abstraction | Low | ⏳ Pending | BLoCs call Firestore directly — major refactor, lower ROI |
 | Accessibility audit (semantics, contrast) | Medium | ⏳ Pending | Required for app store compliance; needs manual device testing |
-| Error boundary widget | Low | ⏳ Pending | Catch unhandled exceptions and show user-friendly screen |
 
 ---
 
@@ -740,5 +958,9 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 10 (design system migration) | `feat/sprint10-design-system` | ✅ Merged |
 | Sprint 11 (US-45–59) | `feat/sprint11-polish` | ✅ Merged |
 | Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | ✅ Merged |
-| Sprint 13 (bug fixes US-70–76) | `fix/sprint13-bugs-state` | ⏳ Open PR |
+| Sprint 13 (US-70–76) | `fix/sprint13-bugs-state` | ✅ Merged |
 | Sprint 14 (US-77–78) | `feat/sprint14-privacy-tooltips` | 🔄 In Progress |
+| Sprint 15 (US-79–81) | `feat/sprint15-smart-data` | ⏳ Planned |
+| Sprint 16 (US-82–83) | `feat/sprint16-offline-first` | ⏳ Planned |
+| Sprint 17 (US-84–85) | `feat/sprint17-benefits-accounts` | ⏳ Planned |
+| Sprint 18 (US-86–89) | `feat/sprint18-quality` | ⏳ Planned |
