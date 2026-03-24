@@ -22,7 +22,9 @@ import '../blocs/home/stats_state.dart';
 import '../blocs/home/transaction_state.dart';
 import '../blocs/limit/limit_cubit.dart';
 import '../blocs/market/market_opportunity_cubit.dart';
+import '../blocs/privacy/privacy_cubit.dart';
 import '../widgets/design_system.dart';
+import '../widgets/privacy_text.dart';
 import '../widgets/skeleton_list.dart';
 
 class HomePage extends StatelessWidget {
@@ -50,6 +52,20 @@ class _HomeContent extends StatelessWidget {
                 onPressed: () => context.push('/seed'),
                 icon: const Icon(Icons.data_object, size: 20),
               ),
+            BlocBuilder<PrivacyCubit, bool>(
+              builder: (BuildContext context, bool isHidden) => Semantics(
+                label: isHidden ? 'Mostrar valores' : 'Ocultar valores',
+                child: AppIconButton(
+                  onPressed: () => context.read<PrivacyCubit>().toggle(),
+                  icon: Icon(
+                    isHidden
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
             Semantics(
               label: 'Configurações',
               child: AppIconButton(
@@ -174,7 +190,7 @@ class _NetWorthCardState extends State<_NetWorthCard> {
                     'Carteira de investimentos',
                     style: AppTextStyles.label,
                   ),
-                  Text(
+                  PrivacyText(
                     convertToCurrencyFormated(_portfolioValue),
                     style: AppTextStyles.title,
                   ),
@@ -254,6 +270,7 @@ class StatsWidget extends StatelessWidget {
                     label: 'Receita do mês',
                     value: convertToCurrencyFormated(totalIncome),
                     valueColor: AppColors.income,
+                    private: true,
                   ),
                 ),
                 _divider(),
@@ -262,6 +279,7 @@ class StatsWidget extends StatelessWidget {
                     label: 'Gastos do mês',
                     value: convertToCurrencyFormated(totalExpenses),
                     valueColor: AppColors.expense,
+                    private: true,
                   ),
                 ),
               ],
@@ -285,25 +303,37 @@ class _StatCell extends StatelessWidget {
     required this.label,
     required this.value,
     required this.valueColor,
+    this.private = false,
   });
 
   final String label;
   final String value;
   final Color valueColor;
+  final bool private;
 
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: <Widget>[
-      Text(
-        value,
-        style: TextStyle(
-          fontSize: AppTextStyle.sizeMd,
-          fontWeight: FontWeight.bold,
-          color: valueColor,
+      if (private)
+        PrivacyText(
+          value,
+          style: TextStyle(
+            fontSize: AppTextStyle.sizeMd,
+            fontWeight: FontWeight.bold,
+            color: valueColor,
+          ),
+        )
+      else
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: AppTextStyle.sizeMd,
+            fontWeight: FontWeight.bold,
+            color: valueColor,
+          ),
+          textAlign: TextAlign.center,
         ),
-        textAlign: TextAlign.center,
-      ),
       const Gap(4),
       Text(
         label,
@@ -434,7 +464,7 @@ class MonthLimit extends StatelessWidget {
         children: <Widget>[
           Text(category, style: AppTextStyles.sectionTitle),
           const Gap(5),
-          Text(
+          PrivacyText(
             '${convertToCurrencyFormated(amount)} de ${convertToCurrencyFormated(totalLimit)}',
             style: AppTextStyles.body.copyWith(
               color: isExceeded ? AppColors.expense : null,
@@ -619,7 +649,7 @@ class LastTransactions extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        Text(
+        PrivacyText(
           convertToCurrencyFormated(amount),
           style: TextStyle(
             fontSize: AppTextStyle.sizeMd,
@@ -681,7 +711,7 @@ class HomeCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(
+                  PrivacyText(
                     convertToCurrencyFormated(totalAmount),
                     style: TextStyle(
                       fontSize: largeFontSize,
@@ -1101,12 +1131,12 @@ class _FiScoreCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    Text(
+                    PrivacyText(
                       'Renda passiva: ${NumberFormat.compactCurrency(locale: 'pt_BR', symbol: 'R\$', decimalDigits: 0).format(data.passiveIncomeMonthly)}/mês',
                       style: AppTextStyles.caption
                           .copyWith(color: AppColors.muted),
                     ),
-                    Text(
+                    PrivacyText(
                       'Despesas: ${NumberFormat.compactCurrency(locale: 'pt_BR', symbol: 'R\$', decimalDigits: 0).format(data.monthlyExpenses)}/mês',
                       style: AppTextStyles.caption
                           .copyWith(color: AppColors.muted),
