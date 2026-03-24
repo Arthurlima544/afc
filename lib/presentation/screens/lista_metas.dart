@@ -74,7 +74,7 @@ class ListaMetas extends StatelessWidget {
               },
               builder: (BuildContext context, GoalState state) => state.when(
                 initial: () => const SizedBox(),
-                loading: () => const SkeletonList(),
+                loading: () => const SkeletonList(itemHeight: 140),
                 error: (String msg) => ErrorState(
                   message: msg,
                   onRetry: () {
@@ -86,7 +86,7 @@ class ListaMetas extends StatelessWidget {
                     context.read<GoalCubit>().loadGoals(userId);
                   },
                 ),
-                success: (_) => const SkeletonList(),
+                success: (_) => const SkeletonList(itemHeight: 140),
                 listed: (List<GoalEntity> goals) => goals.isEmpty
                     ? const EmptyState(
                         message: 'Nenhuma meta ainda.\nToque em + para criar.',

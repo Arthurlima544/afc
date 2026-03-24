@@ -73,10 +73,10 @@ class ListaContas extends StatelessWidget {
             },
             builder: (BuildContext context, BillState state) => state.when(
               initial: () => const SizedBox(),
-              loading: () => const SkeletonList(),
+              loading: () => const SkeletonList(itemHeight: 90),
               error: (String msg) =>
                   EmptyState(message: msg, icon: Icons.error_outline),
-              success: (_) => const SkeletonList(),
+              success: (_) => const SkeletonList(itemHeight: 90),
               listed: (List<BillEntity> bills) => bills.isEmpty
                   ? const EmptyState(
                       message:
