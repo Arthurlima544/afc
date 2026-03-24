@@ -8,7 +8,7 @@ TransactionEntity _tx(String title, {double amount = 10.0}) =>
       amount: amount,
       categoryUUid: '',
       typeUuid: 'expense',
-      data: DateTime(2025, 3, 1),
+      data: DateTime(2025, 3),
       title: title,
       userId: 'u1',
     );

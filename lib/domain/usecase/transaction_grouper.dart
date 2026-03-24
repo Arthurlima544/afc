@@ -23,8 +23,8 @@ class TransactionGroup {
 // Grouper
 // ---------------------------------------------------------------------------
 
-/// Groups a flat list of [TransactionEntity] objects into labelled buckets
-/// by matching their [title] against well-known Brazilian merchant patterns.
+/// Groups a flat list of transactions into labelled buckets
+/// by matching the title against well-known Brazilian merchant patterns.
 ///
 /// The matching is case-insensitive and uses substring search. The first
 /// matching rule wins. Unmatched transactions fall into "Outros".

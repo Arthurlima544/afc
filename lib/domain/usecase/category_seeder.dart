@@ -36,7 +36,7 @@ const List<({String name, int iconType})> _kDefaults = <({
 // Seeder
 // ---------------------------------------------------------------------------
 
-/// Seeds default categories for [userId] on their first sign-in.
+/// Seeds default categories for a user on their first sign-in.
 ///
 /// Idempotent: a `user_meta/{userId}` document with `seeded_categories: true`
 /// is written atomically with the batch — subsequent calls are no-ops.
