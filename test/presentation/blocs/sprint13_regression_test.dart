@@ -4,6 +4,7 @@
 /// US-74: Bill list refreshes after create and update.
 /// US-73: RecurringCubit.create emits success so the BlocListener can pop.
 /// US-70: Error states are emitted so listeners can show snackbars.
+library;
 
 import 'package:afc/domain/entity/bill_entity.dart';
 import 'package:afc/domain/entity/goal_entity.dart';
@@ -30,7 +31,7 @@ void main() {
     icon: 0,
   );
 
-  final BillEntity tBill = BillEntity(
+  const BillEntity tBill = BillEntity(
     uuid: 'bill-1',
     userId: 'user-1',
     name: 'Aluguel',
@@ -149,9 +150,9 @@ void main() {
         const BillState.loading(),
         const BillState.listed(<BillEntity>[]),
         const BillState.loading(),
-        BillState.success(tBill),
+        const BillState.success(tBill),
         const BillState.loading(),
-        BillState.listed(<BillEntity>[tBill]),
+        const BillState.listed(<BillEntity>[tBill]),
       ],
     );
 
@@ -207,8 +208,7 @@ void main() {
     blocTest<GoalCubit, GoalState>(
       'contribute emits error when goal uuid is not found',
       build: () => GoalCubit(firestore: fakeFirestore),
-      act: (GoalCubit cubit) async =>
-          cubit.contribute('non-existent', 100.0),
+      act: (GoalCubit cubit) async => cubit.contribute('non-existent', 100.0),
       expect: () => <GoalState>[
         const GoalState.loading(),
         const GoalState.error('Meta não encontrada.'),
