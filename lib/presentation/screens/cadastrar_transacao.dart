@@ -126,6 +126,10 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
         child: BlocConsumer<TransactionCubit, TransactionState>(
         listener: (BuildContext context, TransactionState state) {
           state.whenOrNull(
+            success: (_) => context.pop(),
+            error: (String msg) => ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(msg)),
+            ),
             initial: (List<CategoryEntity> categories) {
               final TransactionEntity? tx = widget.initialTransaction;
               if (tx != null && _categoryUuid != null) {

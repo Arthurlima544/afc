@@ -55,7 +55,15 @@ class _CadastrarCategoriaState extends State<CadastrarCategoria> {
     body: SafeArea(
       child: SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: BlocBuilder<CategoryCubit, CategoryState>(
+      child: BlocConsumer<CategoryCubit, CategoryState>(
+        listener: (BuildContext context, CategoryState state) {
+          state.whenOrNull(
+            success: (_) => context.pop(),
+            error: (String msg) => ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(msg)),
+            ),
+          );
+        },
         builder: (BuildContext context, CategoryState state) => state.when(
           initial: (int index) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

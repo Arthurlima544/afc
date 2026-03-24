@@ -96,6 +96,10 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
         child: BlocConsumer<LimitCubit, LimitState>(
         listener: (BuildContext context, LimitState state) {
           state.whenOrNull(
+            success: (_) => context.pop(),
+            error: (String msg) => ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(msg)),
+            ),
             initial: (List<CategoryEntity> categories) {
               if (widget.initialLimit != null && _categoryUuid == null) {
                 for (final CategoryEntity cat in categories) {
