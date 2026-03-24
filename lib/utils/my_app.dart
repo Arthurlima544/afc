@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../config/routes/router.dart';
 import '../config/theme/app_theme.dart';
 import '../presentation/blocs/auth/auth_bloc.dart';
+import '../presentation/blocs/privacy/privacy_cubit.dart';
 import '../presentation/blocs/theme/theme_cubit.dart';
 
 class MyApp extends StatefulWidget {
@@ -35,6 +36,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) => MultiBlocProvider(
     providers: <BlocProvider<dynamic>>[
       BlocProvider<ThemeCubit>.value(value: _themeCubit),
+      BlocProvider<PrivacyCubit>(create: (_) => PrivacyCubit()),
       BlocProvider<AuthBloc>(
         create: (BuildContext context) => AuthBloc(
           onFirebaseSignIn: () => FirebaseAuth.instance.signInAnonymously(),

@@ -177,9 +177,19 @@ class _ResultCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(
-                  'Aporte mensal necessário',
-                  style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+                Row(
+                  children: <Widget>[
+                    Text(
+                      'Aporte mensal necessário',
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.muted),
+                    ),
+                    const Gap(4),
+                    const AppTooltipIcon(
+                      'Quanto você precisa investir por mês para atingir '
+                      'sua meta, dado o prazo e retorno informados.',
+                    ),
+                  ],
                 ),
                 const Gap(4),
                 Text(

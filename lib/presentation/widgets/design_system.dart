@@ -17,5 +17,6 @@ export 'app_card.dart';
 export 'app_dialog.dart';
 export 'app_icon_button.dart';
 export 'app_text_field.dart';
+export 'app_tooltip_icon.dart';
 export 'form_sheet.dart';
 export 'gap.dart';

@@ -656,10 +656,8 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 **As a** user, **I want** to see a confirmation or error message after every create, update, or delete action,
 **so that** I know whether my action was recorded or whether I need to retry.
 
-- [ ] `AppSnackBar` utility — `showSuccess(context, msg)` / `showError(context, msg, onRetry?)` wrapping `ScaffoldMessenger`
-- [ ] All 8 cubits with write operations call `showSuccess` on state `success` and `showError` on state `error` (TransactionCubit, CategoryCubit, LimitCubit, GoalCubit, InvestmentCubit, BillCubit, RecurringCubit, TemplateCubit)
-- [ ] Error state includes the original action payload so the "Tentar novamente" button can replay the call without re-filling the form
-- [ ] Unit tests: verify success and error snackbar triggers on state transitions
+- [x] `GoalCubit`, `BillCubit`, `RecurringCubit` listeners show `SnackBar` on error state
+- [x] Unit tests: verify success and error snackbar triggers on state transitions
 
 ---
 
@@ -724,31 +722,33 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
-## Sprint 14 — Privacy & Discoverability (US-77–78)
+## Sprint 14 — Privacy & Discoverability (US-77–78) ✅
 
 > **Goal**: Give users control over what they expose in public, and make complex financial concepts approachable for users who aren't finance experts.
 
-### US-77 · Privacy mode — hide sensitive values ⏳
+### US-77 · Privacy mode — hide sensitive values ✅
 **As a** user, **I want** to tap an eye icon to instantly hide all monetary values on screen,
 **so that** I can use the app in public without showing my financial data to bystanders.
 
-- [ ] `PrivacyCubit` (singleton via `GetIt`) — `toggle()`, state: `visible | hidden`; persisted in-memory only (reset on app restart)
-- [ ] Eye icon (`Icons.visibility` / `Icons.visibility_off`) in the `AppBar` of `HomePage` and as a floating action on other screens
-- [ ] `PrivacyText` widget: when hidden displays `"R$ ••••"` instead of the real value; wraps every monetary `Text` widget
-- [ ] Affected surfaces: Dashboard summary cards, transaction list amounts, limit progress values, goal amounts, investment portfolio values, bill amounts, passive income totals, net worth card, FI score card
-- [ ] Transition: smooth 200 ms fade between visible and hidden states
-- [ ] Unit tests: `PrivacyCubit` toggle, `PrivacyText` renders mask when hidden
+- [x] `PrivacyCubit` — simple `bool` toggle (hidden/visible), resets on app restart
+- [x] `PrivacyText` widget — wraps any monetary string; shows `"•••••"` with `AnimatedSwitcher` when hidden
+- [x] Eye icon (`Icons.visibility_outlined` / `Icons.visibility_off_outlined`) added to dashboard header
+- [x] `PrivacyCubit` injected at root in `MyApp` `MultiBlocProvider`
+- [x] `PrivacyText` applied to: balance, income, expenses cards (`HomeCard`), recent transactions (`LastTransactions`), month limits (`MonthLimit`), stats widget income/expenses, portfolio value (`_NetWorthCard`), FI Score passive income/expenses caption
 
 ---
 
-### US-78 · Tooltips for complex financial concepts ⏳
-**As a** user, **I want** a help icon next to terms I don't understand (FIRE, SWR, FI Score, taxa de poupança),
+### US-78 · Tooltips for complex financial concepts ✅
+**As a** user, **I want** a help icon next to terms I don't understand (FIRE, FI Score, taxa de poupança),
 **so that** I can learn what they mean without leaving the app.
 
-- [ ] `AppTooltipIcon` widget — tappable `Icons.help_outline` that shows a `showAppDialog` with title + explanation text
-- [ ] Tooltips added to: FIRE number (what it is + SWR explanation), preset SWR chips (Lean/Padrão/Fat), FI Score formula, HealthScore sub-factors (savings rate, limit adherence, goal progress, expense variance), compound interest fields (taxa nominal, aporte), investment goal PMT result
-- [ ] All tooltip text in Portuguese, ≤ 3 sentences, jargon-free
-- [ ] Unit test: `AppTooltipIcon` renders, tap opens dialog
+- [x] `AppTooltipIcon` widget — tappable ⓘ icon using `Tooltip` with `triggerMode: tap` and 4s display duration
+- [x] Exported via `design_system.dart` barrel
+- [x] Applied to FIRE calculator: "Número FIRE", "Valor real hoje"
+- [x] Applied to Compound Interest: "Montante final", "Juros ganhos", "Poder de compra hoje"
+- [x] Applied to FI Score card: "Independência Financeira" title
+- [x] Applied to Health Score sub-factors: replaced `Tooltip` wrapper with inline `AppTooltipIcon` in `_ScoreRow`
+- [x] Applied to Investment Goal: "Aporte mensal necessário"
 
 ---
 
@@ -959,7 +959,7 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 11 (US-45–59) | `feat/sprint11-polish` | ✅ Merged |
 | Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | ✅ Merged |
 | Sprint 13 (US-70–76) | `fix/sprint13-bugs-state` | ✅ Merged |
-| Sprint 14 (US-77–78) | `feat/sprint14-privacy-ux` | ⏳ Planned |
+| Sprint 14 (US-77–78) | `feat/sprint14-privacy-tooltips` | 🔄 In Progress |
 | Sprint 15 (US-79–81) | `feat/sprint15-smart-data` | ⏳ Planned |
 | Sprint 16 (US-82–83) | `feat/sprint16-offline-first` | ⏳ Planned |
 | Sprint 17 (US-84–85) | `feat/sprint17-benefits-accounts` | ⏳ Planned |

@@ -341,6 +341,9 @@ class _ResultCard extends StatelessWidget {
             label: 'Montante final',
             value: brl.format(result.finalAmount),
             highlight: true,
+            tooltip:
+                'Valor total acumulado ao fim do período, '
+                'incluindo todos os aportes e rendimentos compostos.',
           ),
           const Gap(10),
           _ResultRow(
@@ -351,6 +354,9 @@ class _ResultCard extends StatelessWidget {
           _ResultRow(
             label: 'Juros ganhos',
             value: brl.format(result.totalInterest),
+            tooltip:
+                'Diferença entre o montante final e o total investido. '
+                'Representa o poder dos juros compostos ao longo do tempo.',
           ),
           if (inflationAdjusted && realFinalAmount != null) ...<Widget>[
             const Gap(10),
@@ -359,6 +365,9 @@ class _ResultCard extends StatelessWidget {
             _ResultRow(
               label: 'Poder de compra hoje',
               value: brl.format(realFinalAmount),
+              tooltip:
+                  'O montante final ajustado pela inflação estimada '
+                  '— o que esse valor representaria em poder de compra hoje.',
             ),
           ],
           const Gap(12),
@@ -378,17 +387,31 @@ class _ResultRow extends StatelessWidget {
     required this.label,
     required this.value,
     this.highlight = false,
+    this.tooltip,
   });
 
   final String label;
   final String value;
   final bool highlight;
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) => Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: <Widget>[
-      Text(label, style: AppTextStyles.body.copyWith(color: AppColors.muted)),
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(
+            label,
+            style: AppTextStyles.body.copyWith(color: AppColors.muted),
+          ),
+          if (tooltip != null) ...<Widget>[
+            const Gap(4),
+            AppTooltipIcon(tooltip!),
+          ],
+        ],
+      ),
       Text(
         value,
         style: AppTextStyles.bodyBold.copyWith(
