@@ -8,8 +8,10 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../domain/entity/bank_profile_entity.dart';
+import '../../../domain/entity/category_entity.dart';
 import '../../../domain/entity/import_candidate_entity.dart';
 import '../../../domain/entity/transaction_entity.dart';
+import '../../../domain/usecase/categorisation_matcher.dart';
 import '../../../domain/usecase/statement_parser.dart';
 import '../../../utils/logger.dart';
 
@@ -108,10 +110,24 @@ class ImportCubit extends Cubit<ImportState> {
       return;
     }
 
+    // Load categories once for name → UUID resolution.
+    final Map<String, String> categoryNameToUuid =
+        await _loadCategoryNameMap();
+
     final List<ImportCandidateEntity> candidates = <ImportCandidateEntity>[];
     for (final ImportCandidateEntity c in parsed) {
       final bool dup = await _isDuplicate(userId, c);
-      candidates.add(c.copyWith(isDuplicate: dup));
+      final CategorizationMatch? match = CategorizationMatcher.match(c.title);
+      final String? matchedUuid = match != null
+          ? categoryNameToUuid[match.categoryName]
+          : null;
+      candidates.add(
+        c.copyWith(
+          isDuplicate: dup,
+          categoryUUid: matchedUuid ?? c.categoryUUid,
+          categoryConfidence: match?.confidence ?? 0.0,
+        ),
+      );
     }
 
     emit(ImportState.reviewed(candidates: candidates, userId: userId));
@@ -224,6 +240,25 @@ class ImportCubit extends Cubit<ImportState> {
   }
 
   void reset() => emit(const ImportState.initial());
+
+  // ---------------------------------------------------------------------------
+  // Category name → UUID lookup
+  // ---------------------------------------------------------------------------
+
+  Future<Map<String, String>> _loadCategoryNameMap() async {
+    try {
+      final QuerySnapshot<Map<String, dynamic>> snap =
+          await _firestore.collection('category').get();
+      return Map<String, String>.fromEntries(
+        snap.docs.map((QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+          final CategoryEntity cat = CategoryEntity.fromJson(doc.data());
+          return MapEntry<String, String>(cat.name, cat.uuid);
+        }),
+      );
+    } on Exception catch (_) {
+      return <String, String>{};
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // Duplicate detection

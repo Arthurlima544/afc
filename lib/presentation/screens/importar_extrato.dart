@@ -275,20 +275,16 @@ class _CandidateItem extends StatelessWidget {
             ),
           ),
           if (candidate.isDuplicate) ...<Widget>[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.warningBackground,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                'Duplicata',
-                style: AppTextStyles.captionBold.copyWith(
-                  color: AppColors.warningText,
-                ),
-              ),
+            const _Badge(
+              label: 'Duplicata',
+              color: AppColors.warningText,
+              background: AppColors.warningBackground,
             ),
-            const Gap(8),
+            const Gap(6),
+          ],
+          if (!candidate.isDuplicate && candidate.categoryConfidence > 0) ...<Widget>[
+            _ConfidenceBadge(confidence: candidate.categoryConfidence),
+            const Gap(6),
           ],
           Text(
             'R\$ ${candidate.amount.toStringAsFixed(2)}',
@@ -300,6 +296,64 @@ class _CandidateItem extends StatelessWidget {
       ),
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// Confidence badge
+// ---------------------------------------------------------------------------
+
+class _ConfidenceBadge extends StatelessWidget {
+  const _ConfidenceBadge({required this.confidence});
+
+  final double confidence;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color;
+    final Color background;
+    final String label;
+
+    if (confidence >= 0.8) {
+      color = AppColors.income;
+      background = AppColors.income.withValues(alpha: 0.12);
+      label = 'Auto';
+    } else if (confidence >= 0.5) {
+      color = AppColors.warningText;
+      background = AppColors.warningBackground;
+      label = 'Revisar';
+    } else {
+      color = AppColors.expense;
+      background = AppColors.expense.withValues(alpha: 0.12);
+      label = 'Manual';
+    }
+
+    return _Badge(label: label, color: color, background: background);
+  }
+}
+
+class _Badge extends StatelessWidget {
+  const _Badge({
+    required this.label,
+    required this.color,
+    required this.background,
+  });
+
+  final String label;
+  final Color color;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+    decoration: BoxDecoration(
+      color: background,
+      borderRadius: BorderRadius.circular(4),
+    ),
+    child: Text(
+      label,
+      style: AppTextStyles.captionBold.copyWith(color: color),
+    ),
+  );
 }
 
 // ---------------------------------------------------------------------------

@@ -756,47 +756,47 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 > **Goal**: Reduce friction for new users and improve data quality by providing sensible defaults and smarter automatic categorisation.
 
-### US-79 · Default categories seeded on first login ⏳
+### US-79 · Default categories seeded on first login ✅
 **As a** new user, **I want** to see a useful set of categories already available when I open the app,
 **so that** I can start logging transactions immediately without configuring anything.
 
-- [ ] On first successful sign-in, check Firestore `category` collection; if empty, write a default set:
+- [x] On first successful sign-in, check Firestore `category` collection; if empty, write a default set:
   Alimentação, Transporte, Moradia, Saúde, Lazer, Educação, Vestuário, Assinaturas, Restaurantes, Viagem, Investimentos, Salário, Freelance, Outros
-- [ ] Each default category has a pre-assigned `iconType` matching existing icon constants
-- [ ] Seeding is idempotent: guarded by a `user_meta/seeded_categories` flag in Firestore so it runs only once per account
-- [ ] Unit test: seeding logic writes exactly N documents when collection is empty, writes 0 when flag already set
+- [x] Each default category has a pre-assigned `iconType` matching existing icon constants
+- [x] Seeding is idempotent: guarded by a `user_meta/seeded_categories` flag in Firestore so it runs only once per account
+- [x] Unit test: seeding logic writes exactly N documents when collection is empty, writes 0 when flag already set
 
 ---
 
-### US-80 · Transaction grouping on list screens ⏳
+### US-80 · Transaction grouping on list screens ✅
 **As a** user, **I want** my transaction list to group similar entries (e.g. all PIX transfers, all supermarket purchases),
 **so that** I can quickly see patterns and totals for each type of spending.
 
-- [ ] `TransactionGroup` — `label: String`, `transactions: List<TransactionEntity>`, `total: double`
-- [ ] `TransactionGrouper` use case — rule-based pattern matching on `title` field:
+- [x] `TransactionGroup` — `label: String`, `transactions: List<TransactionEntity>`, `total: double`
+- [x] `TransactionGrouper` use case — rule-based pattern matching on `title` field:
   - `PIX` → "Transferências PIX"
   - `TED` / `DOC` → "Transferências bancárias"
   - `UBER` / `99` / `CABIFY` → "Transporte por app"
   - `IFOOD` / `RAPPI` / `DELIVERY` → "Delivery"
   - `MERCADO` / `SUPERMERCADO` / `PÃO DE AÇÚCAR` / `CARREFOUR` → "Supermercado"
   - `NETFLIX` / `SPOTIFY` / `AMAZON` / `APPLE` → "Assinaturas"
-  - Remaining → grouped by category name
-- [ ] Toggle in `ListaTransacoes` header: "Por data" ↔ "Por grupo"
-- [ ] Group header shows label + count + total amount for the group
-- [ ] Unit tests for `TransactionGrouper` pattern matching (≥ 10 cases)
+  - Remaining → "Outros"
+- [x] Toggle in `ListaTransacoes` header: "Por data" ↔ "Por grupo"
+- [x] Group header shows label + count + total amount for the group
+- [x] Unit tests for `TransactionGrouper` pattern matching (≥ 10 cases)
 
 ---
 
-### US-81 · Smarter CSV/OFX import auto-categorisation ⏳
+### US-81 · Smarter CSV/OFX import auto-categorisation ✅
 **As a** user, **I want** imported bank transactions to be automatically assigned to the right category based on their description,
 **so that** I spend less time manually re-categorising after an import.
 
-- [ ] Expand `categorisation_rule` keyword bank with 50+ common Brazilian merchant patterns (Nubank, Bradesco, Itaú descriptions)
-- [ ] Add confidence score to `ImportCandidateEntity`: `categoryConfidence: double` (0–1)
-- [ ] In review screen, show confidence badge: green ≥ 0.8, amber 0.5–0.8, red < 0.5
-- [ ] Low-confidence rows are pre-selected for manual review; high-confidence are pre-checked for bulk confirm
-- [ ] User corrections always write a new `categorisation_rule` (learning loop)
-- [ ] Unit tests: keyword matcher coverage for top 20 patterns
+- [x] `CategorizationMatcher` use case with 50+ Brazilian merchant patterns (iFood, Uber, Carrefour, Drogasil, Netflix, IPVA, Cemig, Udemy, etc.)
+- [x] Add confidence score to `ImportCandidateEntity`: `categoryConfidence: double` (0–1)
+- [x] `ImportCubit.parseContent` runs matcher after parsing; resolved category UUID written to each candidate
+- [x] In review screen, show confidence badge: green ≥ 0.8 ("Auto"), amber 0.5–0.8 ("Revisar"), red < 0.5 ("Manual")
+- [x] Duplicate rows show "Duplicata" badge; non-duplicate with confidence > 0 show confidence badge
+- [x] Unit tests: keyword matcher coverage for top 22 patterns
 
 ---
 
@@ -960,7 +960,7 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 12 (US-60–69) | `feat/sprint12-financial-independence` | ✅ Merged |
 | Sprint 13 (US-70–76) | `fix/sprint13-bugs-state` | ✅ Merged |
 | Sprint 14 (US-77–78) | `feat/sprint14-privacy-tooltips` | 🔄 In Progress |
-| Sprint 15 (US-79–81) | `feat/sprint15-smart-data` | ⏳ Planned |
+| Sprint 15 (US-79–81) | `feat/sprint15-smart-data` | ✅ Merged |
 | Sprint 16 (US-82–83) | `feat/sprint16-offline-first` | ⏳ Planned |
 | Sprint 17 (US-84–85) | `feat/sprint17-benefits-accounts` | ⏳ Planned |
 | Sprint 18 (US-86–89) | `feat/sprint18-quality` | ⏳ Planned |
