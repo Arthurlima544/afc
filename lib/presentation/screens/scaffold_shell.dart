@@ -10,8 +10,10 @@ import '../../domain/usecase/category_seeder.dart';
 import '../../utils/connectivity_service.dart';
 import '../../utils/sync_queue.dart';
 import '../blocs/auth/auth_bloc.dart';
+import '../blocs/feedback/feedback_cubit.dart';
 import '../blocs/recurring/recurring_cubit.dart';
 import '../widgets/design_system.dart';
+import 'feedback_sheet.dart';
 import 'quick_add_sheet.dart';
 
 class ScaffoldShell extends StatefulWidget {
@@ -52,7 +54,7 @@ class _ScaffoldShellState extends State<ScaffoldShell>
       },
     );
 
-    Future<void>.microtask(() {
+    Future<void>.microtask(() async {
       if (!mounted) {
         return;
       }
@@ -62,9 +64,29 @@ class _ScaffoldShellState extends State<ScaffoldShell>
               ) ??
           '';
       if (userId.isNotEmpty) {
-        context.read<RecurringCubit>().checkAndMaterialise(userId);
+        unawaited(context.read<RecurringCubit>().checkAndMaterialise(userId));
         unawaited(CategorySeeder().seedIfNeeded(userId));
       }
+
+      // NPS prompt: shown once after 7 days since first launch.
+      final FeedbackCubit npcCubit = FeedbackCubit();
+      await npcCubit.recordFirstLaunch();
+      final bool showNps = await npcCubit.shouldShowNpsPrompt();
+      if (!mounted) {
+        return;
+      }
+      if (showNps) {
+        await showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          useSafeArea: true,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          builder: (_) => const NpsFeedbackPrompt(),
+        );
+      }
+      unawaited(npcCubit.close());
     });
   }
 

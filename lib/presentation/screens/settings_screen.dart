@@ -7,9 +7,11 @@ import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../blocs/auth/auth_bloc.dart';
+import '../blocs/feedback/feedback_cubit.dart';
 import '../blocs/settings/settings_cubit.dart';
 import '../blocs/theme/theme_cubit.dart';
 import '../widgets/design_system.dart';
+import 'feedback_sheet.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -432,6 +434,18 @@ class _DataCard extends StatelessWidget {
           icon: AppIcons.syncPending,
           label: 'Operações pendentes',
           onTap: () => context.push('/pendencias'),
+        ),
+        const Divider(),
+        _ActionRow(
+          icon: Icons.feedback_outlined,
+          label: 'Enviar feedback',
+          onTap: () => showFormSheet<void>(
+            context,
+            builder: (_) => BlocProvider<FeedbackCubit>(
+              create: (_) => FeedbackCubit(),
+              child: const FeedbackSheet(),
+            ),
+          ),
         ),
       ],
     ),

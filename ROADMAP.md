@@ -883,15 +883,16 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
-### US-87 · In-app user feedback ⏳
+### US-87 · In-app user feedback ✅
 **As a** user, **I want** to send feedback about the app directly from within it,
 **so that** I can report problems or suggest improvements without leaving the app.
 
-- [ ] `FeedbackEntity` — `uuid`, `userId`, `rating: int` (1–5), `message: String?`, `appVersion`, `platform`, `createdAt`
-- [ ] `FeedbackCubit` — `submit(rating, message)` → writes to Firestore `feedback` collection
-- [ ] `FeedbackSheet` — star rating row (1–5) + optional text field + submit button; accessible from Settings ("Enviar feedback")
-- [ ] NPS-style prompt: after 7 days since first login (stored in `SharedPreferences`), show a one-time bottom sheet "Está gostando do AFC? ⭐"
-- [ ] Unit test: submit writes correct document, prompt shows only once
+- [x] `FeedbackEntity` — `uuid`, `userId`, `rating: int`, `message`, `appVersion`, `platform`, `createdAt`
+- [x] `FeedbackCubit` — `submit(rating, message)` → writes to Firestore `feedback` collection
+- [x] `FeedbackSheet` — 5-star rating row + optional text field + submit button; accessible from Settings
+- [x] NPS-style prompt: after 7 days since first launch (stored in SharedPreferences), shown once via `NpsFeedbackPrompt` in `ScaffoldShell.initState`
+- [x] `dismissNpsPrompt()` marks prompt shown without submitting
+- [x] 11 unit tests: submit, persist, NPS logic (7-day check, already-shown guard, dismiss)
 
 ---
 
