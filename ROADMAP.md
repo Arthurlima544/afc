@@ -837,16 +837,15 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 > **Goal**: Support the financial reality of both CLT employees (who receive non-cash benefits like VA/VT) and PJ contractors (who manage company expenses separately from personal finances).
 
-### US-84 · Benefits wallet (CLT — VA, VT, VR) ⏳
+### US-84 · Benefits wallet (CLT — VA, VT, VR) ✅
 **As a** CLT employee, **I want** to track my Vale Alimentação, Vale Transporte, and Vale Refeição balances separately from my main account,
 **so that** I know how much benefit credit I've used and what's left this month.
 
-- [ ] `BenefitEntity` — `uuid`, `userId`, `name`, `type` (va / vt / vr / other), `monthlyCredit: double`, `balance: double`, `color: int`
-- [ ] `BenefitCubit` — CRUD + `deduct(amount)` to record a benefit expense
-- [ ] Transactions can be optionally tagged `benefitUuid` (nullable) to link to a benefit wallet
-- [ ] `BenefitWalletScreen` (`/carteiras`) — card per benefit showing balance bar, monthly credit, deductions list
-- [ ] `_BenefitsCard` on Dashboard — total benefit balance + quick deduct FAB
-- [ ] Unit tests for balance deduction and monthly reset logic
+- [x] `BenefitEntity` — `uuid`, `userId`, `name`, `type` (va / vt / vr / other), `monthlyCredit: double`, `balance: double`, `color: int`
+- [x] `BenefitCubit` — CRUD + `deduct(amount)` to record a benefit expense
+- [x] `BenefitWalletScreen` (`/carteiras`) — card per benefit showing balance bar, monthly credit, deduct/edit/delete
+- [x] `_BenefitsCard` on Dashboard — total benefit balance, hidden when empty
+- [x] Unit tests for balance deduction and monthly reset logic (12 tests)
 
 ---
 
@@ -962,5 +961,5 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 14 (US-77–78) | `feat/sprint14-privacy-tooltips` | 🔄 In Progress |
 | Sprint 15 (US-79–81) | `feat/sprint15-smart-data` | ✅ Merged |
 | Sprint 16 (US-82–83) | `feat/sprint16-offline-first` | 🔄 In Progress |
-| Sprint 17 (US-84–85) | `feat/sprint17-benefits-accounts` | ⏳ Planned |
+| Sprint 17 (US-84–85) | `feat/sprint17-benefits-accounts` | 🔄 In Progress |
 | Sprint 18 (US-86–89) | `feat/sprint18-quality` | ⏳ Planned |
