@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../domain/entity/market_quote_entity.dart';
 import '../../domain/entity/watchlist_entity.dart';
+import '../../utils/connectivity_service.dart';
 import '../blocs/watchlist/watchlist_cubit.dart';
 import '../blocs/watchlist/watchlist_item.dart';
 import '../widgets/design_system.dart';
@@ -21,42 +22,60 @@ class ListaWatchlist extends StatelessWidget {
   final String userId;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      leading: BackButton(onPressed: () => context.pop()),
-      title: const Text('Watchlist'),
-      centerTitle: false,
-      actions: <Widget>[
-        AppIconButton(
-          icon: const Icon(Icons.add),
-          tooltip: 'Adicionar ativo',
-          onPressed: () => _showAddDialog(context),
+  Widget build(BuildContext context) {
+    if (!ConnectivityService.instance.isOnline) {
+      return Scaffold(
+        appBar: AppBar(
+          leading: BackButton(onPressed: () => context.pop()),
+          title: const Text('Watchlist'),
+          centerTitle: false,
         ),
-      ],
-    ),
-    body: BlocBuilder<WatchlistCubit, WatchlistState>(
-      builder: (BuildContext context, WatchlistState state) => state.when(
-        initial: () => const SizedBox(),
-        loading: () => const SkeletonList(),
-        error: (String msg) => ErrorState(
-          message: msg,
-          onRetry: () =>
-              context.read<WatchlistCubit>().loadWatchlist(userId),
+        body: const Padding(
+          padding: EdgeInsets.all(20),
+          child: OfflineUnavailableCard(
+            message: 'Watchlist indisponível sem conexão à internet',
+          ),
         ),
-        loaded: (List<WatchlistItem> items, DateTime lastUpdated) =>
-            items.isEmpty
-                ? const EmptyState(
-                    message:
-                        'Nenhum ativo na watchlist.\nToque em + para adicionar.',
-                  )
-                : _WatchlistBody(
-                    items: items,
-                    lastUpdated: lastUpdated,
-                    userId: userId,
-                  ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: BackButton(onPressed: () => context.pop()),
+        title: const Text('Watchlist'),
+        centerTitle: false,
+        actions: <Widget>[
+          AppIconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'Adicionar ativo',
+            onPressed: () => _showAddDialog(context),
+          ),
+        ],
       ),
-    ),
-  );
+      body: BlocBuilder<WatchlistCubit, WatchlistState>(
+        builder: (BuildContext context, WatchlistState state) => state.when(
+          initial: () => const SizedBox(),
+          loading: () => const SkeletonList(),
+          error: (String msg) => ErrorState(
+            message: msg,
+            onRetry: () =>
+                context.read<WatchlistCubit>().loadWatchlist(userId),
+          ),
+          loaded: (List<WatchlistItem> items, DateTime lastUpdated) =>
+              items.isEmpty
+                  ? const EmptyState(
+                      message:
+                          'Nenhum ativo na watchlist.\nToque em + para adicionar.',
+                    )
+                  : _WatchlistBody(
+                      items: items,
+                      lastUpdated: lastUpdated,
+                      userId: userId,
+                    ),
+        ),
+      ),
+    );
+  }
 
   Future<void> _showAddDialog(BuildContext context) async {
     final String? ticker = await showInputDialog(

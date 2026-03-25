@@ -1,9 +1,12 @@
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../domain/entity/category_entity.dart';
+import '../../../domain/entity/pending_operation_entity.dart';
 import '../../../utils/logger.dart';
+import '../../../utils/sync_queue.dart';
 
 part 'category_state.dart';
 part 'category_cubit.freezed.dart';
@@ -33,6 +36,16 @@ class CategoryCubit extends Cubit<CategoryState> {
             (DocumentReference<Object> doc) =>
                 logger.d('DocumentSnapshot added with ID: ${doc.id}'),
           );
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: '',
+          type: OperationType.create,
+          collection: 'category',
+          payload: category.toJson(),
+          createdAt: DateTime.now(),
+        ),
+      );
       emit(CategoryState.success(category));
     } on Exception catch (e) {
       emit(CategoryState.error(e.toString()));
@@ -65,6 +78,16 @@ class CategoryCubit extends Cubit<CategoryState> {
           .get();
       if (snap.docs.isNotEmpty) {
         await snap.docs.first.reference.delete();
+        SyncQueue.enqueueIfOffline(
+          PendingOperationEntity(
+            uuid: const Uuid().v1(),
+            userId: '',
+            type: OperationType.delete,
+            collection: 'category',
+            payload: <String, dynamic>{'uuid': catUuid},
+            createdAt: DateTime.now(),
+          ),
+        );
       }
       await loadCategories();
     } on Exception catch (e) {
@@ -81,6 +104,16 @@ class CategoryCubit extends Cubit<CategoryState> {
           .get();
       if (snap.docs.isNotEmpty) {
         await snap.docs.first.reference.set(category.toJson());
+        SyncQueue.enqueueIfOffline(
+          PendingOperationEntity(
+            uuid: const Uuid().v1(),
+            userId: '',
+            type: OperationType.update,
+            collection: 'category',
+            payload: category.toJson(),
+            createdAt: DateTime.now(),
+          ),
+        );
       }
       emit(CategoryState.success(category));
     } on Exception catch (e) {

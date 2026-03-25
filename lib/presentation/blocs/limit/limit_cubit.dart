@@ -3,12 +3,15 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../domain/entity/calendar_entity.dart';
 import '../../../domain/entity/category_entity.dart';
 import '../../../domain/entity/limit_entity.dart';
+import '../../../domain/entity/pending_operation_entity.dart';
 import '../../../domain/entity/type_entity.dart';
 import '../../../utils/logger.dart';
+import '../../../utils/sync_queue.dart';
 
 part 'limit_state.dart';
 part 'limit_cubit.freezed.dart';
@@ -44,6 +47,16 @@ class LimitCubit extends Cubit<LimitState> {
             (DocumentReference<Object> doc) =>
                 logger.d('DocumentSnapshot added with ID: ${doc.id}'),
           );
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: limit.userId,
+          type: OperationType.create,
+          collection: 'limit',
+          payload: limit.toJson(),
+          createdAt: DateTime.now(),
+        ),
+      );
       emit(LimitState.success(limit));
     } on Exception catch (e) {
       emit(LimitState.error(e.toString()));
@@ -192,6 +205,16 @@ class LimitCubit extends Cubit<LimitState> {
       if (snap.docs.isNotEmpty) {
         await snap.docs.first.reference.delete();
       }
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: '',
+          type: OperationType.delete,
+          collection: 'limit',
+          payload: <String, dynamic>{'uuid': limitUuid},
+          createdAt: DateTime.now(),
+        ),
+      );
     } on Exception catch (e) {
       emit(LimitState.error(e.toString()));
     }
@@ -207,6 +230,16 @@ class LimitCubit extends Cubit<LimitState> {
       if (snap.docs.isNotEmpty) {
         await snap.docs.first.reference.set(limit.toJson());
       }
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: limit.userId,
+          type: OperationType.update,
+          collection: 'limit',
+          payload: limit.toJson(),
+          createdAt: DateTime.now(),
+        ),
+      );
       emit(LimitState.success(limit));
     } on Exception catch (e) {
       emit(LimitState.error(e.toString()));

@@ -1,9 +1,12 @@
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../domain/entity/investment_entity.dart';
+import '../../../domain/entity/pending_operation_entity.dart';
 import '../../../utils/logger.dart';
+import '../../../utils/sync_queue.dart';
 
 part 'investment_state.dart';
 part 'investment_cubit.freezed.dart';
@@ -46,6 +49,16 @@ class InvestmentCubit extends Cubit<InvestmentState> {
             (DocumentReference<Object> doc) =>
                 logger.d('Investment added with ID: ${doc.id}'),
           );
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: inv.userId,
+          type: OperationType.create,
+          collection: 'investment',
+          payload: inv.toJson(),
+          createdAt: DateTime.now(),
+        ),
+      );
       emit(InvestmentState.success(inv));
     } on Exception catch (e) {
       emit(InvestmentState.error(e.toString()));
@@ -71,6 +84,16 @@ class InvestmentCubit extends Cubit<InvestmentState> {
         currentPrice: newPrice,
       );
       await doc.reference.set(updated.toJson());
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: '',
+          type: OperationType.update,
+          collection: 'investment',
+          payload: updated.toJson(),
+          createdAt: DateTime.now(),
+        ),
+      );
       emit(InvestmentState.success(updated));
     } on Exception catch (e) {
       emit(InvestmentState.error(e.toString()));
@@ -86,6 +109,16 @@ class InvestmentCubit extends Cubit<InvestmentState> {
       if (snap.docs.isNotEmpty) {
         await snap.docs.first.reference.delete();
       }
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: '',
+          type: OperationType.delete,
+          collection: 'investment',
+          payload: <String, dynamic>{'uuid': uuid},
+          createdAt: DateTime.now(),
+        ),
+      );
       await loadInvestments(userId);
     } on Exception catch (e) {
       emit(InvestmentState.error(e.toString()));
@@ -102,6 +135,16 @@ class InvestmentCubit extends Cubit<InvestmentState> {
       if (snap.docs.isNotEmpty) {
         await snap.docs.first.reference.set(inv.toJson());
       }
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: inv.userId,
+          type: OperationType.update,
+          collection: 'investment',
+          payload: inv.toJson(),
+          createdAt: DateTime.now(),
+        ),
+      );
       emit(InvestmentState.success(inv));
     } on Exception catch (e) {
       emit(InvestmentState.error(e.toString()));
