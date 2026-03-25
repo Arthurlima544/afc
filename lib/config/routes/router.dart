@@ -23,6 +23,7 @@ import '../../presentation/blocs/market/market_opportunity_cubit.dart';
 import '../../presentation/blocs/net_worth/net_worth_cubit.dart';
 import '../../presentation/blocs/open_finance/open_finance_cubit.dart';
 import '../../presentation/blocs/passive_income/passive_income_cubit.dart';
+import '../../presentation/blocs/pending_ops/pending_ops_cubit.dart';
 import '../../presentation/blocs/recurring/recurring_cubit.dart';
 import '../../presentation/blocs/report/report_cubit.dart';
 import '../../presentation/blocs/review_queue/review_queue_cubit.dart';
@@ -58,6 +59,7 @@ import '../../presentation/screens/net_worth_screen.dart';
 import '../../presentation/screens/onboarding_screen.dart';
 import '../../presentation/screens/oportunidades_screen.dart';
 import '../../presentation/screens/passive_income_screen.dart';
+import '../../presentation/screens/pending_ops_screen.dart';
 import '../../presentation/screens/portfolio_dashboard_screen.dart';
 import '../../presentation/screens/relatorio.dart';
 import '../../presentation/screens/review_queue_screen.dart';
@@ -631,6 +633,19 @@ final GoRouter router = GoRouter(
             ],
             child: CadastrarConta(
               initialBill: state.extra as BillEntity?,
+            ),
+          ),
+    ),
+
+    GoRoute(
+      path: '/pendencias',
+      pageBuilder: (BuildContext context, GoRouterState state) =>
+          slideUpTransition(
+            context: context,
+            state: state,
+            child: BlocProvider<PendingOpsCubit>(
+              create: (_) => PendingOpsCubit()..load(),
+              child: const PendingOpsScreen(),
             ),
           ),
     ),

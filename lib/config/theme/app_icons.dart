@@ -55,6 +55,11 @@ abstract final class AppIcons {
   static const IconData report = Icons.bar_chart_outlined;
   static const IconData template = Icons.bookmark_outline;
 
+  // ── Sync ───────────────────────────────────────────────────────────────────
+
+  static const IconData sync = Icons.sync_outlined;
+  static const IconData syncPending = Icons.sync_problem_outlined;
+
   // ── Status & Feedback ──────────────────────────────────────────────────────
 
   static const IconData warning = Icons.warning_amber_outlined;

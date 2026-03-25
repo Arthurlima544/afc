@@ -415,6 +415,12 @@ class _DataCard extends StatelessWidget {
           label: 'Contas conectadas',
           onTap: () => context.push('/contas-conectadas'),
         ),
+        const Divider(),
+        _ActionRow(
+          icon: AppIcons.syncPending,
+          label: 'Operações pendentes',
+          onTap: () => context.push('/pendencias'),
+        ),
       ],
     ),
   );
