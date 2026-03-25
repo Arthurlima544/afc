@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../domain/entity/benefit_entity.dart';
 import '../../domain/entity/bill_entity.dart';
 import '../../domain/entity/investment_entity.dart';
 import '../../domain/entity/market_quote_entity.dart';
@@ -109,6 +110,8 @@ class _HomeContent extends StatelessWidget {
         const _NetWorthCard(),
         const Gap(12),
         const _BillsCard(),
+        const Gap(12),
+        const _BenefitsCard(),
         const Gap(12),
         const _HealthScoreCard(),
         const Gap(12),
@@ -1410,6 +1413,110 @@ class _BillsCardState extends State<_BillsCard> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Benefits summary card
+// ---------------------------------------------------------------------------
+
+class _BenefitsCard extends StatefulWidget {
+  const _BenefitsCard();
+
+  @override
+  State<_BenefitsCard> createState() => _BenefitsCardState();
+}
+
+class _BenefitsCardState extends State<_BenefitsCard> {
+  double _totalBalance = 0;
+  int _count = 0;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.microtask(_load);
+  }
+
+  Future<void> _load() async {
+    final String userId =
+        context.read<AuthBloc>().state.whenOrNull(
+          signedIn: (ClerkAuthState s) => s.user?.id,
+        ) ??
+        '';
+    if (userId.isEmpty) {
+      return;
+    }
+    try {
+      final QuerySnapshot<Map<String, dynamic>> snap = await FirebaseFirestore
+          .instance
+          .collection('benefit')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      final List<BenefitEntity> benefits = snap.docs
+          .map(
+            (QueryDocumentSnapshot<Map<String, dynamic>> doc) =>
+                BenefitEntity.fromJson(doc.data()),
+          )
+          .toList();
+
+      if (mounted) {
+        setState(() {
+          _totalBalance = benefits.fold(
+            0,
+            (double sum, BenefitEntity b) => sum + b.balance,
+          );
+          _count = benefits.length;
+          _loaded = true;
+        });
+      }
+    } on Exception {
+      if (mounted) {
+        setState(() => _loaded = true);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded || _count == 0) {
+      return const SizedBox.shrink();
+    }
+    final NumberFormat fmt =
+        NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    return GestureDetector(
+      onTap: () => context.push('/carteiras'),
+      child: AppCard(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: <Widget>[
+            const Icon(Icons.account_balance_wallet_outlined, size: 28),
+            const Gap(12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const Text('Benefícios', style: AppTextStyles.label),
+                  Text(
+                    fmt.format(_totalBalance),
+                    style: AppTextStyles.title,
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              '$_count ${_count == 1 ? 'carteira' : 'carteiras'}',
+              style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+            ),
+            const Gap(4),
+            const Icon(Icons.chevron_right),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class SyncStatusWidget extends StatelessWidget {
   const SyncStatusWidget({super.key});

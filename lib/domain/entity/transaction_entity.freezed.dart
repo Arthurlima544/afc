@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$TransactionEntity {
 
- String get uuid; double get amount; String get categoryUUid; String get typeUuid; DateTime get data; String get title; String get userId;
+ String get uuid; double get amount; String get categoryUUid; String get typeUuid; DateTime get data; String get title; String get userId; String? get subAccountUuid;
 /// Create a copy of TransactionEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $TransactionEntityCopyWith<TransactionEntity> get copyWith => _$TransactionEntit
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TransactionEntity&&(identical(other.uuid, uuid) || other.uuid == uuid)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.categoryUUid, categoryUUid) || other.categoryUUid == categoryUUid)&&(identical(other.typeUuid, typeUuid) || other.typeUuid == typeUuid)&&(identical(other.data, data) || other.data == data)&&(identical(other.title, title) || other.title == title)&&(identical(other.userId, userId) || other.userId == userId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TransactionEntity&&(identical(other.uuid, uuid) || other.uuid == uuid)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.categoryUUid, categoryUUid) || other.categoryUUid == categoryUUid)&&(identical(other.typeUuid, typeUuid) || other.typeUuid == typeUuid)&&(identical(other.data, data) || other.data == data)&&(identical(other.title, title) || other.title == title)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.subAccountUuid, subAccountUuid) || other.subAccountUuid == subAccountUuid));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,uuid,amount,categoryUUid,typeUuid,data,title,userId);
+int get hashCode => Object.hash(runtimeType,uuid,amount,categoryUUid,typeUuid,data,title,userId,subAccountUuid);
 
 @override
 String toString() {
-  return 'TransactionEntity(uuid: $uuid, amount: $amount, categoryUUid: $categoryUUid, typeUuid: $typeUuid, data: $data, title: $title, userId: $userId)';
+  return 'TransactionEntity(uuid: $uuid, amount: $amount, categoryUUid: $categoryUUid, typeUuid: $typeUuid, data: $data, title: $title, userId: $userId, subAccountUuid: $subAccountUuid)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $TransactionEntityCopyWith<$Res>  {
   factory $TransactionEntityCopyWith(TransactionEntity value, $Res Function(TransactionEntity) _then) = _$TransactionEntityCopyWithImpl;
 @useResult
 $Res call({
- String uuid, double amount, String categoryUUid, String typeUuid, DateTime data, String title, String userId
+ String uuid, double amount, String categoryUUid, String typeUuid, DateTime data, String title, String userId, String? subAccountUuid
 });
 
 
@@ -65,7 +65,7 @@ class _$TransactionEntityCopyWithImpl<$Res>
 
 /// Create a copy of TransactionEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? uuid = null,Object? amount = null,Object? categoryUUid = null,Object? typeUuid = null,Object? data = null,Object? title = null,Object? userId = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? uuid = null,Object? amount = null,Object? categoryUUid = null,Object? typeUuid = null,Object? data = null,Object? title = null,Object? userId = null,Object? subAccountUuid = freezed,}) {
   return _then(_self.copyWith(
 uuid: null == uuid ? _self.uuid : uuid // ignore: cast_nullable_to_non_nullable
 as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
@@ -74,7 +74,8 @@ as String,typeUuid: null == typeUuid ? _self.typeUuid : typeUuid // ignore: cast
 as String,data: null == data ? _self.data : data // ignore: cast_nullable_to_non_nullable
 as DateTime,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
-as String,
+as String,subAccountUuid: freezed == subAccountUuid ? _self.subAccountUuid : subAccountUuid // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -156,10 +157,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String uuid,  double amount,  String categoryUUid,  String typeUuid,  DateTime data,  String title,  String userId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String uuid,  double amount,  String categoryUUid,  String typeUuid,  DateTime data,  String title,  String userId,  String? subAccountUuid)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TransactionEntity() when $default != null:
-return $default(_that.uuid,_that.amount,_that.categoryUUid,_that.typeUuid,_that.data,_that.title,_that.userId);case _:
+return $default(_that.uuid,_that.amount,_that.categoryUUid,_that.typeUuid,_that.data,_that.title,_that.userId,_that.subAccountUuid);case _:
   return orElse();
 
 }
@@ -177,10 +178,10 @@ return $default(_that.uuid,_that.amount,_that.categoryUUid,_that.typeUuid,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String uuid,  double amount,  String categoryUUid,  String typeUuid,  DateTime data,  String title,  String userId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String uuid,  double amount,  String categoryUUid,  String typeUuid,  DateTime data,  String title,  String userId,  String? subAccountUuid)  $default,) {final _that = this;
 switch (_that) {
 case _TransactionEntity():
-return $default(_that.uuid,_that.amount,_that.categoryUUid,_that.typeUuid,_that.data,_that.title,_that.userId);}
+return $default(_that.uuid,_that.amount,_that.categoryUUid,_that.typeUuid,_that.data,_that.title,_that.userId,_that.subAccountUuid);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -194,10 +195,10 @@ return $default(_that.uuid,_that.amount,_that.categoryUUid,_that.typeUuid,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String uuid,  double amount,  String categoryUUid,  String typeUuid,  DateTime data,  String title,  String userId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String uuid,  double amount,  String categoryUUid,  String typeUuid,  DateTime data,  String title,  String userId,  String? subAccountUuid)?  $default,) {final _that = this;
 switch (_that) {
 case _TransactionEntity() when $default != null:
-return $default(_that.uuid,_that.amount,_that.categoryUUid,_that.typeUuid,_that.data,_that.title,_that.userId);case _:
+return $default(_that.uuid,_that.amount,_that.categoryUUid,_that.typeUuid,_that.data,_that.title,_that.userId,_that.subAccountUuid);case _:
   return null;
 
 }
@@ -209,7 +210,7 @@ return $default(_that.uuid,_that.amount,_that.categoryUUid,_that.typeUuid,_that.
 @JsonSerializable()
 
 class _TransactionEntity implements TransactionEntity {
-  const _TransactionEntity({required this.uuid, required this.amount, required this.categoryUUid, required this.typeUuid, required this.data, required this.title, required this.userId});
+  const _TransactionEntity({required this.uuid, required this.amount, required this.categoryUUid, required this.typeUuid, required this.data, required this.title, required this.userId, this.subAccountUuid = null});
   factory _TransactionEntity.fromJson(Map<String, dynamic> json) => _$TransactionEntityFromJson(json);
 
 @override final  String uuid;
@@ -219,6 +220,7 @@ class _TransactionEntity implements TransactionEntity {
 @override final  DateTime data;
 @override final  String title;
 @override final  String userId;
+@override@JsonKey() final  String? subAccountUuid;
 
 /// Create a copy of TransactionEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -233,16 +235,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TransactionEntity&&(identical(other.uuid, uuid) || other.uuid == uuid)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.categoryUUid, categoryUUid) || other.categoryUUid == categoryUUid)&&(identical(other.typeUuid, typeUuid) || other.typeUuid == typeUuid)&&(identical(other.data, data) || other.data == data)&&(identical(other.title, title) || other.title == title)&&(identical(other.userId, userId) || other.userId == userId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TransactionEntity&&(identical(other.uuid, uuid) || other.uuid == uuid)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.categoryUUid, categoryUUid) || other.categoryUUid == categoryUUid)&&(identical(other.typeUuid, typeUuid) || other.typeUuid == typeUuid)&&(identical(other.data, data) || other.data == data)&&(identical(other.title, title) || other.title == title)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.subAccountUuid, subAccountUuid) || other.subAccountUuid == subAccountUuid));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,uuid,amount,categoryUUid,typeUuid,data,title,userId);
+int get hashCode => Object.hash(runtimeType,uuid,amount,categoryUUid,typeUuid,data,title,userId,subAccountUuid);
 
 @override
 String toString() {
-  return 'TransactionEntity(uuid: $uuid, amount: $amount, categoryUUid: $categoryUUid, typeUuid: $typeUuid, data: $data, title: $title, userId: $userId)';
+  return 'TransactionEntity(uuid: $uuid, amount: $amount, categoryUUid: $categoryUUid, typeUuid: $typeUuid, data: $data, title: $title, userId: $userId, subAccountUuid: $subAccountUuid)';
 }
 
 
@@ -253,7 +255,7 @@ abstract mixin class _$TransactionEntityCopyWith<$Res> implements $TransactionEn
   factory _$TransactionEntityCopyWith(_TransactionEntity value, $Res Function(_TransactionEntity) _then) = __$TransactionEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String uuid, double amount, String categoryUUid, String typeUuid, DateTime data, String title, String userId
+ String uuid, double amount, String categoryUUid, String typeUuid, DateTime data, String title, String userId, String? subAccountUuid
 });
 
 
@@ -270,7 +272,7 @@ class __$TransactionEntityCopyWithImpl<$Res>
 
 /// Create a copy of TransactionEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? uuid = null,Object? amount = null,Object? categoryUUid = null,Object? typeUuid = null,Object? data = null,Object? title = null,Object? userId = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? uuid = null,Object? amount = null,Object? categoryUUid = null,Object? typeUuid = null,Object? data = null,Object? title = null,Object? userId = null,Object? subAccountUuid = freezed,}) {
   return _then(_TransactionEntity(
 uuid: null == uuid ? _self.uuid : uuid // ignore: cast_nullable_to_non_nullable
 as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
@@ -279,7 +281,8 @@ as String,typeUuid: null == typeUuid ? _self.typeUuid : typeUuid // ignore: cast
 as String,data: null == data ? _self.data : data // ignore: cast_nullable_to_non_nullable
 as DateTime,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
-as String,
+as String,subAccountUuid: freezed == subAccountUuid ? _self.subAccountUuid : subAccountUuid // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

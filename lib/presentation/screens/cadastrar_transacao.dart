@@ -9,11 +9,13 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/entity/category_entity.dart';
+import '../../domain/entity/sub_account_entity.dart';
 import '../../domain/entity/template_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
 import '../../utils/logger.dart';
 import '../blocs/auth/auth_bloc.dart';
+import '../blocs/sub_account/sub_account_cubit.dart';
 import '../blocs/template/template_cubit.dart';
 import '../blocs/transaction/transaction_cubit.dart';
 import '../widgets/design_system.dart';
@@ -37,17 +39,26 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
 
   bool _saveAsTemplate = false;
 
+  String? _subAccountUuid;
+
   String? _dateError;
   String? _typeError;
   String? _categoryError;
 
   final TemplateCubit _templateCubit = TemplateCubit();
+  final SubAccountCubit _subAccountCubit = SubAccountCubit();
 
   @override
   void initState() {
     super.initState();
     final TransactionCubit cubit = context.read<TransactionCubit>();
     Future<void>.microtask(cubit.getCategories);
+    final String userId =
+        context.read<AuthBloc>().state.whenOrNull(
+              signedIn: (ClerkAuthState s) => s.user?.id,
+            ) ??
+        '';
+    Future<void>.microtask(() => _subAccountCubit.loadAccounts(userId));
     final TransactionEntity? tx = widget.initialTransaction;
     if (tx != null) {
       _titleController.text = tx.title;
@@ -57,6 +68,7 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
           ? tx.typeUuid
           : null;
       _categoryUuid = tx.categoryUUid;
+      _subAccountUuid = tx.subAccountUuid;
     }
   }
 
@@ -65,6 +77,7 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
     _titleController.dispose();
     _amountController.dispose();
     _templateCubit.close();
+    _subAccountCubit.close();
     super.dispose();
   }
 
@@ -305,6 +318,69 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
               ],
               const Gap(16),
 
+              // Sub-account selector (only shown when ≥ 1 sub-account exists)
+              BlocBuilder<SubAccountCubit, SubAccountState>(
+                bloc: _subAccountCubit,
+                builder: (BuildContext context, SubAccountState saState) {
+                  final List<SubAccountEntity> accounts =
+                      saState.whenOrNull(
+                        listed: (List<SubAccountEntity> a, _) => a,
+                      ) ??
+                      <SubAccountEntity>[];
+                  if (accounts.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      const Text('Sub-conta', style: AppTextStyles.labelBold),
+                      const Gap(8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: <Widget>[
+                          for (final SubAccountEntity acc in accounts)
+                            GestureDetector(
+                              onTap: () => setState(() {
+                                _subAccountUuid = _subAccountUuid == acc.uuid
+                                    ? null
+                                    : acc.uuid;
+                              }),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _subAccountUuid == acc.uuid
+                                      ? Color(acc.color)
+                                      : AppColors.muted.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: _subAccountUuid == acc.uuid
+                                        ? Color(acc.color)
+                                        : AppColors.muted.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: Text(
+                                  acc.name,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: _subAccountUuid == acc.uuid
+                                        ? AppColors.onPrimary
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const Gap(16),
+                    ],
+                  );
+                },
+              ),
+
               // Save as template
               if (widget.initialTransaction == null) ...<Widget>[
                 Row(
@@ -347,6 +423,7 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
                             data: _selectedDate ?? DateTime.now(),
                             title: _titleController.text,
                             userId: userId,
+                            subAccountUuid: _subAccountUuid,
                           ),
                         );
                       } else {
@@ -360,6 +437,7 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
                             data: _selectedDate ?? DateTime.now(),
                             title: title,
                             userId: userId,
+                            subAccountUuid: _subAccountUuid,
                           ),
                         );
                         if (_saveAsTemplate) {

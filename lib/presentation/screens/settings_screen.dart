@@ -411,6 +411,18 @@ class _DataCard extends StatelessWidget {
         ),
         const Divider(),
         _ActionRow(
+          icon: AppIcons.balance,
+          label: 'Carteiras de benefícios',
+          onTap: () => context.push('/carteiras'),
+        ),
+        const Divider(),
+        _ActionRow(
+          icon: Icons.account_balance_wallet_outlined,
+          label: 'Sub-contas',
+          onTap: () => context.push('/sub-contas'),
+        ),
+        const Divider(),
+        _ActionRow(
           icon: AppIcons.bank,
           label: 'Contas conectadas',
           onTap: () => context.push('/contas-conectadas'),

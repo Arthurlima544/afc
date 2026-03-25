@@ -3,13 +3,16 @@ import 'package:flutter/material.dart' hide Colors;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../domain/entity/benefit_entity.dart';
 import '../../domain/entity/bill_entity.dart';
 import '../../domain/entity/category_entity.dart';
 import '../../domain/entity/goal_entity.dart';
 import '../../domain/entity/investment_entity.dart';
 import '../../domain/entity/limit_entity.dart';
+import '../../domain/entity/sub_account_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../presentation/blocs/auth/auth_bloc.dart';
+import '../../presentation/blocs/benefit/benefit_cubit.dart';
 import '../../presentation/blocs/bill/bill_cubit.dart';
 import '../../presentation/blocs/category/category_cubit.dart';
 import '../../presentation/blocs/fi_score/fi_score_cubit.dart';
@@ -28,14 +31,18 @@ import '../../presentation/blocs/recurring/recurring_cubit.dart';
 import '../../presentation/blocs/report/report_cubit.dart';
 import '../../presentation/blocs/review_queue/review_queue_cubit.dart';
 import '../../presentation/blocs/settings/settings_cubit.dart';
+import '../../presentation/blocs/sub_account/sub_account_cubit.dart';
 import '../../presentation/blocs/transaction/transaction_cubit.dart';
 import '../../presentation/blocs/watchlist/watchlist_cubit.dart';
+import '../../presentation/screens/benefit_wallet_screen.dart';
+import '../../presentation/screens/cadastrar_beneficio.dart';
 import '../../presentation/screens/cadastrar_categoria.dart';
 import '../../presentation/screens/cadastrar_conta.dart';
 import '../../presentation/screens/cadastrar_investimento.dart';
 import '../../presentation/screens/cadastrar_limites.dart';
 import '../../presentation/screens/cadastrar_meta.dart';
 import '../../presentation/screens/cadastrar_recorrente.dart';
+import '../../presentation/screens/cadastrar_sub_conta.dart';
 import '../../presentation/screens/cadastrar_transacao.dart';
 import '../../presentation/screens/compound_interest_screen.dart';
 import '../../presentation/screens/connect_bank_screen.dart';
@@ -65,6 +72,7 @@ import '../../presentation/screens/relatorio.dart';
 import '../../presentation/screens/review_queue_screen.dart';
 import '../../presentation/screens/scaffold_shell.dart';
 import '../../presentation/screens/settings_screen.dart';
+import '../../presentation/screens/sub_accounts_screen.dart';
 import '../../utils/logger.dart';
 import 'transitions.dart';
 
@@ -646,6 +654,80 @@ final GoRouter router = GoRouter(
             child: BlocProvider<PendingOpsCubit>(
               create: (_) => PendingOpsCubit()..load(),
               child: const PendingOpsScreen(),
+            ),
+          ),
+    ),
+
+    // --- Benefits routes ---
+
+    GoRoute(
+      path: '/carteiras',
+      builder: (BuildContext context, GoRouterState state) {
+        final String userId =
+            context.read<AuthBloc>().state.whenOrNull(
+                  signedIn: (ClerkAuthState s) => s.user?.id,
+                ) ??
+            '';
+        return BlocProvider<BenefitCubit>(
+          create: (_) => BenefitCubit()..loadBenefits(userId),
+          child: const BenefitWalletScreen(),
+        );
+      },
+    ),
+
+    GoRoute(
+      path: '/cadastro-beneficio',
+      builder: (BuildContext context, GoRouterState state) =>
+          BlocProvider<BenefitCubit>(
+            create: (_) => BenefitCubit(),
+            child: const CadastrarBeneficio(),
+          ),
+    ),
+
+    GoRoute(
+      path: '/editar-beneficio',
+      builder: (BuildContext context, GoRouterState state) =>
+          BlocProvider<BenefitCubit>(
+            create: (_) => BenefitCubit(),
+            child: CadastrarBeneficio(
+              initialBenefit: state.extra as BenefitEntity?,
+            ),
+          ),
+    ),
+
+    // --- Sub-account routes ---
+
+    GoRoute(
+      path: '/sub-contas',
+      builder: (BuildContext context, GoRouterState state) {
+        final String userId =
+            context.read<AuthBloc>().state.whenOrNull(
+                  signedIn: (ClerkAuthState s) => s.user?.id,
+                ) ??
+            '';
+        return BlocProvider<SubAccountCubit>(
+          create: (_) => SubAccountCubit()..loadWithTotals(userId),
+          child: const SubAccountsScreen(),
+        );
+      },
+    ),
+
+    GoRoute(
+      path: '/cadastro-sub-conta',
+      builder: (BuildContext context, GoRouterState state) =>
+          BlocProvider<SubAccountCubit>(
+            create: (_) => SubAccountCubit(),
+            child: const CadastrarSubConta(),
+          ),
+    ),
+
+    GoRoute(
+      path: '/editar-sub-conta',
+      builder: (BuildContext context, GoRouterState state) =>
+          BlocProvider<SubAccountCubit>(
+            create: (_) => SubAccountCubit(),
+            child: CadastrarSubConta(
+              initialAccount: state.extra as SubAccountEntity?,
             ),
           ),
     ),
