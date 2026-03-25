@@ -15,6 +15,7 @@ _TransactionEntity _$TransactionEntityFromJson(Map<String, dynamic> json) =>
       data: DateTime.parse(json['data'] as String),
       title: json['title'] as String,
       userId: json['userId'] as String,
+      subAccountUuid: json['subAccountUuid'] as String? ?? null,
     );
 
 Map<String, dynamic> _$TransactionEntityToJson(_TransactionEntity instance) =>
@@ -26,4 +27,5 @@ Map<String, dynamic> _$TransactionEntityToJson(_TransactionEntity instance) =>
       'data': instance.data.toIso8601String(),
       'title': instance.title,
       'userId': instance.userId,
+      'subAccountUuid': instance.subAccountUuid,
     };

@@ -6,10 +6,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../domain/entity/sub_account_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
 import '../../domain/usecase/transaction_grouper.dart';
 import '../blocs/auth/auth_bloc.dart';
+import '../blocs/sub_account/sub_account_cubit.dart';
 import '../blocs/transaction/transaction_cubit.dart';
 import '../widgets/design_system.dart';
 import '../widgets/empty_state.dart';
@@ -28,6 +30,26 @@ class ListaTransacoes extends StatefulWidget {
 
 class _ListaTransacoesState extends State<ListaTransacoes> {
   _ViewMode _viewMode = _ViewMode.byDate;
+  String? _filterSubAccountUuid;
+
+  late final SubAccountCubit _subAccountCubit;
+
+  @override
+  void initState() {
+    super.initState();
+    final String userId =
+        context.read<AuthBloc>().state.whenOrNull(
+              signedIn: (ClerkAuthState s) => s.user?.id,
+            ) ??
+        '';
+    _subAccountCubit = SubAccountCubit()..loadAccounts(userId);
+  }
+
+  @override
+  void dispose() {
+    _subAccountCubit.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -98,6 +120,52 @@ class _ListaTransacoesState extends State<ListaTransacoes> {
                 ),
               ],
             ),
+            const Gap(8),
+            // Sub-account filter chips (only when ≥ 1 sub-account exists)
+            BlocBuilder<SubAccountCubit, SubAccountState>(
+              bloc: _subAccountCubit,
+              builder: (BuildContext context, SubAccountState saState) {
+                final List<SubAccountEntity> accounts =
+                    saState.whenOrNull(
+                      listed: (List<SubAccountEntity> a, _) => a,
+                    ) ??
+                    <SubAccountEntity>[];
+                if (accounts.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const Gap(8),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: <Widget>[
+                          _ToggleChip(
+                            label: 'Todas',
+                            selected: _filterSubAccountUuid == null,
+                            onTap: () =>
+                                setState(() => _filterSubAccountUuid = null),
+                          ),
+                          const Gap(8),
+                          for (final SubAccountEntity acc in accounts) ...<
+                              Widget>[
+                            _ToggleChip(
+                              label: acc.name,
+                              selected: _filterSubAccountUuid == acc.uuid,
+                              onTap: () => setState(
+                                () => _filterSubAccountUuid = acc.uuid,
+                              ),
+                            ),
+                            const Gap(8),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
             const Gap(16),
             BlocBuilder<TransactionCubit, TransactionState>(
               builder: (BuildContext context, TransactionState state) =>
@@ -118,15 +186,28 @@ class _ListaTransacoesState extends State<ListaTransacoes> {
                       },
                     ),
                     success: (_) => const SizedBox(),
-                    listed: (List<TransactionEntity> txs) => txs.isEmpty
-                        ? const EmptyState(
-                            message:
-                                'Nenhuma transação ainda.\nToque em + para adicionar.',
-                            icon: Icons.receipt_long_outlined,
-                          )
-                        : _viewMode == _ViewMode.byDate
-                        ? _DateList(txs: txs)
-                        : _GroupList(txs: txs),
+                    listed: (List<TransactionEntity> txs) {
+                      final List<TransactionEntity> filtered =
+                          _filterSubAccountUuid == null
+                          ? txs
+                          : txs
+                                .where(
+                                  (TransactionEntity tx) =>
+                                      tx.subAccountUuid ==
+                                      _filterSubAccountUuid,
+                                )
+                                .toList();
+                      if (filtered.isEmpty) {
+                        return const EmptyState(
+                          message:
+                              'Nenhuma transação ainda.\nToque em + para adicionar.',
+                          icon: Icons.receipt_long_outlined,
+                        );
+                      }
+                      return _viewMode == _ViewMode.byDate
+                          ? _DateList(txs: filtered)
+                          : _GroupList(txs: filtered);
+                    },
                   ),
             ),
           ],

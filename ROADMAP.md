@@ -849,17 +849,17 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
-### US-85 · Company / sub-account tracking (PJ) ⏳
+### US-85 · Company / sub-account tracking (PJ) ✅
 **As a** PJ contractor or anyone managing multiple spending contexts, **I want** to tag expenses to different "accounts" (e.g. Pessoal, Empresa, Cartão PJ),
 **so that** I can see separate totals per context without mixing personal and business finances.
 
-- [ ] `SubAccountEntity` — `uuid`, `userId`, `name`, `type` (personal / company / benefit), `color: int`, `icon: int`
-- [ ] `TransactionEntity` extended with optional `subAccountUuid` field (nullable, backwards-compatible)
-- [ ] Sub-account selector chip row in `CadastrarTransacao` and `QuickAddSheet` (only shown when ≥ 1 sub-account exists)
-- [ ] `SubAccountsScreen` (`/sub-contas`) — list with per-account totals (income, expenses, balance); accessible from Settings
-- [ ] `SubAccountCubit` — CRUD + aggregate totals per account
-- [ ] Filter chip in `ListaTransacoes` to filter by sub-account
-- [ ] Unit tests for per-account aggregation
+- [x] `SubAccountEntity` — `uuid`, `userId`, `name`, `type` (personal / company / benefit), `color: int`, `icon: int`
+- [x] `TransactionEntity` extended with optional `subAccountUuid` field (nullable, backwards-compatible)
+- [x] Sub-account selector chip row in `CadastrarTransacao` and `QuickAddSheet` (only shown when ≥ 1 sub-account exists)
+- [x] `SubAccountsScreen` (`/sub-contas`) — list with per-account totals (income, expenses, balance); accessible from Settings
+- [x] `SubAccountCubit` — CRUD + aggregate totals per account (`loadWithTotals`)
+- [x] Filter chip in `ListaTransacoes` to filter by sub-account
+- [x] Unit tests for per-account aggregation (11 tests)
 
 ---
 
@@ -961,5 +961,5 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 14 (US-77–78) | `feat/sprint14-privacy-tooltips` | 🔄 In Progress |
 | Sprint 15 (US-79–81) | `feat/sprint15-smart-data` | ✅ Merged |
 | Sprint 16 (US-82–83) | `feat/sprint16-offline-first` | 🔄 In Progress |
-| Sprint 17 (US-84–85) | `feat/sprint17-benefits-accounts` | 🔄 In Progress |
+| Sprint 17 (US-84–85) | `feat/sprint17-benefits-accounts` | ✅ Done |
 | Sprint 18 (US-86–89) | `feat/sprint18-quality` | ⏳ Planned |

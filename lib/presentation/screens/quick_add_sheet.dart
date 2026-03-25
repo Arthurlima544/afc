@@ -5,10 +5,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/entity/category_entity.dart';
+import '../../domain/entity/sub_account_entity.dart';
 import '../../domain/entity/template_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
 import '../blocs/receipt_ocr/receipt_ocr_cubit.dart';
+import '../blocs/sub_account/sub_account_cubit.dart';
 import '../blocs/template/template_cubit.dart';
 import '../blocs/transaction/transaction_cubit.dart';
 import '../widgets/design_system.dart';
@@ -28,10 +30,13 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
   late final TemplateCubit _templateCubit = TemplateCubit()
     ..loadTemplates(widget.userId);
   final ReceiptOcrCubit _ocrCubit = ReceiptOcrCubit();
+  late final SubAccountCubit _subAccountCubit = SubAccountCubit()
+    ..loadAccounts(widget.userId);
 
   String _amountBuffer = '';
   String _type = TypeEntity.expense.name;
   String? _categoryUuid;
+  String? _subAccountUuid;
   final TextEditingController _titleController = TextEditingController();
 
   @override
@@ -39,6 +44,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
     _cubit.close();
     _templateCubit.close();
     _ocrCubit.close();
+    _subAccountCubit.close();
     _titleController.dispose();
     super.dispose();
   }
@@ -133,6 +139,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
         data: DateTime.now(),
         title: title,
         userId: widget.userId,
+        subAccountUuid: _subAccountUuid,
       ),
     );
     await HapticFeedback.mediumImpact();
@@ -145,6 +152,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
       BlocProvider<TransactionCubit>.value(value: _cubit),
       BlocProvider<TemplateCubit>.value(value: _templateCubit),
       BlocProvider<ReceiptOcrCubit>.value(value: _ocrCubit),
+      BlocProvider<SubAccountCubit>.value(value: _subAccountCubit),
     ],
     child: BlocListener<ReceiptOcrCubit, ReceiptOcrState>(
       listener: (BuildContext context, ReceiptOcrState ocrState) {
@@ -463,6 +471,79 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                       },
                     ),
                     const Gap(16),
+
+                    // Sub-account chips (only when ≥ 1 exists)
+                    BlocBuilder<SubAccountCubit, SubAccountState>(
+                      builder: (
+                        BuildContext context,
+                        SubAccountState saState,
+                      ) {
+                        final List<SubAccountEntity> accounts =
+                            saState.whenOrNull(
+                              listed: (List<SubAccountEntity> a, _) => a,
+                            ) ??
+                            <SubAccountEntity>[];
+                        if (accounts.isEmpty) {
+                          return const SizedBox.shrink();
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            const Text(
+                              'Sub-conta',
+                              style: AppTextStyles.labelBold,
+                            ),
+                            const Gap(8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: <Widget>[
+                                for (final SubAccountEntity acc in accounts)
+                                  GestureDetector(
+                                    onTap: () => setState(() {
+                                      _subAccountUuid =
+                                          _subAccountUuid == acc.uuid
+                                          ? null
+                                          : acc.uuid;
+                                    }),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _subAccountUuid == acc.uuid
+                                            ? Color(acc.color)
+                                            : AppColors.muted.withValues(
+                                                alpha: 0.15,
+                                              ),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: _subAccountUuid == acc.uuid
+                                              ? Color(acc.color)
+                                              : AppColors.muted.withValues(
+                                                  alpha: 0.3,
+                                                ),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        acc.name,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: _subAccountUuid == acc.uuid
+                                              ? AppColors.onPrimary
+                                              : null,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const Gap(16),
+                          ],
+                        );
+                      },
+                    ),
 
                     // Numpad
                     _Numpad(onKey: _onKey),

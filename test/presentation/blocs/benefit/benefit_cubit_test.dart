@@ -9,7 +9,7 @@ void main() {
   group('BenefitCubit', () {
     late FakeFirebaseFirestore fakeFirestore;
 
-    final BenefitEntity tBenefit = BenefitEntity(
+    const BenefitEntity tBenefit = BenefitEntity(
       uuid: 'benefit-1',
       userId: 'user-1',
       name: 'VA Sodexo',
@@ -49,7 +49,7 @@ void main() {
         act: (BenefitCubit cubit) async => cubit.loadBenefits('user-1'),
         expect: () => <BenefitState>[
           const BenefitState.loading(),
-          BenefitState.listed(<BenefitEntity>[tBenefit]),
+          const BenefitState.listed(<BenefitEntity>[tBenefit]),
         ],
       );
 
@@ -76,7 +76,7 @@ void main() {
         act: (BenefitCubit cubit) async => cubit.create(tBenefit),
         expect: () => <BenefitState>[
           const BenefitState.loading(),
-          BenefitState.success(tBenefit),
+          const BenefitState.success(tBenefit),
         ],
       );
 
@@ -124,7 +124,7 @@ void main() {
         },
         expect: () => <BenefitState>[
           const BenefitState.loading(),
-          BenefitState.listed(<BenefitEntity>[tBenefit]),
+          const BenefitState.listed(<BenefitEntity>[tBenefit]),
           const BenefitState.loading(),
           const BenefitState.listed(<BenefitEntity>[]),
         ],
