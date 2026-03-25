@@ -1,9 +1,12 @@
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../domain/entity/goal_entity.dart';
+import '../../../domain/entity/pending_operation_entity.dart';
 import '../../../utils/logger.dart';
+import '../../../utils/sync_queue.dart';
 
 part 'goal_state.dart';
 part 'goal_cubit.freezed.dart';
@@ -46,6 +49,16 @@ class GoalCubit extends Cubit<GoalState> {
             (DocumentReference<Object> doc) =>
                 logger.d('Goal added with ID: ${doc.id}'),
           );
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: goal.userId,
+          type: OperationType.create,
+          collection: 'goal',
+          payload: goal.toJson(),
+          createdAt: DateTime.now(),
+        ),
+      );
       emit(GoalState.success(goal));
     } on Exception catch (e) {
       emit(GoalState.error(e.toString()));
@@ -71,6 +84,16 @@ class GoalCubit extends Cubit<GoalState> {
         currentAmount: current.currentAmount + amount,
       );
       await doc.reference.set(updated.toJson());
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: '',
+          type: OperationType.update,
+          collection: 'goal',
+          payload: updated.toJson(),
+          createdAt: DateTime.now(),
+        ),
+      );
       emit(GoalState.success(updated));
     } on Exception catch (e) {
       emit(GoalState.error(e.toString()));
@@ -86,6 +109,16 @@ class GoalCubit extends Cubit<GoalState> {
       if (snap.docs.isNotEmpty) {
         await snap.docs.first.reference.delete();
       }
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: '',
+          type: OperationType.delete,
+          collection: 'goal',
+          payload: <String, dynamic>{'uuid': goalUuid},
+          createdAt: DateTime.now(),
+        ),
+      );
     } on Exception catch (e) {
       emit(GoalState.error(e.toString()));
     }
@@ -101,6 +134,16 @@ class GoalCubit extends Cubit<GoalState> {
       if (snap.docs.isNotEmpty) {
         await snap.docs.first.reference.set(goal.toJson());
       }
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: goal.userId,
+          type: OperationType.update,
+          collection: 'goal',
+          payload: goal.toJson(),
+          createdAt: DateTime.now(),
+        ),
+      );
       emit(GoalState.success(goal));
     } on Exception catch (e) {
       emit(GoalState.error(e.toString()));

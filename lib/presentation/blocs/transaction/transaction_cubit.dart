@@ -3,10 +3,13 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../domain/entity/category_entity.dart';
+import '../../../domain/entity/pending_operation_entity.dart';
 import '../../../domain/entity/transaction_entity.dart';
 import '../../../utils/logger.dart';
+import '../../../utils/sync_queue.dart';
 
 part 'transaction_state.dart';
 part 'transaction_cubit.freezed.dart';
@@ -42,6 +45,16 @@ class TransactionCubit extends Cubit<TransactionState> {
             (DocumentReference<Object> doc) =>
                 logger.d('DocumentSnapshot added with ID: ${doc.id}'),
           );
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: transaction.userId,
+          type: OperationType.create,
+          collection: 'transaction',
+          payload: transaction.toJson(),
+          createdAt: DateTime.now(),
+        ),
+      );
       emit(TransactionState.success(transaction));
     } on Exception catch (e) {
       emit(TransactionState.error(e.toString()));
@@ -94,6 +107,16 @@ class TransactionCubit extends Cubit<TransactionState> {
           .get();
       if (snap.docs.isNotEmpty) {
         await snap.docs.first.reference.delete();
+        SyncQueue.enqueueIfOffline(
+          PendingOperationEntity(
+            uuid: const Uuid().v1(),
+            userId: '',
+            type: OperationType.delete,
+            collection: 'transaction',
+            payload: <String, dynamic>{'uuid': txUuid},
+            createdAt: DateTime.now(),
+          ),
+        );
       }
     } on Exception catch (e) {
       emit(TransactionState.error(e.toString()));
@@ -109,6 +132,16 @@ class TransactionCubit extends Cubit<TransactionState> {
           .get();
       if (snap.docs.isNotEmpty) {
         await snap.docs.first.reference.set(transaction.toJson());
+        SyncQueue.enqueueIfOffline(
+          PendingOperationEntity(
+            uuid: const Uuid().v1(),
+            userId: transaction.userId,
+            type: OperationType.update,
+            collection: 'transaction',
+            payload: transaction.toJson(),
+            createdAt: DateTime.now(),
+          ),
+        );
       }
       emit(TransactionState.success(transaction));
     } on Exception catch (e) {

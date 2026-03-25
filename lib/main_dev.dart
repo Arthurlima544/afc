@@ -2,10 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import 'utils/connectivity_service.dart';
 import 'utils/flavors.dart';
 import 'utils/logger.dart';
 import 'utils/my_app.dart';
+import 'utils/sync_queue.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,6 +23,13 @@ void main() async {
     persistenceEnabled: true,
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
+
+  ConnectivityService.register();
+  SyncQueue.register();
+
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  SyncQueue.instance.attachPrefs(prefs);
+  await ConnectivityService.instance.initialize();
 
   runApp(const MyApp());
 }

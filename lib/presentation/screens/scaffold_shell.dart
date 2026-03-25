@@ -6,10 +6,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../config/theme/app_icons.dart';
 import '../../domain/usecase/category_seeder.dart';
+import '../../utils/connectivity_service.dart';
+import '../../utils/sync_queue.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/recurring/recurring_cubit.dart';
+import '../widgets/design_system.dart';
 import 'quick_add_sheet.dart';
 
 class ScaffoldShell extends StatefulWidget {
@@ -25,6 +27,7 @@ class _ScaffoldShellState extends State<ScaffoldShell>
     with SingleTickerProviderStateMixin {
   late final AnimationController _fabController;
   late final Animation<double> _fabScale;
+  StreamSubscription<bool>? _connectivitySub;
 
   @override
   void initState() {
@@ -39,6 +42,15 @@ class _ScaffoldShellState extends State<ScaffoldShell>
       CurvedAnimation(parent: _fabController, curve: Curves.elasticOut),
     );
     _fabController.forward();
+
+    // Auto-flush SyncQueue when connectivity is restored.
+    _connectivitySub = ConnectivityService.instance.onlineStream.listen(
+      (bool isOnline) {
+        if (isOnline && SyncQueue.instance.count > 0) {
+          unawaited(SyncQueue.instance.flush());
+        }
+      },
+    );
 
     Future<void>.microtask(() {
       if (!mounted) {
@@ -59,6 +71,7 @@ class _ScaffoldShellState extends State<ScaffoldShell>
   @override
   void dispose() {
     _fabController.dispose();
+    _connectivitySub?.cancel();
     super.dispose();
   }
 
@@ -95,11 +108,13 @@ class _ScaffoldShellState extends State<ScaffoldShell>
     final bool disableAnimations = MediaQuery.of(context).disableAnimations;
 
     return Scaffold(
-      body: widget.navigationShell,
+      body: OfflineBanner(child: widget.navigationShell),
       floatingActionButton: Semantics(
         label: 'Adicionar transação',
         child: ScaleTransition(
-          scale: disableAnimations ? const AlwaysStoppedAnimation<double>(1.0) : _fabScale,
+          scale: disableAnimations
+              ? const AlwaysStoppedAnimation<double>(1.0)
+              : _fabScale,
           child: FloatingActionButton(
             onPressed: () => _showQuickAdd(context),
             tooltip: 'Adicionar transação',

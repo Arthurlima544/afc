@@ -5,9 +5,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../domain/entity/pending_operation_entity.dart';
 import '../../../domain/entity/recurring_entity.dart';
 import '../../../domain/entity/transaction_entity.dart';
 import '../../../utils/logger.dart';
+import '../../../utils/sync_queue.dart';
 
 part 'recurring_state.dart';
 part 'recurring_cubit.freezed.dart';
@@ -74,6 +76,16 @@ class RecurringCubit extends Cubit<RecurringState> {
         (DocumentReference<Object> doc) =>
             logger.d('Recurring rule added with ID: ${doc.id}'),
       );
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: rule.userId,
+          type: OperationType.create,
+          collection: 'recurring',
+          payload: rule.toJson(),
+          createdAt: DateTime.now(),
+        ),
+      );
       emit(RecurringState.success(rule));
     } on Exception catch (e) {
       emit(RecurringState.error(e.toString()));
@@ -115,6 +127,16 @@ class RecurringCubit extends Cubit<RecurringState> {
       if (snap.docs.isNotEmpty) {
         await snap.docs.first.reference.delete();
       }
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: '',
+          type: OperationType.delete,
+          collection: 'recurring',
+          payload: <String, dynamic>{'uuid': uuid},
+          createdAt: DateTime.now(),
+        ),
+      );
     } on Exception catch (e) {
       emit(RecurringState.error(e.toString()));
     }

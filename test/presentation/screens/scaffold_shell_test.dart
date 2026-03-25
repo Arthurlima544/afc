@@ -1,14 +1,18 @@
 import 'package:afc/presentation/blocs/auth/auth_bloc.dart';
 import 'package:afc/presentation/blocs/recurring/recurring_cubit.dart';
 import 'package:afc/presentation/screens/scaffold_shell.dart';
+import 'package:afc/utils/connectivity_service.dart';
+import 'package:afc/utils/sync_queue.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -90,7 +94,14 @@ void main() {
   late MockAuthBloc mockAuthBloc;
   late RecurringCubit recurringCubit;
 
-  setUp(() {
+  setUp(() async {
+    await GetIt.I.reset();
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    ConnectivityService.register();
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    GetIt.I.registerSingleton<SyncQueue>(SyncQueue(firestore: FakeFirebaseFirestore()));
+    SyncQueue.instance.attachPrefs(prefs);
+
     mockAuthBloc = MockAuthBloc();
     when(() => mockAuthBloc.state).thenReturn(const AuthState.initial());
     when(() => mockAuthBloc.stream).thenAnswer(
@@ -102,6 +113,7 @@ void main() {
   tearDown(() async {
     await mockAuthBloc.close();
     await recurringCubit.close();
+    await GetIt.I.reset();
   });
 
   group('ScaffoldShell (US-15 — bottom navigation tab switching)', () {

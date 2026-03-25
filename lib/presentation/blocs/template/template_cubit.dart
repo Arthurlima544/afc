@@ -3,9 +3,12 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:uuid/uuid.dart';
 
+import '../../../domain/entity/pending_operation_entity.dart';
 import '../../../domain/entity/template_entity.dart';
 import '../../../utils/logger.dart';
+import '../../../utils/sync_queue.dart';
 
 part 'template_state.dart';
 part 'template_cubit.freezed.dart';
@@ -58,6 +61,16 @@ class TemplateCubit extends Cubit<TemplateState> {
         (DocumentReference<Object> doc) =>
             logger.d('Template saved with ID: ${doc.id}'),
       );
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: template.userId,
+          type: OperationType.create,
+          collection: 'template',
+          payload: template.toJson(),
+          createdAt: DateTime.now(),
+        ),
+      );
       emit(TemplateState.success(template));
     } on Exception catch (e) {
       emit(TemplateState.error(e.toString()));
@@ -77,6 +90,16 @@ class TemplateCubit extends Cubit<TemplateState> {
       if (snap.docs.isNotEmpty) {
         await snap.docs.first.reference.delete();
       }
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: '',
+          type: OperationType.delete,
+          collection: 'template',
+          payload: <String, dynamic>{'uuid': uuid},
+          createdAt: DateTime.now(),
+        ),
+      );
     } on Exception catch (e) {
       emit(TemplateState.error(e.toString()));
     }

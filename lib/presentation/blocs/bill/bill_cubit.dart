@@ -1,9 +1,12 @@
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../domain/entity/bill_entity.dart';
+import '../../../domain/entity/pending_operation_entity.dart';
 import '../../../utils/logger.dart';
+import '../../../utils/sync_queue.dart';
 
 part 'bill_state.dart';
 part 'bill_cubit.freezed.dart';
@@ -46,6 +49,16 @@ class BillCubit extends Cubit<BillState> {
             (DocumentReference<Object> doc) =>
                 logger.d('Bill added with ID: ${doc.id}'),
           );
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: bill.userId,
+          type: OperationType.create,
+          collection: 'bill',
+          payload: bill.toJson(),
+          createdAt: DateTime.now(),
+        ),
+      );
       emit(BillState.success(bill));
     } on Exception catch (e) {
       emit(BillState.error(e.toString()));
@@ -61,6 +74,16 @@ class BillCubit extends Cubit<BillState> {
       if (snap.docs.isNotEmpty) {
         await snap.docs.first.reference.delete();
       }
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: '',
+          type: OperationType.delete,
+          collection: 'bill',
+          payload: <String, dynamic>{'uuid': uuid},
+          createdAt: DateTime.now(),
+        ),
+      );
       await loadBills(userId);
     } on Exception catch (e) {
       emit(BillState.error(e.toString()));
@@ -77,6 +100,16 @@ class BillCubit extends Cubit<BillState> {
       if (snap.docs.isNotEmpty) {
         await snap.docs.first.reference.set(bill.toJson());
       }
+      SyncQueue.enqueueIfOffline(
+        PendingOperationEntity(
+          uuid: const Uuid().v1(),
+          userId: bill.userId,
+          type: OperationType.update,
+          collection: 'bill',
+          payload: bill.toJson(),
+          createdAt: DateTime.now(),
+        ),
+      );
       emit(BillState.success(bill));
     } on Exception catch (e) {
       emit(BillState.error(e.toString()));

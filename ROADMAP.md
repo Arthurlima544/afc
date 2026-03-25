@@ -804,18 +804,18 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 > **Goal**: Make the app fully usable without internet and keep users clearly informed when a feature needs connectivity, rather than silently failing or showing a spinner forever.
 
-### US-82 · Offline indicator and local operation queue ⏳
+### US-82 · Offline indicator and local operation queue ✅
 **As a** user, **I want** to create and modify data even when I have no internet connection,
 **so that** I can log expenses on the go and trust they'll sync when I'm back online.
 
-- [ ] Add `connectivity_plus` package; `ConnectivityService` singleton (via GetIt) exposes `Stream<bool> isOnline`
-- [ ] `OfflineBanner` widget — amber sticky banner "Sem conexão — dados serão sincronizados quando a internet voltar"; shown at top of `ScaffoldShell` when offline
-- [ ] `PendingOperationEntity` — `uuid`, `userId`, `type` (create/update/delete), `collection`, `payload: Map`, `createdAt`, `retries: int`; stored in `SharedPreferences` (local, not Firestore)
-- [ ] `SyncQueue` service — `enqueue(op)`, `flush()` (replays ops against Firestore when online), `clear()`
-- [ ] All cubit write operations: when offline → enqueue op + optimistically update local state; when online → write directly to Firestore
-- [ ] Features that are **read-only and require internet** (BrapiService quotes, Watchlist live prices, Open Finance sync): show a `_OfflineUnavailableCard` placeholder instead of a loading spinner
-- [ ] `ConnectivityService` triggers `SyncQueue.flush()` automatically when transitioning offline → online
-- [ ] Unit tests: enqueue, flush (applies ops in order), idempotency guard (skip if Firestore doc already up-to-date)
+- [x] Add `connectivity_plus` package; `ConnectivityService` singleton (via GetIt) exposes `Stream<bool> isOnline`
+- [x] `OfflineBanner` widget — amber sticky banner "Sem conexão — dados serão sincronizados quando a internet voltar"; shown at top of `ScaffoldShell` when offline
+- [x] `PendingOperationEntity` — `uuid`, `userId`, `type` (create/update/delete), `collection`, `payload: Map`, `createdAt`, `retries: int`; stored in `SharedPreferences` (local, not Firestore)
+- [x] `SyncQueue` service — `enqueue(op)`, `flush()` (replays ops against Firestore when online), `clear()`
+- [x] All cubit write operations: when offline → enqueue op + optimistically update local state; when online → write directly to Firestore
+- [x] Features that are **read-only and require internet** (BrapiService quotes, Watchlist live prices, Open Finance sync): show a `_OfflineUnavailableCard` placeholder instead of a loading spinner
+- [x] `ConnectivityService` triggers `SyncQueue.flush()` automatically when transitioning offline → online
+- [x] Unit tests: enqueue, flush (applies ops in order), idempotency guard (skip if Firestore doc already up-to-date)
 
 ---
 
@@ -961,6 +961,6 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 13 (US-70–76) | `fix/sprint13-bugs-state` | ✅ Merged |
 | Sprint 14 (US-77–78) | `feat/sprint14-privacy-tooltips` | 🔄 In Progress |
 | Sprint 15 (US-79–81) | `feat/sprint15-smart-data` | ✅ Merged |
-| Sprint 16 (US-82–83) | `feat/sprint16-offline-first` | ⏳ Planned |
+| Sprint 16 (US-82–83) | `feat/sprint16-offline-first` | 🔄 In Progress |
 | Sprint 17 (US-84–85) | `feat/sprint17-benefits-accounts` | ⏳ Planned |
 | Sprint 18 (US-86–89) | `feat/sprint18-quality` | ⏳ Planned |

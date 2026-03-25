@@ -13,6 +13,7 @@ import '../../domain/entity/stats_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
 import '../../domain/usecase/health_score.dart';
+import '../../utils/connectivity_service.dart';
 import '../../utils/flavors.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/fi_score/fi_score_cubit.dart';
@@ -1587,12 +1588,18 @@ class _MarketOpportunitiesCard extends StatelessWidget {
   const _MarketOpportunitiesCard();
 
   @override
-  Widget build(BuildContext context) => BlocProvider<MarketOpportunityCubit>(
-    create: (_) => MarketOpportunityCubit()..load(),
-    child: BlocBuilder<MarketOpportunityCubit, MarketOpportunityState>(
-      builder: (BuildContext ctx, MarketOpportunityState state) => state.when(
-        initial: () => const SizedBox(),
-        loading: () => const AppCard(
+  Widget build(BuildContext context) {
+    if (!ConnectivityService.instance.isOnline) {
+      return const OfflineUnavailableCard(
+        message: 'Oportunidades de mercado indisponíveis sem conexão',
+      );
+    }
+    return BlocProvider<MarketOpportunityCubit>(
+      create: (_) => MarketOpportunityCubit()..load(),
+      child: BlocBuilder<MarketOpportunityCubit, MarketOpportunityState>(
+        builder: (BuildContext ctx, MarketOpportunityState state) => state.when(
+          initial: () => const SizedBox(),
+          loading: () => const AppCard(
           padding: EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1657,6 +1664,7 @@ class _MarketOpportunitiesCard extends StatelessWidget {
       ),
     ),
   );
+  }
 }
 
 // ─── FIRE card ────────────────────────────────────────────────────────────────
