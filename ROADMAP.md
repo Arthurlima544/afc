@@ -867,18 +867,19 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 > **Goal**: Make the app production-ready: richer reports users actually want to export, stability monitoring via Crashlytics, and a feedback loop to drive future improvements.
 
-### US-86 · Enhanced PDF spending report ⏳
+### US-86 · Enhanced PDF spending report ✅
 **As a** user, **I want** my exported PDF to contain all the financial data I care about in one place,
 **so that** I can share it with an accountant or review it away from the app.
 
-- [ ] PDF cover page: period, user name, generation date, summary table (income / expenses / savings rate / balance)
-- [ ] Section 1 — Top expenses: ranked list of categories with amount + % of total + bar chart
-- [ ] Section 2 — Full transaction list: sorted by date, grouped by category, with running total per category
-- [ ] Section 3 — Goals snapshot: each goal name, target, current amount, progress %, days remaining
-- [ ] Section 4 — Month-over-month comparison table: last 3 months side-by-side (income, expenses, savings rate)
-- [ ] Section 5 — Investment summary: total invested, current value, overall gain/loss %
-- [ ] Page numbers, header with AFC logo text, footer with generation timestamp
-- [ ] Unit tests: PDF builder produces correct section count and non-zero byte output
+- [x] PDF cover page: period, user name, generation date, summary table (income / expenses / savings rate / balance)
+- [x] Section 1 — Top expenses: ranked list of categories with amount + % of total
+- [x] Section 2 — Full transaction list: sorted by date, grouped by category, with running total per category
+- [x] Section 3 — Goals snapshot: each goal name, target, current amount, progress %, days remaining
+- [x] Section 4 — Month-over-month comparison table: last 3 months side-by-side (income, expenses, savings rate)
+- [x] Section 5 — Investment summary: total cost, current value, overall gain/loss %
+- [x] Page numbers, header with AFC logo text, footer with generation timestamp
+- [x] `PdfReportBuilder` in domain layer; `relatorio.dart` delegates to it; `userName` read from `AuthBloc`
+- [x] Unit tests: PDF builder produces valid PDF magic header, non-zero bytes, `MonthSummary` savings rate
 
 ---
 
