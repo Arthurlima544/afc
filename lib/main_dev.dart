@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'utils/connectivity_service.dart';
 import 'utils/flavors.dart';
+import 'utils/local_notification_service.dart';
 import 'utils/logger.dart';
 import 'utils/my_app.dart';
 import 'utils/sync_queue.dart';
@@ -24,12 +25,14 @@ void main() async {
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
+  LocalNotificationService.register();
   ConnectivityService.register();
   SyncQueue.register();
 
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   SyncQueue.instance.attachPrefs(prefs);
   await ConnectivityService.instance.initialize();
+  await LocalNotificationService.instance.initialize();
 
   runApp(const MyApp());
 }

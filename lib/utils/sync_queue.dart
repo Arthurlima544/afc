@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/entity/pending_operation_entity.dart';
 import 'connectivity_service.dart';
+import 'local_notification_service.dart';
 import 'logger.dart';
 
 /// Persists offline write operations to [SharedPreferences] and replays them
@@ -19,10 +21,19 @@ class SyncQueue {
 
   static const String _kKey = 'sync_queue_ops';
 
+  /// Retry threshold after which a failed op triggers a failure notification.
+  static const int kRetryLimit = 3;
+
   static SyncQueue get instance => GetIt.I<SyncQueue>();
 
   final FirebaseFirestore _firestore;
   SharedPreferences? _prefs;
+
+  final StreamController<int> _countController =
+      StreamController<int>.broadcast();
+
+  /// Emits the current pending count whenever the queue changes.
+  Stream<int> get countStream => _countController.stream;
 
   // ---------------------------------------------------------------------------
   // Initialisation
@@ -59,6 +70,8 @@ class SyncQueue {
   void enqueue(PendingOperationEntity op) {
     final List<PendingOperationEntity> ops = pending..add(op);
     _persist(ops);
+    _countController.add(ops.length);
+    _scheduleNotification(ops.length);
     logger.d(
       'SyncQueue: enqueued ${op.type.name} on ${op.collection} '
       '(total: ${ops.length})',
@@ -89,6 +102,20 @@ class SyncQueue {
     }
 
     _persist(remaining);
+    _countController.add(remaining.length);
+
+    if (remaining.isEmpty) {
+      _notifySuccess();
+    } else {
+      final bool hardFailed =
+          remaining.any((PendingOperationEntity op) => op.retries >= kRetryLimit);
+      if (hardFailed) {
+        _notifyFailure(remaining.length);
+      } else {
+        _scheduleNotification(remaining.length);
+      }
+    }
+
     logger.d(
       'SyncQueue: ${ops.length - remaining.length} flushed, '
       '${remaining.length} remaining',
@@ -98,6 +125,34 @@ class SyncQueue {
   /// Removes all queued operations without replaying them.
   void clear() {
     _persist(<PendingOperationEntity>[]);
+    _countController.add(0);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Notification helpers (safe — swallow if service not registered)
+  // ---------------------------------------------------------------------------
+
+  void _scheduleNotification(int count) {
+    try {
+      unawaited(LocalNotificationService.instance.showPendingOps(count));
+      // ignore: avoid_catches_without_on_clauses
+    } catch (_) {
+      // Not registered in tests — skip silently.
+    }
+  }
+
+  void _notifySuccess() {
+    try {
+      unawaited(LocalNotificationService.instance.showSyncSuccess());
+      // ignore: avoid_catches_without_on_clauses
+    } catch (_) {}
+  }
+
+  void _notifyFailure(int count) {
+    try {
+      unawaited(LocalNotificationService.instance.showSyncFailure(count));
+      // ignore: avoid_catches_without_on_clauses
+    } catch (_) {}
   }
 
   // ---------------------------------------------------------------------------

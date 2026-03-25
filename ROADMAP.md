@@ -819,17 +819,17 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
-### US-83 · Pending sync notifications page ⏳
+### US-83 · Pending sync notifications page ✅
 **As a** user, **I want** to see a list of operations waiting to sync and be notified when they complete,
 **so that** I always know the state of my data and can trust the app.
 
-- [ ] `flutter_local_notifications` package; `LocalNotificationService` initialised in both entry points
-- [ ] When `SyncQueue` has ≥ 1 pending op: schedule a persistent local notification "X operações aguardando sincronização — toque para ver"
-- [ ] When `SyncQueue.flush()` completes successfully: show "Dados sincronizados com sucesso" notification + clear the persistent one
-- [ ] When flush fails after 3 retries: show "Falha ao sincronizar X operações — verifique sua conexão" notification
-- [ ] `PendingOpsScreen` (`/pendencias`) — list of queued operations grouped by collection (e.g. "3 transações", "1 meta"), each showing description + timestamp + retry button
-- [ ] Badge on Settings icon when pending ops > 0
-- [ ] Unit tests: notification scheduling on enqueue, clear on flush success, retry increment on flush failure
+- [x] `flutter_local_notifications` package; `LocalNotificationService` initialised in both entry points
+- [x] When `SyncQueue` has ≥ 1 pending op: schedule a persistent local notification "X operações aguardando sincronização — toque para ver"
+- [x] When `SyncQueue.flush()` completes successfully: show "Dados sincronizados com sucesso" notification + clear the persistent one
+- [x] When flush fails after 3 retries: show "Falha ao sincronizar X operações — verifique sua conexão" notification
+- [x] `PendingOpsScreen` (`/pendencias`) — list of queued operations grouped by collection (e.g. "3 transações", "1 meta"), each showing description + timestamp + retry button
+- [x] Badge on Settings icon when pending ops > 0
+- [x] Unit tests: notification scheduling on enqueue, clear on flush success, retry increment on flush failure
 
 ---
 

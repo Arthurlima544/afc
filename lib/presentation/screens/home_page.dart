@@ -15,6 +15,7 @@ import '../../domain/entity/type_entity.dart';
 import '../../domain/usecase/health_score.dart';
 import '../../utils/connectivity_service.dart';
 import '../../utils/flavors.dart';
+import '../../utils/sync_queue.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/fi_score/fi_score_cubit.dart';
 import '../blocs/health_score/health_score_cubit.dart';
@@ -35,6 +36,35 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) =>
       const SafeArea(child: SingleChildScrollView(child: _HomeContent()));
 }
+
+// ---------------------------------------------------------------------------
+// Settings badge
+// ---------------------------------------------------------------------------
+
+class _SettingsBadge extends StatelessWidget {
+  const _SettingsBadge({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => StreamBuilder<int>(
+    stream: SyncQueue.instance.countStream,
+    initialData: SyncQueue.instance.count,
+    builder: (BuildContext context, AsyncSnapshot<int> snap) {
+      final int count = snap.data ?? 0;
+      return Badge(
+        isLabelVisible: count > 0,
+        label: Text('$count'),
+        child: AppIconButton(
+          onPressed: onPressed,
+          icon: const Icon(AppIcons.settings, size: 20),
+        ),
+      );
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
 
 class _HomeContent extends StatelessWidget {
   const _HomeContent();
@@ -69,10 +99,7 @@ class _HomeContent extends StatelessWidget {
             ),
             Semantics(
               label: 'Configurações',
-              child: AppIconButton(
-                onPressed: () => context.push('/settings'),
-                icon: const Icon(AppIcons.settings, size: 20),
-              ),
+              child: _SettingsBadge(onPressed: () => context.push('/settings')),
             ),
           ],
         ),
