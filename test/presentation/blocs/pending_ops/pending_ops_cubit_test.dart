@@ -26,8 +26,7 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    queue = SyncQueue(firestore: FakeFirebaseFirestore());
-    queue.attachPrefs(prefs);
+    queue = SyncQueue(firestore: FakeFirebaseFirestore())..attachPrefs(prefs);
     cubit = PendingOpsCubit(queue: queue);
   });
 
@@ -43,9 +42,10 @@ void main() {
     });
 
     test('load() groups ops by collection correctly', () {
-      queue.enqueue(_op(uuid: 'op-1', collection: 'transaction'));
-      queue.enqueue(_op(uuid: 'op-2', collection: 'transaction'));
-      queue.enqueue(_op(uuid: 'op-3', collection: 'goal'));
+      queue
+        ..enqueue(_op(uuid: 'op-1'))
+        ..enqueue(_op(uuid: 'op-2'))
+        ..enqueue(_op(uuid: 'op-3', collection: 'goal'));
 
       cubit.load();
 
@@ -55,8 +55,9 @@ void main() {
     });
 
     test('load() preserves insertion order in ops list', () {
-      queue.enqueue(_op(uuid: 'op-a', collection: 'goal'));
-      queue.enqueue(_op(uuid: 'op-b', collection: 'transaction'));
+      queue
+        ..enqueue(_op(uuid: 'op-a', collection: 'goal'))
+        ..enqueue(_op(uuid: 'op-b'));
 
       cubit.load();
 
@@ -65,12 +66,7 @@ void main() {
     });
 
     test('retryNow() flushes queue and reloads state', () async {
-      queue.enqueue(
-        _op(
-          uuid: 'op-1',
-          collection: 'goal',
-        ).copyWith(),
-      );
+      queue.enqueue(_op(uuid: 'op-1', collection: 'goal'));
 
       cubit.load();
       expect(cubit.state.total, 1);
@@ -82,8 +78,9 @@ void main() {
     });
 
     test('clear() empties queue and emits empty state', () {
-      queue.enqueue(_op(uuid: 'op-1'));
-      queue.enqueue(_op(uuid: 'op-2'));
+      queue
+        ..enqueue(_op(uuid: 'op-1'))
+        ..enqueue(_op(uuid: 'op-2'));
 
       cubit.load();
       expect(cubit.state.total, 2);

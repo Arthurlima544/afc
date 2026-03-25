@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:afc/domain/entity/pending_operation_entity.dart';
 import 'package:afc/utils/local_notification_service.dart';
 import 'package:afc/utils/sync_queue.dart';
@@ -59,8 +61,7 @@ void main() {
 
     SharedPreferences.setMockInitialValues(<String, Object>{});
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    queue = SyncQueue(firestore: FakeFirebaseFirestore());
-    queue.attachPrefs(prefs);
+    queue = SyncQueue(firestore: FakeFirebaseFirestore())..attachPrefs(prefs);
   });
 
   tearDown(() => GetIt.I.reset());
@@ -74,8 +75,9 @@ void main() {
     });
 
     test('enqueue() calls showPendingOps(2) on second op', () async {
-      queue.enqueue(_op(uuid: 'op-1'));
-      queue.enqueue(_op(uuid: 'op-2'));
+      queue
+        ..enqueue(_op(uuid: 'op-1'))
+        ..enqueue(_op(uuid: 'op-2'));
 
       await Future<void>.delayed(Duration.zero);
       verify(() => mockNotifications.showPendingOps(1)).called(1);
@@ -83,12 +85,7 @@ void main() {
     });
 
     test('flush() calls showSyncSuccess() when all ops are flushed', () async {
-      queue.enqueue(
-        _op(
-          collection: 'goal',
-          type: OperationType.create,
-        ),
-      );
+      queue.enqueue(_op(collection: 'goal'));
 
       await queue.flush();
 
@@ -99,51 +96,34 @@ void main() {
 
     test('flush() calls showPendingOps when some ops remain (retries < limit)',
         () async {
-      // Pre-populate queue with an op that will fail (we use update on a
-      // non-existent doc — FakeFirestore silently no-ops, so it succeeds).
-      // To test "remaining" path we need to seed a failing op.  The simplest
-      // approach: enqueue a valid op but then manually add a failing entry by
-      // persisting an op that FakeFirestore won't be able to flush
-      // (impossible with FakeFirestore which never throws).
-      // Instead verify via countStream that showPendingOps is called on enqueue.
+      // Verify via countStream that showPendingOps is called on enqueue.
       queue.enqueue(_op(uuid: 'op-1'));
 
       await Future<void>.delayed(Duration.zero);
       verify(() => mockNotifications.showPendingOps(1)).called(1);
     });
 
-    test('flush() calls showSyncFailure when an op reaches retry limit',
+    test('flush() calls showSyncSuccess after hard-failed op still flushes ok',
         () async {
-      // Manually persist an op that has already hit the retry threshold.
-      // We bypass enqueue() to avoid triggering another showPendingOps call.
-      final PendingOperationEntity hardFailedOp = _op(
-        retries: SyncQueue.kRetryLimit,
-        // Use an update op with a UUID that exists in Firestore so flush
-        // succeeds — but we need it to fail instead.  Since FakeFirestore
-        // never throws, we simulate by injecting an op whose collection
-        // triggers an exception via a custom subclass of SyncQueue.
-        // Simpler: verify the path via a direct call to the protected helper
-        // via a SyncQueue subclass in test, but that requires exposing it.
-        // Compromise: test via the countStream + verify no showSyncSuccess.
-      );
-      queue.enqueue(hardFailedOp);
+      // An op at the retry limit still flushes successfully against
+      // FakeFirestore (which never throws), so showSyncSuccess is expected.
+      queue.enqueue(_op(retries: SyncQueue.kRetryLimit));
 
       await queue.flush();
 
       await Future<void>.delayed(Duration.zero);
-      // FakeFirestore succeeds, so showSyncSuccess is called.
-      // The hard-failed path requires a Firestore exception — covered below
-      // via retry-increment test.
       verify(mockNotifications.showSyncSuccess).called(1);
     });
 
     test('countStream emits updated count on enqueue and clear', () async {
       final List<int> counts = <int>[];
-      final subscription = queue.countStream.listen(counts.add);
+      final StreamSubscription<int> subscription =
+          queue.countStream.listen(counts.add);
 
-      queue.enqueue(_op(uuid: 'op-1'));
-      queue.enqueue(_op(uuid: 'op-2'));
-      queue.clear();
+      queue
+        ..enqueue(_op(uuid: 'op-1'))
+        ..enqueue(_op(uuid: 'op-2'))
+        ..clear();
 
       await Future<void>.delayed(Duration.zero);
       await subscription.cancel();
