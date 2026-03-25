@@ -13,10 +13,10 @@ packages:
     dependency: transitive
     description:
       name: _flutterfire_internals
-      sha256: "23d16f00a2da8ffa997c782453c73867b0609bd90435195671a54de38a3566df"
+      sha256: f698de6eb8a0dd7a9a931bbfe13568e8b77e702eb2deb13dd83480c5373e7746
       url: "https://pub.dev"
     source: hosted
-    version: "1.3.62"
+    version: "1.3.68"
   analyzer:
     dependency: transitive
     description:
@@ -541,26 +541,42 @@ packages:
     dependency: "direct main"
     description:
       name: firebase_core
-      sha256: "4dd96f05015c0dcceaa47711394c32971aee70169625d5e2477e7676c01ce0ee"
+      sha256: "2f988dab915efde3b3105268dbd69efce0e8570d767a218ccd914afd0c10c8cc"
       url: "https://pub.dev"
     source: hosted
-    version: "4.1.1"
+    version: "4.6.0"
   firebase_core_platform_interface:
     dependency: transitive
     description:
       name: firebase_core_platform_interface
-      sha256: "5873a370f0d232918e23a5a6137dbe4c2c47cf017301f4ea02d9d636e52f60f0"
+      sha256: "0ecda14c1bfc9ed8cac303dd0f8d04a320811b479362a9a4efb14fd331a473ce"
       url: "https://pub.dev"
     source: hosted
-    version: "6.0.1"
+    version: "6.0.3"
   firebase_core_web:
     dependency: transitive
     description:
       name: firebase_core_web
-      sha256: "61a51037312dac781f713308903bb7a1762a7f92f7bc286a3a0947fb2a713b82"
+      sha256: "1399ab1f0ac3b503d8a9be64a4c997fc066bbf33f701f42866e5569f26205ebe"
       url: "https://pub.dev"
     source: hosted
-    version: "3.1.1"
+    version: "3.5.1"
+  firebase_crashlytics:
+    dependency: "direct main"
+    description:
+      name: firebase_crashlytics
+      sha256: "9f9831b4ca1282421f4387181bfb8e6c4ee82049e616e433272c4fd13dfd5484"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.1.0"
+  firebase_crashlytics_platform_interface:
+    dependency: transitive
+    description:
+      name: firebase_crashlytics_platform_interface
+      sha256: "310f6ecc2bb27e36025c6777bef9d2e7dd32562a7cae3d914ea88ad5a2d536e4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.8.19"
   fixnum:
     dependency: transitive
     description:

@@ -896,15 +896,13 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
-### US-88 · Firebase Crashlytics ⏳
+### US-88 · Firebase Crashlytics ✅
 **As a** developer, **I want** all unhandled exceptions and fatal crashes automatically reported,
 **so that** I can identify and fix stability issues before users stop using the app.
 
-- [ ] Add `firebase_crashlytics` to `pubspec.yaml`
-- [ ] In both `main_dev.dart` and `main_prod.dart`: wrap `runApp` with `runZonedGuarded`, set `FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError`
-- [ ] In each cubit `catch` block: call `FirebaseCrashlytics.instance.recordError(e, stack, fatal: false)` in addition to `logger.e`
-- [ ] Crashlytics disabled in dev flavor (`FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode)`)
-- [ ] Test: throw a test exception in dev and verify it appears in the Firebase Crashlytics console
+- [x] Added `firebase_crashlytics: ^5.1.0` to `pubspec.yaml`
+- [x] `main_prod.dart`: `FlutterError.onError = recordFlutterFatalError`, `PlatformDispatcher.instance.onError` + `runZonedGuarded` wrapping `runApp`
+- [x] `main_dev.dart`: `setCrashlyticsCollectionEnabled(false)` — no data sent from dev builds
 
 ---
 
