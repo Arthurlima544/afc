@@ -15,7 +15,7 @@ import 'logger.dart';
 /// [SyncQueue.instance].
 class SyncQueue {
   SyncQueue({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   static const String _kKey = 'sync_queue_ops';
 
@@ -59,8 +59,10 @@ class SyncQueue {
   void enqueue(PendingOperationEntity op) {
     final List<PendingOperationEntity> ops = pending..add(op);
     _persist(ops);
-    logger.d('SyncQueue: enqueued ${op.type.name} on ${op.collection} '
-        '(total: ${ops.length})');
+    logger.d(
+      'SyncQueue: enqueued ${op.type.name} on ${op.collection} '
+      '(total: ${ops.length})',
+    );
   }
 
   /// Replays all pending operations against Firestore in insertion order.
@@ -74,8 +76,7 @@ class SyncQueue {
       return;
     }
 
-    final List<PendingOperationEntity> remaining =
-        <PendingOperationEntity>[];
+    final List<PendingOperationEntity> remaining = <PendingOperationEntity>[];
 
     for (final PendingOperationEntity op in ops) {
       try {
@@ -171,9 +172,7 @@ class SyncQueue {
   void _persist(List<PendingOperationEntity> ops) {
     _prefs?.setString(
       _kKey,
-      jsonEncode(
-        ops.map((PendingOperationEntity o) => o.toJson()).toList(),
-      ),
+      jsonEncode(ops.map((PendingOperationEntity o) => o.toJson()).toList()),
     );
   }
 
@@ -190,6 +189,7 @@ class SyncQueue {
       if (!ConnectivityService.instance.isOnline) {
         SyncQueue.instance.enqueue(op);
       }
+      // ignore: avoid_catches_without_on_clauses
     } catch (_) {
       // GetIt not configured — skip silently.
     }
