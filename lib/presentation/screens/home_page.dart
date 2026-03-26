@@ -10,10 +10,12 @@ import '../../domain/entity/benefit_entity.dart';
 import '../../domain/entity/bill_entity.dart';
 import '../../domain/entity/investment_entity.dart';
 import '../../domain/entity/market_quote_entity.dart';
+import '../../domain/entity/spending_insight.dart';
 import '../../domain/entity/stats_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
 import '../../domain/usecase/health_score.dart';
+import '../../domain/usecase/insight_engine.dart';
 import '../../utils/connectivity_service.dart';
 import '../../utils/flavors.dart';
 import '../../utils/sync_queue.dart';
@@ -106,6 +108,8 @@ class _HomeContent extends StatelessWidget {
         ),
         const SyncStatusWidget(),
         const SummaryWidget(),
+        const Gap(12),
+        const _InsightsCard(),
         const Gap(12),
         const _NetWorthCard(),
         const Gap(12),
@@ -2137,4 +2141,153 @@ class _MiniQuoteRow extends StatelessWidget {
       ],
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// Insights card (US-92)
+// ---------------------------------------------------------------------------
+
+class _InsightsCard extends StatefulWidget {
+  const _InsightsCard();
+
+  @override
+  State<_InsightsCard> createState() => _InsightsCardState();
+}
+
+class _InsightsCardState extends State<_InsightsCard> {
+  List<SpendingInsight> _insights = <SpendingInsight>[];
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.microtask(_load);
+  }
+
+  Future<void> _load() async {
+    final String userId =
+        context.read<AuthBloc>().state.whenOrNull(
+          signedIn: (ClerkAuthState s) => s.user?.id,
+        ) ??
+        '';
+    if (userId.isEmpty) {
+      return;
+    }
+    try {
+      final List<Future<QuerySnapshot<Map<String, dynamic>>>> futures =
+          <Future<QuerySnapshot<Map<String, dynamic>>>>[
+        FirebaseFirestore.instance
+            .collection('transaction')
+            .where('userId', isEqualTo: userId)
+            .get(),
+        FirebaseFirestore.instance.collection('category').get(),
+      ];
+      final List<QuerySnapshot<Map<String, dynamic>>> results =
+          await Future.wait(futures);
+
+      final List<TransactionEntity> allTxs =
+          results[0].docs.map((QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+        final Map<String, dynamic> data = Map<String, dynamic>.from(doc.data());
+        final dynamic rawDate = data['data'];
+        if (rawDate is Timestamp) {
+          data['data'] = rawDate.toDate().toIso8601String();
+        }
+        return TransactionEntity.fromJson(data);
+      }).toList();
+
+      final Map<String, String> categoryNames = <String, String>{};
+      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc
+          in results[1].docs) {
+        final Map<String, dynamic> data = doc.data();
+        final String uuid = (data['uuid'] as String?) ?? doc.id;
+        final String name = (data['name'] as String?) ?? '';
+        categoryNames[uuid] = name;
+      }
+
+      final DateTime now = DateTime.now();
+      final List<TransactionEntity> currMonth = allTxs
+          .where(
+            (TransactionEntity tx) =>
+                tx.data.year == now.year && tx.data.month == now.month,
+          )
+          .toList();
+
+      final DateTime prevDate = now.month == 1
+          ? DateTime(now.year - 1, 12)
+          : DateTime(now.year, now.month - 1);
+      final List<TransactionEntity> prevMonth = allTxs
+          .where(
+            (TransactionEntity tx) =>
+                tx.data.year == prevDate.year &&
+                tx.data.month == prevDate.month,
+          )
+          .toList();
+
+      final List<SpendingInsight> insights = InsightEngine.generate(
+        currentMonth: currMonth,
+        prevMonth: prevMonth,
+        categoryNames: categoryNames,
+      );
+
+      if (mounted) {
+        setState(() => _insights = insights);
+      }
+    } on Exception {
+      // silently ignore — insights are non-critical
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_insights.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return SizedBox(
+      height: 72,
+      child: PageView.builder(
+        itemCount: _insights.length,
+        itemBuilder: (BuildContext context, int index) =>
+            _InsightChip(insight: _insights[index]),
+      ),
+    );
+  }
+}
+
+class _InsightChip extends StatelessWidget {
+  const _InsightChip({required this.insight});
+
+  final SpendingInsight insight;
+
+  IconData get _icon => switch (insight.type) {
+        InsightType.topCategory => Icons.category_outlined,
+        InsightType.biggestExpense => Icons.receipt_long_outlined,
+        InsightType.monthOverMonthDelta => Icons.trending_up_outlined,
+        InsightType.savingsRateTrend => Icons.savings_outlined,
+      };
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    child: Row(
+      children: <Widget>[
+        Icon(_icon, size: 20, color: AppColors.primary),
+        const Gap(10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Text(insight.title, style: AppTextStyles.caption),
+              const Gap(2),
+              Text(
+                insight.subtitle,
+                style: AppTextStyles.bodyBold,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
 }

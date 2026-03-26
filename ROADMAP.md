@@ -946,14 +946,14 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
-### US-92 · Spending insights on dashboard ⏳
+### US-92 · Spending insights on dashboard ✅
 **As a** user, **I want** to see smart insight cards on my dashboard,
 **so that** I can spot unusual spending without manually reviewing reports.
 
-- [ ] `InsightEngine` use-case — takes current-month and previous-month transaction lists, returns `List<SpendingInsight>`
-- [ ] Insight types: `topCategory` (highest spend category), `biggestExpense` (single largest transaction), `monthOverMonthDelta` (% change in total expenses vs prev month), `savingsRateTrend` (improving/worsening)
-- [ ] `InsightsCard` widget on `home_page.dart` — horizontal `PageView` of insight chips (hidden when no transactions)
-- [ ] Unit tests: each insight type computed correctly, empty list when no data
+- [x] `InsightEngine` use-case — takes current-month and previous-month transaction lists, returns `List<SpendingInsight>`
+- [x] Insight types: `topCategory` (highest spend category), `biggestExpense` (single largest transaction), `monthOverMonthDelta` (% change in total expenses vs prev month), `savingsRateTrend` (improving/worsening)
+- [x] `InsightsCard` widget on `home_page.dart` — horizontal `PageView` of insight chips (hidden when no transactions)
+- [x] Unit tests: each insight type computed correctly, empty list when no data
 
 ---
 
