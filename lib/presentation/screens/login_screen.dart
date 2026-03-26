@@ -24,9 +24,11 @@ class LoginScreen extends StatelessWidget {
       state.whenOrNull(signedIn: (_) => context.go('/home'));
     },
     child: child ??
-        const SafeArea(
-          child: ClerkErrorListener(
-            child: ClerkAuthentication(),
+        const Scaffold(
+          body: SafeArea(
+            child: ClerkErrorListener(
+              child: ClerkAuthentication(),
+            ),
           ),
         ),
   );
