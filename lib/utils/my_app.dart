@@ -20,17 +20,21 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late final ThemeCubit _themeCubit;
+  late final PrivacyCubit _privacyCubit;
 
   @override
   void initState() {
     super.initState();
     _themeCubit = ThemeCubit();
     _themeCubit.loadSavedTheme();
+    _privacyCubit = PrivacyCubit();
+    _privacyCubit.loadSavedPrivacy();
   }
 
   @override
   void dispose() {
     _themeCubit.close();
+    _privacyCubit.close();
     super.dispose();
   }
 
@@ -38,7 +42,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) => MultiBlocProvider(
     providers: <BlocProvider<dynamic>>[
       BlocProvider<ThemeCubit>.value(value: _themeCubit),
-      BlocProvider<PrivacyCubit>(create: (_) => PrivacyCubit()),
+      BlocProvider<PrivacyCubit>.value(value: _privacyCubit),
       BlocProvider<AuthBloc>(
         create: (BuildContext context) => AuthBloc(
           onFirebaseSignIn: _firebaseSignIn,

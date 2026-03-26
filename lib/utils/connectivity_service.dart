@@ -21,6 +21,15 @@ class ConnectivityService {
 
   bool get isOnline => _isOnline;
 
+  /// Returns `true` when online. Returns `true` (optimistic) if the service
+  /// has not been registered yet (e.g. in unit-test environments).
+  static bool get isOnlineSafe {
+    if (!GetIt.I.isRegistered<ConnectivityService>()) {
+      return true;
+    }
+    return ConnectivityService.instance.isOnline;
+  }
+
   /// Emits `true` when online, `false` when offline.
   Stream<bool> get onlineStream => _controller.stream;
 

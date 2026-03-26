@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -90,7 +92,8 @@ class _HomeContent extends StatelessWidget {
               builder: (BuildContext context, bool isHidden) => Semantics(
                 label: isHidden ? 'Mostrar valores' : 'Ocultar valores',
                 child: AppIconButton(
-                  onPressed: () => context.read<PrivacyCubit>().toggle(),
+                  onPressed: () =>
+                      unawaited(context.read<PrivacyCubit>().toggle()),
                   icon: Icon(
                     isHidden
                         ? Icons.visibility_off_outlined
@@ -1116,9 +1119,12 @@ class _FiScoreCard extends StatelessWidget {
                         children: <Widget>[
                           const Row(
                             children: <Widget>[
-                              Text(
-                                'Independência Financeira',
-                                style: AppTextStyles.sectionTitle,
+                              Flexible(
+                                child: Text(
+                                  'Independência Financeira',
+                                  style: AppTextStyles.sectionTitle,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                               Gap(6),
                               AppTooltipIcon(
@@ -1727,7 +1733,7 @@ class _MarketOpportunitiesCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!ConnectivityService.instance.isOnline) {
+    if (!ConnectivityService.isOnlineSafe) {
       return const OfflineUnavailableCard(
         message: 'Oportunidades de mercado indisponíveis sem conexão',
       );

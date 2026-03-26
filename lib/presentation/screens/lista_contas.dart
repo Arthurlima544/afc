@@ -107,6 +107,9 @@ class _BillItem extends StatelessWidget {
   final BillEntity bill;
 
   _BillStatus _getStatus() {
+    if (bill.isPaid) {
+      return _BillStatus.paid;
+    }
     final DateTime now = DateTime.now();
     final int today = now.day;
     if (bill.dueDay < today) {
@@ -121,7 +124,9 @@ class _BillItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final _BillStatus status = _getStatus();
-    final Color borderColor = status == _BillStatus.overdue
+    final Color borderColor = status == _BillStatus.paid
+        ? AppColors.income
+        : status == _BillStatus.overdue
         ? AppColors.expense
         : status == _BillStatus.upcoming
         ? AppColors.warning
@@ -140,6 +145,25 @@ class _BillItem extends StatelessWidget {
             Row(
               children: <Widget>[
                 Expanded(child: Text(bill.name, style: AppTextStyles.title)),
+                if (status == _BillStatus.paid)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDCFCE7),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'Pago',
+                      style: TextStyle(
+                        fontSize: AppTextStyle.sizeXs,
+                        color: AppColors.income,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 if (status == _BillStatus.upcoming)
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -202,36 +226,53 @@ class _BillItem extends StatelessWidget {
             ),
             const Gap(8),
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 AppIconButton(
-                  onPressed: () async {
-                    final BillCubit bills = context.read<BillCubit>();
-                    final String userId =
-                        context.read<AuthBloc>().state.whenOrNull(
-                          signedIn: (ClerkAuthState s) => s.user?.id,
-                        ) ??
-                        '';
-                    await showFormSheet<void>(
-                      context,
-                      builder: (BuildContext ctx) => MultiBlocProvider(
-                        providers: <BlocProvider<dynamic>>[
-                          BlocProvider<BillCubit>(create: (_) => BillCubit()),
-                          BlocProvider<CategoryCubit>(
-                            create: (_) => CategoryCubit()..loadCategories(),
-                          ),
-                        ],
-                        child: CadastrarConta(initialBill: bill),
-                      ),
-                    );
-                    unawaited(bills.loadBills(userId));
-                  },
-                  icon: const Icon(Icons.edit, size: 18),
+                  onPressed: () =>
+                      context.read<BillCubit>().togglePaid(bill),
+                  icon: Icon(
+                    bill.isPaid
+                        ? Icons.check_circle
+                        : Icons.check_circle_outline,
+                    size: 20,
+                    color: bill.isPaid ? AppColors.income : null,
+                  ),
                 ),
-                const Gap(8),
-                AppIconButton(
-                  onPressed: () => _confirmDelete(context),
-                  icon: const Icon(Icons.delete, size: 18),
+                Row(
+                  children: <Widget>[
+                    AppIconButton(
+                      onPressed: () async {
+                        final BillCubit bills = context.read<BillCubit>();
+                        final String userId =
+                            context.read<AuthBloc>().state.whenOrNull(
+                              signedIn: (ClerkAuthState s) => s.user?.id,
+                            ) ??
+                            '';
+                        await showFormSheet<void>(
+                          context,
+                          builder: (BuildContext ctx) => MultiBlocProvider(
+                            providers: <BlocProvider<dynamic>>[
+                              BlocProvider<BillCubit>(
+                                create: (_) => BillCubit(),
+                              ),
+                              BlocProvider<CategoryCubit>(
+                                create: (_) => CategoryCubit()..loadCategories(),
+                              ),
+                            ],
+                            child: CadastrarConta(initialBill: bill),
+                          ),
+                        );
+                        unawaited(bills.loadBills(userId));
+                      },
+                      icon: const Icon(Icons.edit, size: 18),
+                    ),
+                    const Gap(8),
+                    AppIconButton(
+                      onPressed: () => _confirmDelete(context),
+                      icon: const Icon(Icons.delete, size: 18),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -272,4 +313,4 @@ class _BillItem extends StatelessWidget {
   }
 }
 
-enum _BillStatus { normal, upcoming, overdue }
+enum _BillStatus { normal, upcoming, overdue, paid }

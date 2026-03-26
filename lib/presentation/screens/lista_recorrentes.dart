@@ -161,9 +161,19 @@ class _RecorrenteItem extends StatelessWidget {
             }
           },
         ),
-        AppIconButton(
-          onPressed: () => context.read<RecurringCubit>().delete(rule.uuid),
-          icon: const Icon(Icons.delete, size: 18),
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert, size: 20),
+          onSelected: (String action) {
+            if (action == 'delete') {
+              context.read<RecurringCubit>().delete(rule.uuid);
+            }
+          },
+          itemBuilder: (_) => const <PopupMenuEntry<String>>[
+            PopupMenuItem<String>(
+              value: 'delete',
+              child: Text('Excluir'),
+            ),
+          ],
         ),
       ],
     ),

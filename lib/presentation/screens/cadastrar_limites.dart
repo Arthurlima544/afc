@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 import '../../domain/entity/calendar_entity.dart';
 import '../../domain/entity/category_entity.dart';
 import '../../domain/entity/limit_entity.dart';
+import '../../utils/connectivity_service.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/limit/limit_cubit.dart';
 import '../widgets/design_system.dart';
@@ -46,6 +47,8 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
           ? limit.month
           : null;
       _categoryUuid = limit.categoryUUid;
+    } else {
+      _monthValue = CalendarEntity.values[DateTime.now().month - 1].name;
     }
   }
 
@@ -96,7 +99,12 @@ class _CadastrarLimitesState extends State<CadastrarLimites> {
         child: BlocConsumer<LimitCubit, LimitState>(
         listener: (BuildContext context, LimitState state) {
           state.whenOrNull(
-            success: (_) => context.pop(),
+            success: (_) {
+              if (!ConnectivityService.isOnlineSafe) {
+                showOfflineSavedSnackBar(context);
+              }
+              context.pop();
+            },
             error: (String msg) => ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(msg)),
             ),

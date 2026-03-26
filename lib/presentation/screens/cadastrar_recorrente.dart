@@ -13,6 +13,7 @@ import '../../domain/entity/frequency_entity.dart';
 import '../../domain/entity/recurring_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
+import '../../utils/connectivity_service.dart';
 import '../../utils/logger.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/recurring/recurring_cubit.dart';
@@ -121,7 +122,12 @@ class _CadastrarRecorrenteState extends State<CadastrarRecorrente> {
     body: BlocListener<RecurringCubit, RecurringState>(
       listener: (BuildContext context, RecurringState state) {
         state.whenOrNull(
-          success: (_) => context.pop(),
+          success: (_) {
+            if (!ConnectivityService.isOnlineSafe) {
+              showOfflineSavedSnackBar(context);
+            }
+            context.pop();
+          },
           error: (String msg) => ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(msg)),
           ),

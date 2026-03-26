@@ -36,29 +36,32 @@ class _BannerContent extends StatelessWidget {
   const _BannerContent();
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: double.infinity,
-    color: AppColors.warningBackground,
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    child: const Row(
-      children: <Widget>[
-        Icon(
-          Icons.wifi_off_outlined,
-          size: 16,
-          color: AppColors.warningText,
-        ),
-        Gap(8),
-        Expanded(
-          child: Text(
-            'Sem conexão — dados serão sincronizados quando a internet voltar',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.warningText,
-              fontWeight: FontWeight.w500,
+  Widget build(BuildContext context) => SafeArea(
+    bottom: false,
+    child: Container(
+      width: double.infinity,
+      color: AppColors.warningBackground,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: const Row(
+        children: <Widget>[
+          Icon(
+            Icons.wifi_off_outlined,
+            size: 16,
+            color: AppColors.warningText,
+          ),
+          Gap(8),
+          Expanded(
+            child: Text(
+              'Sem conexão — dados serão sincronizados quando a internet voltar',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.warningText,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     ),
   );
 }
@@ -83,6 +86,20 @@ class OfflineUnavailableCard extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
       ],
+    ),
+  );
+}
+
+/// Shows a [SnackBar] informing the user the record was saved locally and will
+/// sync when connectivity is restored. Call inside a BLoC success listener
+/// whenever `ConnectivityService.instance.isOnline` is `false` at save time.
+void showOfflineSavedSnackBar(BuildContext context) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text(
+        'Salvo localmente — será sincronizado quando a internet voltar',
+      ),
+      duration: Duration(seconds: 3),
     ),
   );
 }

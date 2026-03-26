@@ -90,6 +90,11 @@ class BillCubit extends Cubit<BillState> {
     }
   }
 
+  Future<void> togglePaid(BillEntity bill) async {
+    final BillEntity updated = bill.copyWith(isPaid: !bill.isPaid);
+    await update(updated);
+  }
+
   Future<void> update(BillEntity bill) async {
     try {
       emit(const BillState.loading());

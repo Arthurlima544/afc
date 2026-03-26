@@ -23,7 +23,7 @@ class ListaWatchlist extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!ConnectivityService.instance.isOnline) {
+    if (!ConnectivityService.isOnlineSafe) {
       return Scaffold(
         appBar: AppBar(
           leading: BackButton(onPressed: () => context.pop()),

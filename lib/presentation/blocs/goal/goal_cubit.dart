@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -5,6 +7,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../domain/entity/goal_entity.dart';
 import '../../../domain/entity/pending_operation_entity.dart';
+import '../../../utils/connectivity_service.dart';
 import '../../../utils/logger.dart';
 import '../../../utils/sync_queue.dart';
 
@@ -42,13 +45,16 @@ class GoalCubit extends Cubit<GoalState> {
   Future<void> create(GoalEntity goal) async {
     try {
       emit(const GoalState.loading());
-      await _firestore
-          .collection('goal')
-          .add(goal.toJson())
-          .then(
-            (DocumentReference<Object> doc) =>
-                logger.d('Goal added with ID: ${doc.id}'),
-          );
+      final Future<DocumentReference<Map<String, dynamic>>> addFuture =
+          _firestore.collection('goal').add(goal.toJson());
+      if (ConnectivityService.isOnlineSafe) {
+        await addFuture.then(
+          (DocumentReference<Object> doc) =>
+              logger.d('Goal added with ID: ${doc.id}'),
+        );
+      } else {
+        unawaited(addFuture);
+      }
       SyncQueue.enqueueIfOffline(
         PendingOperationEntity(
           uuid: const Uuid().v1(),
@@ -83,7 +89,12 @@ class GoalCubit extends Cubit<GoalState> {
       final GoalEntity updated = current.copyWith(
         currentAmount: current.currentAmount + amount,
       );
-      await doc.reference.set(updated.toJson());
+      final Future<void> setFutureContrib = doc.reference.set(updated.toJson());
+      if (ConnectivityService.isOnlineSafe) {
+        await setFutureContrib;
+      } else {
+        unawaited(setFutureContrib);
+      }
       SyncQueue.enqueueIfOffline(
         PendingOperationEntity(
           uuid: const Uuid().v1(),
@@ -132,7 +143,13 @@ class GoalCubit extends Cubit<GoalState> {
           .where('uuid', isEqualTo: goal.uuid)
           .get();
       if (snap.docs.isNotEmpty) {
-        await snap.docs.first.reference.set(goal.toJson());
+        final Future<void> setFuture =
+            snap.docs.first.reference.set(goal.toJson());
+        if (ConnectivityService.isOnlineSafe) {
+          await setFuture;
+        } else {
+          unawaited(setFuture);
+        }
       }
       SyncQueue.enqueueIfOffline(
         PendingOperationEntity(

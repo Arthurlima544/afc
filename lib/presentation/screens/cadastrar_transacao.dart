@@ -13,6 +13,7 @@ import '../../domain/entity/sub_account_entity.dart';
 import '../../domain/entity/template_entity.dart';
 import '../../domain/entity/transaction_entity.dart';
 import '../../domain/entity/type_entity.dart';
+import '../../utils/connectivity_service.dart';
 import '../../utils/logger.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/sub_account/sub_account_cubit.dart';
@@ -139,7 +140,12 @@ class _CadastrarTransacaoState extends State<CadastrarTransacao> {
         child: BlocConsumer<TransactionCubit, TransactionState>(
         listener: (BuildContext context, TransactionState state) {
           state.whenOrNull(
-            success: (_) => context.pop(),
+            success: (_) {
+              if (!ConnectivityService.isOnlineSafe) {
+                showOfflineSavedSnackBar(context);
+              }
+              context.pop();
+            },
             error: (String msg) => ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(msg)),
             ),

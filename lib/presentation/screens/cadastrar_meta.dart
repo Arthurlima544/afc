@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/entity/goal_entity.dart';
+import '../../utils/connectivity_service.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/goal/goal_cubit.dart';
 import '../widgets/design_system.dart';
@@ -84,7 +85,12 @@ class _CadastrarMetaState extends State<CadastrarMeta> {
     body: BlocListener<GoalCubit, GoalState>(
     listener: (BuildContext context, GoalState state) {
       state.whenOrNull(
-        success: (_) => context.pop(),
+        success: (_) {
+          if (!ConnectivityService.isOnlineSafe) {
+            showOfflineSavedSnackBar(context);
+          }
+          context.pop();
+        },
         error: (String msg) => ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(msg)),
         ),
