@@ -324,10 +324,21 @@ class _ListaTransacoesState extends State<ListaTransacoes> {
                       final List<TransactionEntity> filtered =
                           _applyFilters(txs);
                       if (filtered.isEmpty) {
-                        return const EmptyState(
-                          message:
-                              'Nenhuma transação ainda.\nToque em + para adicionar.',
+                        return EmptyState(
+                          message: 'Nenhuma transação ainda.',
+                          subtitle:
+                              'Registre receitas e despesas para acompanhar para onde vai seu dinheiro.',
                           icon: Icons.receipt_long_outlined,
+                          actionLabel: 'Registrar transação',
+                          onAction: () => showFormSheet<void>(
+                            context,
+                            builder: (BuildContext ctx) =>
+                                BlocProvider<TransactionCubit>(
+                                  create: (_) =>
+                                      TransactionCubit()..getCategories(),
+                                  child: const CadastrarTransacao(),
+                                ),
+                          ),
                         );
                       }
                       return _viewMode == _ViewMode.byDate

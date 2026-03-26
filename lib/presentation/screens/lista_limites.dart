@@ -72,10 +72,20 @@ class ListaLimites extends StatelessWidget {
                 loaded: (_) => const SizedBox(),
                 success: (_) => const SizedBox(),
                 listed: (List<LimitListItem> items) => items.isEmpty
-                    ? const EmptyState(
-                        message:
-                            'Nenhum limite ainda.\nToque em + para definir.',
+                    ? EmptyState(
+                        message: 'Nenhum limite ainda.',
+                        subtitle:
+                            'Defina tetos de gastos por categoria e receba alertas ao se aproximar.',
                         icon: Icons.tune_outlined,
+                        actionLabel: 'Criar limite',
+                        onAction: () => showFormSheet<void>(
+                          context,
+                          builder: (BuildContext ctx) =>
+                              BlocProvider<LimitCubit>(
+                                create: (_) => LimitCubit()..getCategories(),
+                                child: const CadastrarLimites(),
+                              ),
+                        ),
                       )
                     : Column(
                         children: <Widget>[

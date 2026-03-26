@@ -1,10 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../utils/app_spacing.dart';
+import '../blocs/goal/goal_cubit.dart';
+import '../widgets/design_system.dart';
+import 'cadastrar_meta.dart';
 
 /// First-run onboarding experience shown before the main app shell.
 ///
@@ -49,6 +52,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body:
           'Monitore seu score de saúde financeira e tome decisões mais conscientes.',
     ),
+    _OnboardingPage(
+      icon: Icons.flag_outlined,
+      title: 'Crie sua primeira meta',
+      body:
+          'Defina um objetivo — reserva de emergência, viagem ou qualquer sonho — e comece a acompanhar seu progresso.',
+    ),
   ];
 
   bool get _isLastPage => _currentPage == _pages.length - 1;
@@ -59,6 +68,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (mounted) {
       context.go('/home');
     }
+  }
+
+  Future<void> _openGoalCreation() async {
+    await showFormSheet<void>(
+      context,
+      builder: (BuildContext ctx) => BlocProvider<GoalCubit>(
+        create: (_) => GoalCubit(),
+        child: const CadastrarMeta(),
+      ),
+    );
+    unawaited(_complete());
   }
 
   void _next() {
@@ -107,26 +127,41 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const SizedBox(height: 24),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _next,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.onPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+            child: Column(
+              children: <Widget>[
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed:
+                        _isLastPage ? () => unawaited(_openGoalCreation()) : _next,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.onPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      _isLastPage ? 'Criar minha primeira meta' : 'Próximo',
+                      style: const TextStyle(
+                        fontSize: AppTextStyle.sizeLg,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
-                child: Text(
-                  _isLastPage ? 'Começar' : 'Próximo',
-                  style: const TextStyle(
-                    fontSize: AppTextStyle.sizeLg,
-                    fontWeight: FontWeight.w600,
+                if (_isLastPage) ...<Widget>[
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: _complete,
+                    child: const Text(
+                      'Pular por agora',
+                      style: TextStyle(color: AppColors.muted),
+                    ),
                   ),
-                ),
-              ),
+                ],
+              ],
             ),
           ),
           const SizedBox(height: 32),

@@ -31,6 +31,7 @@ import '../../presentation/blocs/recurring/recurring_cubit.dart';
 import '../../presentation/blocs/report/report_cubit.dart';
 import '../../presentation/blocs/review_queue/review_queue_cubit.dart';
 import '../../presentation/blocs/settings/settings_cubit.dart';
+import '../../presentation/blocs/setup_checklist/setup_checklist_cubit.dart';
 import '../../presentation/blocs/sub_account/sub_account_cubit.dart';
 import '../../presentation/blocs/transaction/transaction_cubit.dart';
 import '../../presentation/blocs/watchlist/watchlist_cubit.dart';
@@ -186,6 +187,10 @@ final GoRouter router = GoRouter(
                     ),
                     BlocProvider<FiScoreCubit>(
                       create: (_) => FiScoreCubit()..load(uuidOrNull),
+                    ),
+                    BlocProvider<SetupChecklistCubit>(
+                      create: (_) =>
+                          SetupChecklistCubit()..load(uuidOrNull),
                     ),
                   ],
                   child: const HomePage(),
