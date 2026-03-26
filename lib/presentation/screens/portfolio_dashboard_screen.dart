@@ -8,10 +8,12 @@ import 'package:intl/intl.dart';
 
 import '../../domain/entity/investment_entity.dart';
 import '../../domain/usecase/portfolio_calculator.dart';
+import '../../utils/share_card_service.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/investment/investment_cubit.dart';
 import '../widgets/design_system.dart';
 import '../widgets/error_state.dart';
+import '../widgets/share_cards/portfolio_share_card.dart';
 import '../widgets/skeleton_list.dart';
 
 // ─── Asset type helpers ───────────────────────────────────────────────────────
@@ -103,15 +105,33 @@ class _PortfolioDashboardScreenState extends State<PortfolioDashboardScreen> {
 
 // ─── Body ─────────────────────────────────────────────────────────────────────
 
-class _PortfolioBody extends StatelessWidget {
+class _PortfolioBody extends StatefulWidget {
   const _PortfolioBody({required this.summary});
 
   final PortfolioSummary summary;
 
   @override
+  State<_PortfolioBody> createState() => _PortfolioBodyState();
+}
+
+class _PortfolioBodyState extends State<_PortfolioBody> {
+  final GlobalKey _shareKey = GlobalKey();
+
+  Future<void> _shareCard() async {
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+    if (!mounted) {
+      return;
+    }
+    await ShareCardService.captureAndShare(
+      _shareKey,
+      'afc_portfolio.png',
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final List<PortfolioPosition> sorted = List<PortfolioPosition>.of(
-      summary.positions,
+      widget.summary.positions,
     )..sort(
       (PortfolioPosition a, PortfolioPosition b) =>
           b.currentValue.compareTo(a.currentValue),
@@ -122,19 +142,30 @@ class _PortfolioBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          _OverallCard(summary: summary),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: <Widget>[
+              AppIconButton(
+                onPressed: _shareCard,
+                icon: const Icon(Icons.share_outlined, size: 18),
+                tooltip: 'Compartilhar portfólio',
+              ),
+            ],
+          ),
+          _OverallCard(summary: widget.summary),
           const Gap(16),
-          if (summary.allocationByType.length > 1) ...<Widget>[
+          if (widget.summary.allocationByType.length > 1) ...<Widget>[
             const _SectionLabel('Alocação por tipo'),
             const Gap(8),
-            _AllocationChart(allocation: summary.allocationByType),
+            _AllocationChart(allocation: widget.summary.allocationByType),
             const Gap(16),
           ],
-          if (summary.bestPerformer != null &&
-              summary.bestPerformer != summary.worstPerformer) ...<Widget>[
+          if (widget.summary.bestPerformer != null &&
+              widget.summary.bestPerformer !=
+                  widget.summary.worstPerformer) ...<Widget>[
             const _SectionLabel('Destaques'),
             const Gap(8),
-            _HighlightCards(summary: summary),
+            _HighlightCards(summary: widget.summary),
             const Gap(16),
           ],
           const _SectionLabel('Posições'),
@@ -143,6 +174,13 @@ class _PortfolioBody extends StatelessWidget {
             _PositionCard(position: p),
             const Gap(8),
           ],
+          // ── Off-screen portfolio card for share capture ────────────────
+          Offstage(
+            child: RepaintBoundary(
+              key: _shareKey,
+              child: PortfolioShareCard(summary: widget.summary),
+            ),
+          ),
         ],
       ),
     );

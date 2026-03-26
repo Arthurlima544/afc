@@ -1215,6 +1215,121 @@ If a shared `SkeletonList` widget is used, add a `itemHeight` parameter so each 
 
 ---
 
+## Sprint 22 — Social Sharing & Organic Growth (US-105–108)
+
+> **Goal**: Turn AFC into a word-of-mouth machine. Every user who hits a financial milestone — closes a month with a positive savings rate, reaches a goal, crosses a FI milestone, or sees their portfolio grow — gets a one-tap way to share a beautiful, branded card on WhatsApp, Instagram Stories, or any social platform. The cards carry AFC's visual identity so each share is organic marketing: real data, real design, zero ad spend.
+
+**Technical foundation** (shared across all US stories):
+- Flutter's `RepaintBoundary` + `RenderRepaintBoundary.toImage(pixelRatio: 3.0)` to rasterise any widget into a `ui.Image`.
+- `image` package (`dart:ui` → PNG bytes) + `path_provider` to write a temporary file.
+- `share_plus` (already in `pubspec.yaml`) → `Share.shareXFiles([XFile(path)])` opens the native share sheet.
+- All cards render at **1080 × 1080 px** (square, optimal for Instagram / WhatsApp) or **1080 × 1920 px** (stories format where noted).
+- A `ShareCardWrapper` widget handles the fixed dimensions, background gradient, AFC logo watermark, and "Gerado com AFC · afc.app" attribution line at the bottom — ensuring every card carries the brand without each US having to repeat it.
+- Cards are rendered off-screen inside an `Offstage` widget, captured, then shared — the user never sees the render step.
+
+---
+
+### US-105 · Monthly Financial Snapshot Card ⏳
+**As a** user, **I want** to share a beautiful branded card with my monthly financial summary,
+**so that** I can celebrate a good month with friends or hold myself publicly accountable.
+
+**Trigger**: "Compartilhar resumo" button added to the `RelatorioScreen` (report screen), visible after the report data loads. Also accessible from the dashboard's "Resumo do mês" card via a share icon in the top-right corner.
+
+**Card content** (1080 × 1080):
+- **Header**: month name + year (e.g. "Março 2026"), AFC logo top-right.
+- **Hero row**: three stat bubbles — Receitas (green), Despesas (red), Saldo (primary or red depending on sign).
+- **Taxa de poupança**: large percentage with colour-coded label ("Excelente ≥ 30%", "Boa 15–30%", "Atenção < 15%").
+- **Top 3 categorias**: horizontal bar chart (mini) showing the three highest-spend categories with amounts.
+- **Saúde financeira**: health score gauge (semi-circle arc) with the numeric score.
+- **Footer**: "Gerado com AFC · afc.app" in small muted text.
+- Background: dark card surface (`AppColors.surface`) with subtle emerald gradient in the top-left corner.
+
+**Implementation**:
+- `MonthlySnapshotCard` widget in `lib/presentation/widgets/share_cards/monthly_snapshot_card.dart`.
+- `ShareCardService.captureAndShare(GlobalKey key, String filename)` utility in `lib/utils/share_card_service.dart` — wraps the `RepaintBoundary` capture + `share_plus` call; reused by all four US stories.
+- `RelatorioScreen` wraps the card in `Offstage(child: RepaintBoundary(key: _shareKey, child: MonthlySnapshotCard(...)))`.
+- Privacy mode: if `PrivacyCubit` is `true` (hidden), show "••••" placeholders for all monetary values on the card.
+
+**Unit tests**: `MonthlySnapshotCard` renders without overflow at 1080×1080; `ShareCardService` returns a non-empty byte list from a `RepaintBoundary` in a widget test.
+
+---
+
+### US-106 · Goal Achievement Celebration Card ⏳
+**As a** user, **I want** to share a celebratory card when I complete a savings goal,
+**so that** I can celebrate the milestone and inspire others to use AFC.
+
+**Trigger**: when `currentAmount >= targetAmount` on a `GoalEntity`, the goal card in `lista_metas.dart` shows a "🎉 Meta alcançada!" banner with a "Compartilhar conquista" button. Also appears as a one-time full-screen modal the first time the user opens the goals list after a goal reaches 100% (tracked via SharedPreferences key `goal_celebrated_{uuid}`).
+
+**Card content** (1080 × 1080):
+- **Background**: rich emerald gradient (top-left `#10B981` → bottom-right `#065F46`).
+- **Central icon**: the goal's `icon` rendered large (64 px) inside a white circle.
+- **Goal name**: large bold white text.
+- **Amount**: "R$ X,XX alcançados" in white.
+- **Duration**: "em X meses" — computed from `GoalEntity.createdAt` → `deadline` (or today if reached early).
+- **Confetti-style decoration**: static geometric shapes (diamonds, circles) scattered in the background using `CustomPaint` — no animation needed since this is a static image capture.
+- **Footer**: AFC logo + "Realize seus objetivos financeiros · afc.app".
+
+**Implementation**:
+- `GoalAchievementCard` widget in `lib/presentation/widgets/share_cards/goal_achievement_card.dart`.
+- `GoalEntity` requires a `createdAt: String` field (ISO-8601) — add with `@Default('')` (Freezed regeneration required).
+- `lista_metas.dart`: detect `goal.currentAmount >= goal.targetAmount` in the `listed` state; show banner and share button per qualifying card.
+
+**Unit tests**: `GoalAchievementCard` renders correctly for a completed goal; duration label shows "em 6 meses" for a goal created 6 months ago.
+
+---
+
+### US-107 · FI Milestone Share Card ⏳
+**As a** user, **I want** a shareable card when I cross a Financial Independence milestone (10 / 25 / 50 / 75 / 100%),
+**so that** I can mark the progress on my journey to financial independence and motivate others.
+
+**Trigger**: `FiScoreCubit` detects a milestone crossing (new score ≥ threshold AND previous score < threshold). Emits a `FiScoreState.milestoneReached(int milestone)` variant. `ScaffoldShell` (or `home_page.dart`) listens and shows a bottom sheet with the card preview + share button. Milestone shown only once per threshold (tracked in SharedPreferences `fi_milestone_shared_{milestone}`).
+
+**Card content** (1080 × 1920 — Stories format):
+- **Top third**: large milestone percentage (e.g. "50%") in bold, sub-label "Independência Financeira".
+- **Middle**: horizontal progress bar filled to the milestone %, with milestone labels (10 / 25 / 50 / 75 / 100) below.
+- **Stats row**: "Renda passiva: R$ X / mês" and "Despesas: R$ Y / mês".
+- **Milestone label**: contextual message per level:
+  - 10% → "Primeiros passos 🌱"
+  - 25% → "No caminho certo 🚀"
+  - 50% → "Metade do caminho 🏆"
+  - 75% → "Quase lá! 💎"
+  - 100% → "Financeiramente independente! 🎉"
+- **Background**: dark surface with a radial glow in `AppColors.primary` centred on the percentage.
+- **Footer**: AFC logo + "Calcule sua independência financeira · afc.app".
+
+**Implementation**:
+- Add `milestoneReached` variant to `FiScoreState` (Freezed regeneration required).
+- `FiScoreCubit._tryRecompute()`: after computing the new score, compare against the 5 milestone thresholds and emit `milestoneReached` if a new one is crossed.
+- `FiMilestoneCard` widget in `lib/presentation/widgets/share_cards/fi_milestone_card.dart`.
+
+**Unit tests**: `FiScoreCubit` emits `milestoneReached(50)` when score crosses from 48 → 52; does not re-emit if score stays above 50.
+
+---
+
+### US-108 · Portfolio Performance Share Card ⏳
+**As a** user, **I want** to share a snapshot of my investment portfolio's performance,
+**so that** I can show my gains (or losses) and discuss investing with friends.
+
+**Trigger**: "Compartilhar" icon button in the top-right of `PortfolioDashboardScreen`, visible whenever the portfolio has at least 1 investment.
+
+**Card content** (1080 × 1080):
+- **Header**: "Portfólio — [Month Year]", AFC logo top-right.
+- **Hero**: total current value (large), total gain/loss in R$ and % (green if positive, red if negative).
+- **Allocation donut**: compact `fl_chart` `PieChart` (120 × 120 px) with colour-coded slices by asset type (Ações / Renda Fixa / Cripto / Outros) — same colours as `PortfolioDashboardScreen`.
+- **Top 3 positions**: ranked list showing ticker/name, current value, ROI % — with green/red colouring.
+- **Best performer chip**: ticker + ROI% highlighted in a green pill.
+- **Footer**: "Acompanhe seus investimentos · afc.app" + AFC logo.
+- Background: dark surface with a subtle blue-teal gradient (differentiating investment context from the green-dominant monthly card).
+
+**Implementation**:
+- `PortfolioShareCard` widget in `lib/presentation/widgets/share_cards/portfolio_share_card.dart`.
+- `PortfolioDashboardScreen` holds a `GlobalKey _shareKey`; wraps the off-screen card in `Offstage` + `RepaintBoundary`; share button calls `ShareCardService.captureAndShare(_shareKey, 'portfolio_${DateTime.now().millisecondsSinceEpoch}.png')`.
+- Reuses `PortfolioSummary` and `List<PortfolioPosition>` already computed by `PortfolioCalculator`.
+
+**Unit tests**: `PortfolioShareCard` renders without overflow for a portfolio with 5 positions; gain is formatted in green when positive.
+
+---
+
 ## Technical Debt & Cross-cutting
 
 These items are not user stories but are necessary for long-term quality.
@@ -1262,3 +1377,4 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 19 (US-90–93) | `feat/sprint19-search-export-insights` | ✅ Done |
 | Sprint 20 (US-94–101) | `fix/sprint20-resilience-polish` | ✅ Merged |
 | Sprint 21 (US-102–104) | `feat/sprint21-trajectory` | ✅ Done |
+| Sprint 22 (US-105–108) | `feat/sprint22-social-sharing` | ⏳ Planned |

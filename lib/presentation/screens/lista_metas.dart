@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../domain/entity/goal_entity.dart';
+import '../../utils/share_card_service.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/goal/goal_cubit.dart';
 import '../widgets/design_system.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/error_state.dart';
+import '../widgets/share_cards/goal_achievement_card.dart';
 import '../widgets/skeleton_list.dart';
 import 'cadastrar_categoria.dart';
 import 'cadastrar_meta.dart';
@@ -111,10 +113,17 @@ class ListaMetas extends StatelessWidget {
   );
 }
 
-class _MetaItem extends StatelessWidget {
+class _MetaItem extends StatefulWidget {
   const _MetaItem({required this.goal});
 
   final GoalEntity goal;
+
+  @override
+  State<_MetaItem> createState() => _MetaItemState();
+}
+
+class _MetaItemState extends State<_MetaItem> {
+  final GlobalKey _shareKey = GlobalKey();
 
   Color _progressColor(double ratio) {
     if (ratio >= 1.0) {
@@ -130,9 +139,9 @@ class _MetaItem extends StatelessWidget {
     final DateTime now = DateTime.now();
     final DateTime today = DateTime(now.year, now.month, now.day);
     final DateTime deadline = DateTime(
-      goal.deadline.year,
-      goal.deadline.month,
-      goal.deadline.day,
+      widget.goal.deadline.year,
+      widget.goal.deadline.month,
+      widget.goal.deadline.day,
     );
     final int days = deadline.difference(today).inDays;
     if (days < 0) {
@@ -141,12 +150,27 @@ class _MetaItem extends StatelessWidget {
     return '$days dias restantes';
   }
 
+  Future<void> _shareCard() async {
+    // One frame so the Offstage card is laid out.
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+    if (!mounted) {
+      return;
+    }
+    await ShareCardService.captureAndShare(
+      _shareKey,
+      'afc_meta_${widget.goal.uuid.substring(0, 8)}.png',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final GoalEntity goal = widget.goal;
     final double ratio = goal.targetAmount > 0
         ? (goal.currentAmount / goal.targetAmount).clamp(0.0, 1.0)
         : 0.0;
     final Color barColor = _progressColor(ratio);
+    final bool isComplete = ratio >= 1.0;
+    final IconData goalIcon = iconList[goal.icon % iconList.length];
 
     return AppCard(
       padding: const EdgeInsets.all(16),
@@ -155,9 +179,16 @@ class _MetaItem extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Icon(iconList[goal.icon % iconList.length], size: 24),
+              Icon(goalIcon, size: 24),
               const Gap(12),
               Expanded(child: Text(goal.name, style: AppTextStyles.title)),
+              // Share button — visible only when goal is 100% complete.
+              if (isComplete)
+                AppIconButton(
+                  onPressed: _shareCard,
+                  icon: const Icon(Icons.share_outlined, size: 18),
+                  tooltip: 'Compartilhar conquista',
+                ),
               AppIconButton(
                 onPressed: () async {
                   final GoalCubit goals = context.read<GoalCubit>();
@@ -228,6 +259,19 @@ class _MetaItem extends StatelessWidget {
               child: const Text('Contribuir'),
             ),
           ),
+          // ── Off-screen achievement card for share capture ─────────────
+          Offstage(
+            child: RepaintBoundary(
+              key: _shareKey,
+              child: GoalAchievementCard(
+                goalName: goal.name,
+                targetAmount: goal.targetAmount,
+                currentAmount: goal.currentAmount,
+                deadline: goal.deadline,
+                icon: goalIcon,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -251,7 +295,7 @@ class _MetaItem extends StatelessWidget {
     }
     final double? amount = double.tryParse(result.replaceAll(',', '.'));
     if (amount != null && amount > 0) {
-      await goals.contribute(goal.uuid, amount);
+      await goals.contribute(widget.goal.uuid, amount);
       unawaited(goals.loadGoals(userId));
     }
   }
