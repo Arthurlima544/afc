@@ -130,7 +130,10 @@ class _ListaTransacoesState extends State<ListaTransacoes> {
               signedIn: (ClerkAuthState s) => s.user?.id,
             ) ??
             '';
-        unawaited(context.read<TransactionCubit>().loadTransactions(userId));
+        await Future.wait<void>(<Future<void>>[
+          context.read<TransactionCubit>().loadTransactions(userId),
+          Future<void>.delayed(const Duration(milliseconds: 600)),
+        ]);
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -516,20 +519,34 @@ class _TransacaoItem extends StatelessWidget {
               ],
             ),
           ),
-          AppIconButton(
-            onPressed: () => showFormSheet<void>(
-              context,
-              builder: (BuildContext ctx) => BlocProvider<TransactionCubit>(
-                create: (_) => TransactionCubit()..getCategories(),
-                child: CadastrarTransacao(initialTransaction: tx),
+          PopupMenuButton<_TxAction>(
+            icon: const Icon(Icons.more_vert, size: 20),
+            onSelected: (_TxAction action) {
+              if (action == _TxAction.edit) {
+                showFormSheet<void>(
+                  context,
+                  builder: (BuildContext ctx) =>
+                      BlocProvider<TransactionCubit>(
+                        create: (_) => TransactionCubit()..getCategories(),
+                        child: CadastrarTransacao(initialTransaction: tx),
+                      ),
+                );
+              } else {
+                context
+                    .read<TransactionCubit>()
+                    .deleteTransaction(tx.uuid);
+              }
+            },
+            itemBuilder: (_) => const <PopupMenuEntry<_TxAction>>[
+              PopupMenuItem<_TxAction>(
+                value: _TxAction.edit,
+                child: Text('Editar'),
               ),
-            ),
-            icon: const Icon(Icons.edit, size: 18),
-          ),
-          AppIconButton(
-            onPressed: () =>
-                context.read<TransactionCubit>().deleteTransaction(tx.uuid),
-            icon: const Icon(Icons.delete, size: 18),
+              PopupMenuItem<_TxAction>(
+                value: _TxAction.delete,
+                child: Text('Excluir'),
+              ),
+            ],
           ),
         ],
       ),
@@ -539,3 +556,5 @@ class _TransacaoItem extends StatelessWidget {
 
 String _formatCurrency(double amount) =>
     NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$').format(amount);
+
+enum _TxAction { edit, delete }

@@ -1119,9 +1119,12 @@ class _FiScoreCard extends StatelessWidget {
                         children: <Widget>[
                           const Row(
                             children: <Widget>[
-                              Text(
-                                'Independência Financeira',
-                                style: AppTextStyles.sectionTitle,
+                              Flexible(
+                                child: Text(
+                                  'Independência Financeira',
+                                  style: AppTextStyles.sectionTitle,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                               Gap(6),
                               AppTooltipIcon(

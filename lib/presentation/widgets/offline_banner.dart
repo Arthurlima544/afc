@@ -36,29 +36,32 @@ class _BannerContent extends StatelessWidget {
   const _BannerContent();
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: double.infinity,
-    color: AppColors.warningBackground,
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    child: const Row(
-      children: <Widget>[
-        Icon(
-          Icons.wifi_off_outlined,
-          size: 16,
-          color: AppColors.warningText,
-        ),
-        Gap(8),
-        Expanded(
-          child: Text(
-            'Sem conexão — dados serão sincronizados quando a internet voltar',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.warningText,
-              fontWeight: FontWeight.w500,
+  Widget build(BuildContext context) => SafeArea(
+    bottom: false,
+    child: Container(
+      width: double.infinity,
+      color: AppColors.warningBackground,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: const Row(
+        children: <Widget>[
+          Icon(
+            Icons.wifi_off_outlined,
+            size: 16,
+            color: AppColors.warningText,
+          ),
+          Gap(8),
+          Expanded(
+            child: Text(
+              'Sem conexão — dados serão sincronizados quando a internet voltar',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.warningText,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     ),
   );
 }

@@ -73,10 +73,18 @@ class ListaInvestimentos extends StatelessWidget {
               success: (_) => const SizedBox(),
               listed: (List<InvestmentEntity> investments) {
                 if (investments.isEmpty) {
-                  return const EmptyState(
-                    message:
-                        'Nenhum investimento ainda.\nToque em + para adicionar.',
+                  return EmptyState(
+                    message: 'Nenhum investimento ainda.',
                     icon: Icons.trending_up_outlined,
+                    actionLabel: 'Adicionar investimento',
+                    onAction: () => showFormSheet<void>(
+                      context,
+                      builder: (BuildContext ctx) =>
+                          BlocProvider<InvestmentCubit>(
+                            create: (_) => InvestmentCubit(),
+                            child: const CadastrarInvestimento(),
+                          ),
+                    ),
                   );
                 }
 

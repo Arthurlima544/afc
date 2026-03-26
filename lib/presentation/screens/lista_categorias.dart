@@ -95,25 +95,38 @@ class _CategoriaItem extends StatelessWidget {
         ),
         const Gap(12),
         Expanded(child: Text(cat.name, style: AppTextStyles.title)),
-        AppIconButton(
-          onPressed: () => showFormSheet<void>(
-            context,
-            builder: (BuildContext ctx) => BlocProvider<CategoryCubit>(
-              create: (_) => CategoryCubit(),
-              child: CadastrarCategoria(initialCategory: cat),
+        PopupMenuButton<_CatAction>(
+          icon: const Icon(Icons.more_vert, size: 20),
+          onSelected: (_CatAction action) {
+            if (action == _CatAction.edit) {
+              showFormSheet<void>(
+                context,
+                builder: (BuildContext ctx) => BlocProvider<CategoryCubit>(
+                  create: (_) => CategoryCubit(),
+                  child: CadastrarCategoria(initialCategory: cat),
+                ),
+              );
+            } else {
+              context.read<CategoryCubit>().deleteCategory(cat.uuid);
+            }
+          },
+          itemBuilder: (_) => const <PopupMenuEntry<_CatAction>>[
+            PopupMenuItem<_CatAction>(
+              value: _CatAction.edit,
+              child: Text('Editar'),
             ),
-          ),
-          icon: const Icon(Icons.edit, size: 18),
-        ),
-        AppIconButton(
-          onPressed: () =>
-              context.read<CategoryCubit>().deleteCategory(cat.uuid),
-          icon: const Icon(Icons.delete, size: 18),
+            PopupMenuItem<_CatAction>(
+              value: _CatAction.delete,
+              child: Text('Excluir'),
+            ),
+          ],
         ),
       ],
     ),
   );
 }
+
+enum _CatAction { edit, delete }
 
 const List<IconData> _categoryIcons = <IconData>[
   Icons.share_outlined,

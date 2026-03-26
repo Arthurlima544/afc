@@ -59,7 +59,7 @@ class PassiveIncomeScreen extends StatelessWidget {
       builder: (BuildContext context, PassiveIncomeState state) =>
           state.when(
         initial: () => const SizedBox(),
-        loading: () => const SkeletonList(),
+        loading: () => const SkeletonList(itemHeight: 100),
         error: (String msg) => ErrorState(
           message: msg,
           onRetry: () =>

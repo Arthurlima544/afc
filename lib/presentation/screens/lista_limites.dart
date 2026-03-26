@@ -25,7 +25,10 @@ class ListaLimites extends StatelessWidget {
               signedIn: (ClerkAuthState s) => s.user?.id,
             ) ??
             '';
-        unawaited(context.read<LimitCubit>().loadLimits(userId));
+        await Future.wait<void>(<Future<void>>[
+          context.read<LimitCubit>().loadLimits(userId),
+          Future<void>.delayed(const Duration(milliseconds: 600)),
+        ]);
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
