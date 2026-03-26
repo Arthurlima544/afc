@@ -39,9 +39,9 @@ void main() {
       test('identifies category with highest total expense', () {
         final List<SpendingInsight> result = InsightEngine.generate(
           currentMonth: <TransactionEntity>[
-            _tx(type: 'expense', amount: 200, categoryUUid: 'cat-1'),
+            _tx(type: 'expense', amount: 200),
             _tx(type: 'expense', amount: 500, categoryUUid: 'cat-2'),
-            _tx(type: 'expense', amount: 100, categoryUUid: 'cat-1'),
+            _tx(type: 'expense', amount: 100),
           ],
           prevMonth: <TransactionEntity>[],
           categoryNames: _cats,
@@ -227,7 +227,7 @@ void main() {
       final List<SpendingInsight> result = InsightEngine.generate(
         currentMonth: <TransactionEntity>[
           _tx(type: 'income', amount: 5000),
-          _tx(type: 'expense', amount: 1000, categoryUUid: 'cat-1'),
+          _tx(type: 'expense', amount: 1000),
           _tx(type: 'expense', amount: 300, categoryUUid: 'cat-2', title: 'Ônibus'),
         ],
         prevMonth: <TransactionEntity>[

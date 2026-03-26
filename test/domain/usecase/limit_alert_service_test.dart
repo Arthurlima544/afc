@@ -69,7 +69,8 @@ void main() {
     prefs = await SharedPreferences.getInstance();
   });
 
-  LimitAlertService _service() => LimitAlertService(
+  LimitAlertService makeService() =>
+      LimitAlertService(
     firestore: fs,
     prefs: prefs,
     showNotification: ({required int id, required String title, required String body}) =>
@@ -81,14 +82,14 @@ void main() {
       await _addLimit(fs, userId: 'user-1', categoryUUid: 'cat-1', limitAmount: 100);
       await _addExpense(fs, userId: 'user-1', categoryUUid: 'cat-1', amount: 100);
       // Should not throw even with empty userId
-      await expectLater(_service().checkAfterTransaction(''), completes);
+      await expectLater(makeService().checkAfterTransaction(''), completes);
     });
 
     test('does not fire alert when spending is below 80 %', () async {
       await _addLimit(fs, userId: 'user-1', categoryUUid: 'cat-1', limitAmount: 1000);
       await _addExpense(fs, userId: 'user-1', categoryUUid: 'cat-1', amount: 700);
 
-      await _service().checkAfterTransaction('user-1');
+      await makeService().checkAfterTransaction('user-1');
 
       expect(prefs.getBool('limit_alert_cat-1_${_monthKey()}_80'), isNull);
       expect(prefs.getBool('limit_alert_cat-1_${_monthKey()}_100'), isNull);
@@ -98,7 +99,7 @@ void main() {
       await _addLimit(fs, userId: 'user-1', categoryUUid: 'cat-1', limitAmount: 1000);
       await _addExpense(fs, userId: 'user-1', categoryUUid: 'cat-1', amount: 800);
 
-      await _service().checkAfterTransaction('user-1');
+      await makeService().checkAfterTransaction('user-1');
 
       expect(prefs.getBool('limit_alert_cat-1_${_monthKey()}_80'), isTrue);
       expect(prefs.getBool('limit_alert_cat-1_${_monthKey()}_100'), isNull);
@@ -108,7 +109,7 @@ void main() {
       await _addLimit(fs, userId: 'user-1', categoryUUid: 'cat-1', limitAmount: 500);
       await _addExpense(fs, userId: 'user-1', categoryUUid: 'cat-1', amount: 500);
 
-      await _service().checkAfterTransaction('user-1');
+      await makeService().checkAfterTransaction('user-1');
 
       expect(prefs.getBool('limit_alert_cat-1_${_monthKey()}_100'), isTrue);
       expect(prefs.getBool('limit_alert_cat-1_${_monthKey()}_80'), isTrue);
@@ -118,7 +119,7 @@ void main() {
       await _addLimit(fs, userId: 'user-1', categoryUUid: 'cat-1', limitAmount: 1000);
       await _addExpense(fs, userId: 'user-1', categoryUUid: 'cat-1', amount: 900);
 
-      final LimitAlertService svc = _service();
+      final LimitAlertService svc = makeService();
       await svc.checkAfterTransaction('user-1');
       // Manually reset to false to detect if setBool was called again
       await prefs.setBool('limit_alert_cat-1_${_monthKey()}_80', false);
@@ -142,7 +143,7 @@ void main() {
       // No limit added — just a transaction
       await _addExpense(fs, userId: 'user-1', categoryUUid: 'cat-1', amount: 5000);
 
-      await _service().checkAfterTransaction('user-1');
+      await makeService().checkAfterTransaction('user-1');
 
       expect(prefs.getBool('limit_alert_cat-1_${_monthKey()}_80'), isNull);
     });

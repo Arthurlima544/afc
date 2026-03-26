@@ -6,7 +6,7 @@ import '../../utils/logger.dart';
 import '../entity/limit_entity.dart';
 import '../entity/transaction_entity.dart';
 
-/// Shows a local notification. Defaults to [LocalNotificationService.instance.show].
+/// Shows a local notification. Defaults to `LocalNotificationService.instance.show`.
 typedef ShowNotification = Future<void> Function({
   required int id,
   required String title,
