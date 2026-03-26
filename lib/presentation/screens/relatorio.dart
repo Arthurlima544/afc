@@ -12,9 +12,11 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../domain/usecase/csv_exporter.dart';
 import '../../domain/usecase/pdf_report_builder.dart';
+import '../../utils/share_card_service.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/report/report_cubit.dart';
 import '../widgets/design_system.dart';
+import '../widgets/share_cards/monthly_snapshot_card.dart';
 
 const List<Color> _kPieColors = <Color>[
   Color(0xFF6366F1),
@@ -54,6 +56,8 @@ class Relatorio extends StatefulWidget {
 class _RelatorioState extends State<Relatorio> {
   late int _year;
   late int _month;
+  final GlobalKey _shareKey = GlobalKey();
+  ReportData? _shareData;
 
   @override
   void initState() {
@@ -105,6 +109,19 @@ class _RelatorioState extends State<Relatorio> {
     );
   }
 
+  Future<void> _shareCard(ReportData data) async {
+    setState(() => _shareData = data);
+    // Wait one frame so the Offstage card is laid out before capture.
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+    if (!mounted) {
+      return;
+    }
+    await ShareCardService.captureAndShare(
+      _shareKey,
+      'afc_resumo_${data.year}_${data.month.toString().padLeft(2, '0')}.png',
+    );
+  }
+
   Future<void> _exportCsv(ReportData data) async {
     final List<int> bytes = CsvExporter.export(
       data.transactions,
@@ -148,6 +165,14 @@ class _RelatorioState extends State<Relatorio> {
                   return Row(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
+                      AppIconButton(
+                        onPressed: data != null
+                            ? () => _shareCard(data)
+                            : null,
+                        icon: const Icon(Icons.share_outlined),
+                        tooltip: 'Compartilhar card',
+                      ),
+                      const Gap(4),
                       AppIconButton(
                         onPressed: data != null
                             ? () => _exportCsv(data)
@@ -198,6 +223,16 @@ class _RelatorioState extends State<Relatorio> {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (String msg) => Center(child: Text(msg)),
               success: (ReportData data) => _ReportContent(data: data),
+            ),
+          ),
+
+          // ── Off-screen share card (captured on share tap) ─────────────
+          Offstage(
+            child: RepaintBoundary(
+              key: _shareKey,
+              child: _shareData != null
+                  ? MonthlySnapshotCard(data: _shareData!)
+                  : const SizedBox(),
             ),
           ),
         ],

@@ -20,6 +20,7 @@ import '../../domain/usecase/health_score.dart';
 import '../../domain/usecase/insight_engine.dart';
 import '../../utils/connectivity_service.dart';
 import '../../utils/flavors.dart';
+import '../../utils/share_card_service.dart';
 import '../../utils/sync_queue.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/fi_score/fi_score_cubit.dart';
@@ -32,6 +33,7 @@ import '../blocs/market/market_opportunity_cubit.dart';
 import '../blocs/privacy/privacy_cubit.dart';
 import '../widgets/design_system.dart';
 import '../widgets/privacy_text.dart';
+import '../widgets/share_cards/fi_milestone_card.dart';
 import '../widgets/skeleton_list.dart';
 
 class HomePage extends StatelessWidget {
@@ -1083,8 +1085,26 @@ class _HealthSparkline extends StatelessWidget {
 // FI Score card
 // ---------------------------------------------------------------------------
 
-class _FiScoreCard extends StatelessWidget {
+class _FiScoreCard extends StatefulWidget {
   const _FiScoreCard();
+
+  @override
+  State<_FiScoreCard> createState() => _FiScoreCardState();
+}
+
+class _FiScoreCardState extends State<_FiScoreCard> {
+  final GlobalKey _shareKey = GlobalKey();
+
+  Future<void> _shareCard(FiScoreData data) async {
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+    if (!mounted) {
+      return;
+    }
+    await ShareCardService.captureAndShare(
+      _shareKey,
+      'afc_fi_score_${data.fiScore.toStringAsFixed(0)}.png',
+    );
+  }
 
   @override
   Widget build(BuildContext context) =>
@@ -1153,6 +1173,11 @@ class _FiScoreCard extends StatelessWidget {
                         color: _fiColor(data.fiScore),
                       ),
                     ),
+                    AppIconButton(
+                      onPressed: () => _shareCard(data),
+                      icon: const Icon(Icons.share_outlined, size: 18),
+                      tooltip: 'Compartilhar milestone',
+                    ),
                   ],
                 ),
 
@@ -1206,6 +1231,14 @@ class _FiScoreCard extends StatelessWidget {
                         ),
                       )
                       .toList(),
+                ),
+
+                // ── Off-screen FI milestone card for share capture ─────────
+                Offstage(
+                  child: RepaintBoundary(
+                    key: _shareKey,
+                    child: FiMilestoneCard(data: data),
+                  ),
                 ),
               ],
             ),
