@@ -972,7 +972,7 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 > **Goal**: Eliminate every crash, infinite-loader, and data-staleness bug reported in user testing. Harden offline writes across all forms, make financial scores react to new data, unify the card design language, and fix all visual polish issues.
 
-### US-94 · Offline write resilience — no more infinite loading ⏳
+### US-94 · Offline write resilience — no more infinite loading ✅
 **As a** user, **I want** adding transactions, limits, metas, categories, recurring rules, and importing extracts to complete immediately even without internet,
 **so that** the form sheet always closes and I am never left staring at a spinner.
 
@@ -1006,7 +1006,7 @@ emit(State.success(entity));                      // always emit success
 
 ---
 
-### US-95 · Health score & FI score reactive to new data ⏳
+### US-95 · Health score & FI score reactive to new data ✅
 **As a** user, **I want** "Saúde financeira" and "Independência Financeira" cards to reflect my latest transactions and goals automatically,
 **so that** I don't need to restart the app to see updated scores.
 
@@ -1023,7 +1023,7 @@ emit(State.success(entity));                      // always emit success
 
 ---
 
-### US-96 · Contas a pagar — paid status & transaction title auto-match ⏳
+### US-96 · Contas a pagar — paid status & transaction title auto-match ✅
 **As a** user, **I want** to mark a bill as paid and optionally tie it to a transaction title keyword so the app auto-detects payment,
 **so that** I can track which bills are settled each month without manual data entry.
 
@@ -1051,7 +1051,7 @@ Both fields are optional with safe defaults so existing Firestore documents pars
 
 ---
 
-### US-97 · Privacy mode persists across restarts ⏳
+### US-97 · Privacy mode persists across restarts ✅
 **As a** user, **I want** the eye icon (hide/show values) state to be remembered even when I close and reopen the app,
 **so that** I don't have to re-tap it on every launch.
 
@@ -1067,7 +1067,7 @@ Both fields are optional with safe defaults so existing Firestore documents pars
 
 ---
 
-### US-98 · Firestore composite index fix for Patrimônio Líquido ⏳
+### US-98 · Firestore composite index fix for Patrimônio Líquido ✅
 **As a** user, **I want** the Patrimônio Líquido card to load without errors,
 **so that** my net worth is always visible on the dashboard.
 
@@ -1083,7 +1083,7 @@ Identify the exact query in `_NetWorthCardState` (or wherever the query lives), 
 
 ---
 
-### US-99 · Layout & UX micro-fixes ⏳
+### US-99 · Layout & UX micro-fixes ✅
 **As a** user, **I want** text that fits its container, a clear path to add investments from the empty portfolio state, reliable pull-to-refresh, correct decimal formatting, a pre-selected current month in limit creation, and the offline banner fully visible on notched devices,
 **so that** the app looks and behaves correctly on all devices.
 
@@ -1118,7 +1118,7 @@ Fix each item independently — they can be committed together in one PR:
 
 ---
 
-### US-100 · Skeleton sizing matches real content ⏳
+### US-100 · Skeleton sizing matches real content ✅
 **As a** user, **I want** loading skeletons in Transações, Renda Passiva, and Limites to match the actual size and shape of the list items they represent,
 **so that** the layout does not jump when data loads.
 
@@ -1138,7 +1138,7 @@ If a shared `SkeletonList` widget is used, add a `itemHeight` parameter so each 
 
 ---
 
-### US-101 · Unified card design — Renda Passiva style ⏳
+### US-101 · Unified card design — Renda Passiva style ✅
 **As a** user, **I want** all list cards (transactions, limits, goals, investments, bills, templates, recurring) to follow a consistent design with a hidden delete action,
 **so that** the app feels polished and the delete option is not visually noisy.
 
@@ -1162,7 +1162,7 @@ If a shared `SkeletonList` widget is used, add a `itemHeight` parameter so each 
 
 > **Goal**: Transform the FIRE Calculator, Compound Interest Simulator, and Investment Goal Planner from static what-if tools into living projections that overlay each user's **actual** financial trajectory. Users see where they are today on the path to their long-term goals — making the app indispensable for multi-year financial planning.
 
-### US-102 · FIRE Calculator — real data trajectory ⏳
+### US-102 · FIRE Calculator — real data trajectory ✅
 **As a** user, **I want** the FIRE Calculator to show my actual savings rate and net worth as a starting point, and plot a projected path to financial independence over up to 10 years,
 **so that** I can see whether my current spending and saving habits will get me to FIRE on time.
 
@@ -1183,7 +1183,7 @@ If a shared `SkeletonList` widget is used, add a `itemHeight` parameter so each 
 
 ---
 
-### US-103 · Compound Interest Simulator — actual savings trajectory ⏳
+### US-103 · Compound Interest Simulator — actual savings trajectory ✅
 **As a** user, **I want** the Compound Interest Simulator to show how my real monthly savings compare to the simulated contribution,
 **so that** I can immediately see whether I am on track with the plan I modelled.
 
@@ -1197,7 +1197,7 @@ If a shared `SkeletonList` widget is used, add a `itemHeight` parameter so each 
 
 ---
 
-### US-104 · Investment Goal Planner — actual vs projected progress ⏳
+### US-104 · Investment Goal Planner — actual vs projected progress ✅
 **As a** user, **I want** the Investment Goal Planner to display both my projected wealth growth and my actual net worth history on the same chart,
 **so that** I can see at a glance whether my investment contributions are keeping pace with my long-term plan.
 
@@ -1260,5 +1260,5 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 17 (US-84–85) | `feat/sprint17-benefits-accounts` | ✅ Done |
 | Sprint 18 (US-86–89) | `feat/sprint18-quality-reporting` | ✅ Done |
 | Sprint 19 (US-90–93) | `feat/sprint19-search-export-insights` | ✅ Done |
-| Sprint 20 (US-94–101) | `fix/sprint20-resilience-polish` | ⏳ Planned |
-| Sprint 21 (US-102–104) | `feat/sprint21-financial-trajectory` | ⏳ Planned |
+| Sprint 20 (US-94–101) | `fix/sprint20-resilience-polish` | ✅ Merged |
+| Sprint 21 (US-102–104) | `feat/sprint21-trajectory` | ✅ Done |
