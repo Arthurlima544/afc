@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import '../../../domain/entity/category_entity.dart';
 import '../../../domain/entity/pending_operation_entity.dart';
 import '../../../domain/entity/transaction_entity.dart';
+import '../../../domain/usecase/limit_alert_service.dart';
 import '../../../utils/logger.dart';
 import '../../../utils/sync_queue.dart';
 
@@ -15,11 +16,13 @@ part 'transaction_state.dart';
 part 'transaction_cubit.freezed.dart';
 
 class TransactionCubit extends Cubit<TransactionState> {
-  TransactionCubit({FirebaseFirestore? firestore})
+  TransactionCubit({FirebaseFirestore? firestore, LimitAlertService? limitAlertService})
     : _firestore = firestore ?? FirebaseFirestore.instance,
+      _limitAlertService = limitAlertService,
       super(const TransactionState.initial(<CategoryEntity>[]));
 
   final FirebaseFirestore _firestore;
+  final LimitAlertService? _limitAlertService;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _txSubscription;
 
   Future<void> getCategories() async {
@@ -56,6 +59,9 @@ class TransactionCubit extends Cubit<TransactionState> {
         ),
       );
       emit(TransactionState.success(transaction));
+      unawaited(
+        _limitAlertService?.checkAfterTransaction(transaction.userId),
+      );
     } on Exception catch (e) {
       emit(TransactionState.error(e.toString()));
     }
@@ -144,6 +150,9 @@ class TransactionCubit extends Cubit<TransactionState> {
         );
       }
       emit(TransactionState.success(transaction));
+      unawaited(
+        _limitAlertService?.checkAfterTransaction(transaction.userId),
+      );
     } on Exception catch (e) {
       emit(TransactionState.error(e.toString()));
     }

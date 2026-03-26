@@ -32,7 +32,21 @@ class _ListaTransacoesState extends State<ListaTransacoes> {
   _ViewMode _viewMode = _ViewMode.byDate;
   String? _filterSubAccountUuid;
 
+  // Search & filter state
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _searchQuery = '';
+  DateTime? _filterFrom;
+  DateTime? _filterTo;
+  String? _filterType; // null = all, 'income', 'expense'
+
   late final SubAccountCubit _subAccountCubit;
+
+  bool get _hasActiveFilter =>
+      _searchQuery.isNotEmpty ||
+      _filterFrom != null ||
+      _filterTo != null ||
+      _filterType != null ||
+      _filterSubAccountUuid != null;
 
   @override
   void initState() {
@@ -47,8 +61,63 @@ class _ListaTransacoesState extends State<ListaTransacoes> {
 
   @override
   void dispose() {
+    _searchCtrl.dispose();
     _subAccountCubit.close();
     super.dispose();
+  }
+
+  List<TransactionEntity> _applyFilters(List<TransactionEntity> txs) =>
+      txs.where((TransactionEntity tx) {
+      if (_filterSubAccountUuid != null &&
+          tx.subAccountUuid != _filterSubAccountUuid) {
+        return false;
+      }
+      if (_searchQuery.isNotEmpty &&
+          !tx.title.toLowerCase().contains(_searchQuery.toLowerCase())) {
+        return false;
+      }
+      if (_filterFrom != null && tx.data.isBefore(_filterFrom!)) {
+        return false;
+      }
+      if (_filterTo != null &&
+          tx.data.isAfter(
+            _filterTo!.add(const Duration(days: 1)),
+          )) {
+        return false;
+      }
+      if (_filterType != null && tx.typeUuid != _filterType) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+  void _clearAllFilters() {
+    setState(() {
+      _searchCtrl.clear();
+      _searchQuery = '';
+      _filterFrom = null;
+      _filterTo = null;
+      _filterType = null;
+      _filterSubAccountUuid = null;
+    });
+  }
+
+  Future<void> _pickDateRange() async {
+    final DateTimeRange? range = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      initialDateRange: _filterFrom != null && _filterTo != null
+          ? DateTimeRange(start: _filterFrom!, end: _filterTo!)
+          : null,
+      locale: const Locale('pt', 'BR'),
+    );
+    if (range != null) {
+      setState(() {
+        _filterFrom = range.start;
+        _filterTo = range.end;
+      });
+    }
   }
 
   @override
@@ -104,21 +173,83 @@ class _ListaTransacoesState extends State<ListaTransacoes> {
               ],
             ),
             const Gap(12),
-            // View-mode toggle
-            Row(
-              children: <Widget>[
-                _ToggleChip(
-                  label: 'Por data',
-                  selected: _viewMode == _ViewMode.byDate,
-                  onTap: () => setState(() => _viewMode = _ViewMode.byDate),
-                ),
-                const Gap(8),
-                _ToggleChip(
-                  label: 'Por grupo',
-                  selected: _viewMode == _ViewMode.byGroup,
-                  onTap: () => setState(() => _viewMode = _ViewMode.byGroup),
-                ),
-              ],
+            // Search bar
+            AppTextField(
+              controller: _searchCtrl,
+              hintText: 'Buscar por título…',
+              onChanged: (String v) => setState(() => _searchQuery = v),
+            ),
+            const Gap(10),
+            // Filter chips row
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: <Widget>[
+                  // View-mode
+                  _ToggleChip(
+                    label: 'Por data',
+                    selected: _viewMode == _ViewMode.byDate,
+                    onTap: () => setState(() => _viewMode = _ViewMode.byDate),
+                  ),
+                  const Gap(8),
+                  _ToggleChip(
+                    label: 'Por grupo',
+                    selected: _viewMode == _ViewMode.byGroup,
+                    onTap: () =>
+                        setState(() => _viewMode = _ViewMode.byGroup),
+                  ),
+                  const Gap(8),
+                  // Type filter
+                  _ToggleChip(
+                    label: 'Receitas',
+                    selected: _filterType == 'income',
+                    onTap: () => setState(
+                      () => _filterType =
+                          _filterType == 'income' ? null : 'income',
+                    ),
+                  ),
+                  const Gap(8),
+                  _ToggleChip(
+                    label: 'Despesas',
+                    selected: _filterType == 'expense',
+                    onTap: () => setState(
+                      () => _filterType =
+                          _filterType == 'expense' ? null : 'expense',
+                    ),
+                  ),
+                  const Gap(8),
+                  // Date range
+                  if (_filterFrom == null)
+                    _ToggleChip(
+                      label: 'Período',
+                      selected: false,
+                      onTap: _pickDateRange,
+                      icon: Icons.date_range_outlined,
+                    )
+                  else
+                    _ToggleChip(
+                      label:
+                          '${DateFormat('dd/MM').format(_filterFrom!)}–'
+                          '${DateFormat('dd/MM').format(_filterTo!)}',
+                      selected: true,
+                      onTap: _pickDateRange,
+                      trailing: Icons.close,
+                      onTrailingTap: () => setState(() {
+                        _filterFrom = null;
+                        _filterTo = null;
+                      }),
+                    ),
+                  if (_hasActiveFilter) ...<Widget>[
+                    const Gap(8),
+                    _ToggleChip(
+                      label: 'Limpar',
+                      selected: false,
+                      onTap: _clearAllFilters,
+                      icon: Icons.filter_alt_off_outlined,
+                    ),
+                  ],
+                ],
+              ),
             ),
             const Gap(8),
             // Sub-account filter chips (only when ≥ 1 sub-account exists)
@@ -188,15 +319,7 @@ class _ListaTransacoesState extends State<ListaTransacoes> {
                     success: (_) => const SizedBox(),
                     listed: (List<TransactionEntity> txs) {
                       final List<TransactionEntity> filtered =
-                          _filterSubAccountUuid == null
-                          ? txs
-                          : txs
-                                .where(
-                                  (TransactionEntity tx) =>
-                                      tx.subAccountUuid ==
-                                      _filterSubAccountUuid,
-                                )
-                                .toList();
+                          _applyFilters(txs);
                       if (filtered.isEmpty) {
                         return const EmptyState(
                           message:
@@ -296,17 +419,23 @@ class _ToggleChip extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.icon,
+    this.trailing,
+    this.onTrailingTap,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final IconData? icon;
+  final IconData? trailing;
+  final VoidCallback? onTrailingTap;
 
   @override
   Widget build(BuildContext context) => GestureDetector(
     onTap: onTap,
     child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: selected
             ? AppColors.primary.withValues(alpha: 0.12)
@@ -318,12 +447,36 @@ class _ToggleChip extends StatelessWidget {
               : AppColors.muted.withValues(alpha: 0.4),
         ),
       ),
-      child: Text(
-        label,
-        style: AppTextStyles.caption.copyWith(
-          color: selected ? AppColors.primary : null,
-          fontWeight: selected ? FontWeight.w600 : null,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (icon != null) ...<Widget>[
+            Icon(
+              icon,
+              size: 14,
+              color: selected ? AppColors.primary : AppColors.muted,
+            ),
+            const Gap(4),
+          ],
+          Text(
+            label,
+            style: AppTextStyles.caption.copyWith(
+              color: selected ? AppColors.primary : null,
+              fontWeight: selected ? FontWeight.w600 : null,
+            ),
+          ),
+          if (trailing != null) ...<Widget>[
+            const Gap(4),
+            GestureDetector(
+              onTap: onTrailingTap,
+              child: Icon(
+                trailing,
+                size: 14,
+                color: selected ? AppColors.primary : AppColors.muted,
+              ),
+            ),
+          ],
+        ],
       ),
     ),
   );
