@@ -1,10 +1,17 @@
+import 'dart:async';
+
+import 'package:clerk_flutter/clerk_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../domain/entity/type_entity.dart';
 import '../../domain/usecase/fire_calculator.dart';
 import '../../domain/usecase/inflation_calculator.dart';
+import '../blocs/auth/auth_bloc.dart';
 import '../widgets/design_system.dart';
 
 // ─── Preset SWR rates ──────────────────────────────────────────────────────────
@@ -18,6 +25,30 @@ enum _FirePreset {
 
   final String label;
   final double swr;
+}
+
+// ─── Real data snapshot ───────────────────────────────────────────────────────
+
+class _RealSnapshot {
+  const _RealSnapshot({
+    required this.avgMonthlyIncome,
+    required this.avgMonthlyExpenses,
+    required this.portfolioValue,
+    required this.netWorthPoints,
+  });
+
+  final double avgMonthlyIncome;
+  final double avgMonthlyExpenses;
+  final double portfolioValue;
+
+  /// Monthly net-worth snapshots (totalAmount) sorted oldest-first.
+  final List<double> netWorthPoints;
+
+  double get avgMonthlySavings => avgMonthlyIncome - avgMonthlyExpenses;
+  double get savingsRatePct =>
+      avgMonthlyIncome > 0
+          ? (avgMonthlySavings / avgMonthlyIncome * 100).clamp(0, 100)
+          : 0;
 }
 
 // ─── Screen ────────────────────────────────────────────────────────────────────
@@ -45,10 +76,22 @@ class _FireCalculatorScreenState extends State<FireCalculatorScreen> {
   bool _inflationAdjusted = false;
   FireResult? _result;
 
+  _RealSnapshot? _real;
+  bool _realDataLoaded = false;
+
   @override
   void initState() {
     super.initState();
     _calculate();
+    final AuthBloc auth = context.read<AuthBloc>();
+    final String userId =
+        auth.state.whenOrNull(
+          signedIn: (ClerkAuthState s) => s.user?.id,
+        ) ??
+        '';
+    if (userId.isNotEmpty) {
+      unawaited(_loadRealData(userId));
+    }
   }
 
   @override
@@ -59,6 +102,137 @@ class _FireCalculatorScreenState extends State<FireCalculatorScreen> {
     _returnCtrl.dispose();
     _inflationCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadRealData(String userId) async {
+    try {
+      final DateTime now = DateTime.now();
+      final DateTime threeMonthsAgo = DateTime(now.year, now.month - 3);
+
+      // Fetch all three in parallel.
+      final List<QuerySnapshot<Map<String, dynamic>>> snaps =
+          await Future.wait(<Future<QuerySnapshot<Map<String, dynamic>>>>[
+        FirebaseFirestore.instance
+            .collection('transaction')
+            .where('userId', isEqualTo: userId)
+            .get(),
+        FirebaseFirestore.instance
+            .collection('investment')
+            .where('userId', isEqualTo: userId)
+            .get(),
+        FirebaseFirestore.instance
+            .collection('net_worth_snapshot')
+            .where('userId', isEqualTo: userId)
+            .get(),
+      ]);
+
+      // ── Avg income / expenses (last 3 months) ────────────────────────────
+      final Map<String, double> incomeByMonth = <String, double>{};
+      final Map<String, double> expenseByMonth = <String, double>{};
+
+      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc
+          in snaps[0].docs) {
+        final Map<String, dynamic> data = doc.data();
+        final dynamic rawDate = data['data'];
+        final DateTime date;
+        if (rawDate is Timestamp) {
+          date = rawDate.toDate();
+        } else if (rawDate is String) {
+          date = DateTime.parse(rawDate);
+        } else if (rawDate is DateTime) {
+          date = rawDate;
+        } else {
+          continue;
+        }
+        if (date.isBefore(threeMonthsAgo)) {
+          continue;
+        }
+        final String monthKey = '${date.year}-${date.month}';
+        final double amount = (data['amount'] as num?)?.toDouble() ?? 0;
+        final String typeUuid = data['typeUuid'] as String? ?? '';
+        if (typeUuid == TypeEntity.income.name) {
+          incomeByMonth[monthKey] = (incomeByMonth[monthKey] ?? 0) + amount;
+        } else if (typeUuid == TypeEntity.expense.name) {
+          expenseByMonth[monthKey] =
+              (expenseByMonth[monthKey] ?? 0) + amount;
+        }
+      }
+
+      final Set<String> months = <String>{
+        ...incomeByMonth.keys,
+        ...expenseByMonth.keys,
+      };
+      double totalIncome = 0;
+      double totalExpenses = 0;
+      for (final String m in months) {
+        totalIncome += incomeByMonth[m] ?? 0;
+        totalExpenses += expenseByMonth[m] ?? 0;
+      }
+      final int monthCount = months.isEmpty ? 1 : months.length;
+      final double avgIncome = totalIncome / monthCount;
+      final double avgExpenses = totalExpenses / monthCount;
+
+      // ── Portfolio value ────────────────────────────────────────────────────
+      double portfolioValue = 0;
+      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc
+          in snaps[1].docs) {
+        final Map<String, dynamic> data = doc.data();
+        final double qty = (data['quantity'] as num?)?.toDouble() ?? 0;
+        final double price = (data['currentPrice'] as num?)?.toDouble() ?? 0;
+        portfolioValue += qty * price;
+      }
+
+      // ── Net worth snapshots (sorted oldest-first) ─────────────────────────
+      final List<Map<String, dynamic>> snapDocs = snaps[2].docs
+          .map((QueryDocumentSnapshot<Map<String, dynamic>> d) => d.data())
+          .toList()
+        ..sort((Map<String, dynamic> a, Map<String, dynamic> b) {
+        final dynamic da = a['date'];
+        final dynamic db = b['date'];
+        final DateTime ta = da is Timestamp
+            ? da.toDate()
+            : (da is String ? DateTime.parse(da) : DateTime(2000));
+        final DateTime tb = db is Timestamp
+            ? db.toDate()
+            : (db is String ? DateTime.parse(db) : DateTime(2000));
+        return ta.compareTo(tb);
+        });
+      final List<double> netWorthPoints = snapDocs
+          .map(
+            (Map<String, dynamic> d) =>
+                (d['totalAmount'] as num?)?.toDouble() ?? 0,
+          )
+          .toList();
+
+      final _RealSnapshot real = _RealSnapshot(
+        avgMonthlyIncome: avgIncome,
+        avgMonthlyExpenses: avgExpenses,
+        portfolioValue: portfolioValue,
+        netWorthPoints: netWorthPoints,
+      );
+
+      if (mounted) {
+        setState(() {
+          _real = real;
+          _realDataLoaded = true;
+          // Pre-fill controllers with real data if user hasn't touched them.
+          if (avgExpenses > 0) {
+            _expensesCtrl.text = avgExpenses.toStringAsFixed(0);
+          }
+          if (portfolioValue > 0) {
+            _portfolioCtrl.text = portfolioValue.toStringAsFixed(0);
+          }
+          if (real.avgMonthlySavings > 0) {
+            _savingsCtrl.text = real.avgMonthlySavings.toStringAsFixed(0);
+          }
+          _calculate();
+        });
+      }
+    } on Exception {
+      if (mounted) {
+        setState(() => _realDataLoaded = true);
+      }
+    }
   }
 
   void _calculate() {
@@ -106,6 +280,13 @@ class _FireCalculatorScreenState extends State<FireCalculatorScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            // Real data section (only shown after load)
+            if (_realDataLoaded && _real != null) ...<Widget>[
+              const _SectionLabel('Sua posição atual'),
+              const Gap(8),
+              _RealDataCard(real: _real!),
+              const Gap(16),
+            ],
             const _SectionLabel('Estratégia'),
             const Gap(8),
             _PresetBar(
@@ -144,7 +325,26 @@ class _FireCalculatorScreenState extends State<FireCalculatorScreen> {
               const Gap(16),
               const _SectionLabel('Trajetória do Portfólio'),
               const Gap(8),
-              _GrowthChart(result: _result!, realTimeline: realTimeline),
+              _GrowthChart(
+                result: _result!,
+                realTimeline: realTimeline,
+                netWorthPoints:
+                    (_real?.netWorthPoints.length ?? 0) >= 2
+                        ? _real!.netWorthPoints
+                        : null,
+              ),
+              if ((_real?.netWorthPoints.length ?? 0) >= 2) ...<Widget>[
+                const Gap(8),
+                const _ChartLegend(),
+              ] else if (_realDataLoaded) ...<Widget>[
+                const Gap(8),
+                Text(
+                  'Adicione transações e investimentos para ver sua trajetória real',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.muted,
+                  ),
+                ),
+              ],
               const Gap(8),
               Text(
                 'Taxa de retirada segura: ${(_preset.swr * 100).toStringAsFixed(0)}% a.a.  ·  '
@@ -157,6 +357,126 @@ class _FireCalculatorScreenState extends State<FireCalculatorScreen> {
       ),
     );
   }
+}
+
+// ─── Real data card ───────────────────────────────────────────────────────────
+
+class _RealDataCard extends StatelessWidget {
+  const _RealDataCard({required this.real});
+
+  final _RealSnapshot real;
+
+  @override
+  Widget build(BuildContext context) {
+    final NumberFormat brl = NumberFormat.currency(
+      locale: 'pt_BR',
+      symbol: 'R\$',
+      decimalDigits: 0,
+    );
+    return AppCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: <Widget>[
+          _RealRow(
+            label: 'Renda média mensal',
+            value: brl.format(real.avgMonthlyIncome),
+            icon: Icons.trending_up,
+            iconColor: AppColors.income,
+          ),
+          const Gap(8),
+          const Divider(height: 1),
+          const Gap(8),
+          _RealRow(
+            label: 'Gastos médios mensais',
+            value: brl.format(real.avgMonthlyExpenses),
+            icon: Icons.trending_down,
+            iconColor: AppColors.expense,
+          ),
+          const Gap(8),
+          const Divider(height: 1),
+          const Gap(8),
+          _RealRow(
+            label: 'Taxa de poupança',
+            value: '${real.savingsRatePct.toStringAsFixed(1)}%',
+            icon: Icons.savings_outlined,
+            iconColor: AppColors.primary,
+          ),
+          const Gap(8),
+          const Divider(height: 1),
+          const Gap(8),
+          _RealRow(
+            label: 'Portfólio atual',
+            value: brl.format(real.portfolioValue),
+            icon: Icons.account_balance_outlined,
+            iconColor: AppColors.primary,
+          ),
+          const Gap(4),
+          Text(
+            'Baseado nos últimos 3 meses · valores editáveis abaixo',
+            style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RealRow extends StatelessWidget {
+  const _RealRow({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.iconColor,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color iconColor;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: <Widget>[
+      Icon(icon, size: 16, color: iconColor),
+      const Gap(8),
+      Expanded(
+        child: Text(
+          label,
+          style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+        ),
+      ),
+      Text(value, style: AppTextStyles.labelBold),
+    ],
+  );
+}
+
+// ─── Chart legend ─────────────────────────────────────────────────────────────
+
+class _ChartLegend extends StatelessWidget {
+  const _ChartLegend();
+
+  @override
+  Widget build(BuildContext context) => const Row(
+    children: <Widget>[
+      SizedBox(
+        width: 16,
+        height: 3,
+        child: ColoredBox(color: AppColors.income),
+      ),
+      Gap(6),
+      Text('Projeção', style: AppTextStyles.caption),
+      Gap(16),
+      DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.primary,
+          borderRadius: BorderRadius.all(Radius.circular(2)),
+        ),
+        child: SizedBox(width: 16, height: 3),
+      ),
+      Gap(6),
+      Text('Trajetória real', style: AppTextStyles.caption),
+    ],
+  );
 }
 
 // ─── Preset bar ───────────────────────────────────────────────────────────────
@@ -490,17 +810,25 @@ class _ResultRow extends StatelessWidget {
 // ─── Growth chart ─────────────────────────────────────────────────────────────
 
 class _GrowthChart extends StatelessWidget {
-  const _GrowthChart({required this.result, this.realTimeline});
+  const _GrowthChart({
+    required this.result,
+    this.realTimeline,
+    this.netWorthPoints,
+  });
 
   final FireResult result;
   final List<double>? realTimeline;
+
+  /// Historical net-worth snapshots (oldest-first). Null = hide series.
+  final List<double>? netWorthPoints;
 
   @override
   Widget build(BuildContext context) {
     final List<double> timeline = result.yearlyTimeline;
     final double fireNumber = result.fireNumber;
 
-    final List<FlSpot> spots = timeline
+    // Projection spots: x = years from today (0 = today).
+    final List<FlSpot> projectionSpots = timeline
         .asMap()
         .entries
         .map(
@@ -508,6 +836,27 @@ class _GrowthChart extends StatelessWidget {
               FlSpot(e.key.toDouble(), e.value),
         )
         .toList();
+
+    // Historical spots: x = negative fractional years from today.
+    // Each net_worth_snapshot = 1 month = -1/12 year per step back from today.
+    final List<FlSpot> histSpots = <FlSpot>[];
+    if (netWorthPoints != null && netWorthPoints!.isNotEmpty) {
+      final int n = netWorthPoints!.length;
+      for (int i = 0; i < n; i++) {
+        // i=0 is oldest; i=n-1 is most recent (= today's approximate position)
+        final double x = (i - (n - 1)) / 12.0;
+        histSpots.add(FlSpot(x, netWorthPoints![i]));
+      }
+      // Connect to today (x=0) using the first projection point.
+      if (projectionSpots.isNotEmpty) {
+        histSpots.add(FlSpot(0, projectionSpots.first.y));
+      }
+    }
+
+    final double minX = histSpots.isNotEmpty
+        ? histSpots.first.x
+        : 0;
+    final double maxX = (timeline.length - 1).toDouble();
 
     final double maxY = fireNumber.isInfinite
         ? (timeline.last * 1.1)
@@ -519,16 +868,108 @@ class _GrowthChart extends StatelessWidget {
       decimalDigits: 0,
     );
 
+    final List<LineChartBarData> bars = <LineChartBarData>[
+      // Projection line (dashed, income colour)
+      LineChartBarData(
+        spots: projectionSpots,
+        isCurved: true,
+        curveSmoothness: 0.3,
+        color: AppColors.income,
+        dashArray: <int>[6, 4],
+        dotData: const FlDotData(show: false),
+        belowBarData: BarAreaData(
+          show: histSpots.isEmpty,
+          color: AppColors.income.withValues(alpha: 0.08),
+        ),
+      ),
+      // Inflation-adjusted overlay
+      if (realTimeline != null)
+        LineChartBarData(
+          spots: realTimeline!
+              .asMap()
+              .entries
+              .map(
+                (MapEntry<int, double> e) =>
+                    FlSpot(e.key.toDouble(), e.value),
+              )
+              .toList(),
+          isCurved: true,
+          curveSmoothness: 0.3,
+          color: AppColors.warning.withValues(alpha: 0.8),
+          barWidth: 1.5,
+          dashArray: <int>[5, 3],
+          dotData: const FlDotData(show: false),
+          belowBarData: BarAreaData(),
+        ),
+      // Real trajectory (solid primary colour)
+      if (histSpots.isNotEmpty)
+        LineChartBarData(
+          spots: histSpots,
+          isCurved: true,
+          curveSmoothness: 0.3,
+          color: AppColors.primary,
+          barWidth: 2.5,
+          dotData: const FlDotData(show: false),
+          belowBarData: BarAreaData(
+            show: true,
+            color: AppColors.primary.withValues(alpha: 0.10),
+          ),
+        ),
+    ];
+
+    // "Hoje" vertical line at x=0, and FIRE horizontal line.
+    final ExtraLinesData extraLines = ExtraLinesData(
+      verticalLines: <VerticalLine>[
+        VerticalLine(
+          x: 0,
+          color: AppColors.muted.withValues(alpha: 0.4),
+          strokeWidth: 1.5,
+          dashArray: <int>[4, 4],
+          label: VerticalLineLabel(
+            show: true,
+            alignment: Alignment.topRight,
+            padding: const EdgeInsets.only(left: 4, bottom: 2),
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.muted,
+              fontSize: 9,
+            ),
+            labelResolver: (_) => 'Hoje',
+          ),
+        ),
+      ],
+      horizontalLines: fireNumber.isInfinite
+          ? <HorizontalLine>[]
+          : <HorizontalLine>[
+              HorizontalLine(
+                y: fireNumber,
+                color: AppColors.primary.withValues(alpha: 0.7),
+                strokeWidth: 1.5,
+                dashArray: <int>[6, 4],
+                label: HorizontalLineLabel(
+                  show: true,
+                  alignment: Alignment.topRight,
+                  padding: const EdgeInsets.only(right: 4, bottom: 2),
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.primary,
+                    fontSize: 9,
+                  ),
+                  labelResolver: (_) => 'FIRE',
+                ),
+              ),
+            ],
+    );
+
     return AppCard(
       padding: const EdgeInsets.fromLTRB(8, 16, 16, 8),
       child: SizedBox(
         height: 200,
         child: LineChart(
           LineChartData(
-            minX: 0,
-            maxX: (timeline.length - 1).toDouble(),
+            minX: minX,
+            maxX: maxX,
             minY: 0,
             maxY: maxY,
+            extraLinesData: extraLines,
             gridData: FlGridData(
               drawVerticalLine: false,
               horizontalInterval: maxY / 4,
@@ -555,70 +996,21 @@ class _GrowthChart extends StatelessWidget {
                 sideTitles: SideTitles(
                   showTitles: true,
                   interval: 10,
-                  getTitlesWidget: (double v, TitleMeta m) => Text(
-                    'Ano ${v.toInt()}',
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.muted, fontSize: 9),
-                  ),
+                  getTitlesWidget: (double v, TitleMeta m) {
+                    final int year = v.toInt();
+                    return Text(
+                      year == 0 ? 'Hoje' : 'A$year',
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.muted, fontSize: 9),
+                    );
+                  },
                 ),
               ),
               rightTitles: const AxisTitles(),
               topTitles: const AxisTitles(),
             ),
             lineTouchData: const LineTouchData(enabled: false),
-            extraLinesData: fireNumber.isInfinite
-                ? const ExtraLinesData()
-                : ExtraLinesData(
-                    horizontalLines: <HorizontalLine>[
-                      HorizontalLine(
-                        y: fireNumber,
-                        color: AppColors.primary.withValues(alpha: 0.7),
-                        strokeWidth: 1.5,
-                        dashArray: <int>[6, 4],
-                        label: HorizontalLineLabel(
-                          show: true,
-                          alignment: Alignment.topRight,
-                          padding: const EdgeInsets.only(right: 4, bottom: 2),
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.primary,
-                            fontSize: 9,
-                          ),
-                          labelResolver: (_) => 'FIRE',
-                        ),
-                      ),
-                    ],
-                  ),
-            lineBarsData: <LineChartBarData>[
-              LineChartBarData(
-                spots: spots,
-                isCurved: true,
-                curveSmoothness: 0.3,
-                color: AppColors.income,
-                dotData: const FlDotData(show: false),
-                belowBarData: BarAreaData(
-                  show: true,
-                  color: AppColors.income.withValues(alpha: 0.08),
-                ),
-              ),
-              if (realTimeline != null)
-                LineChartBarData(
-                  spots: realTimeline!
-                      .asMap()
-                      .entries
-                      .map(
-                        (MapEntry<int, double> e) =>
-                            FlSpot(e.key.toDouble(), e.value),
-                      )
-                      .toList(),
-                  isCurved: true,
-                  curveSmoothness: 0.3,
-                  color: AppColors.warning.withValues(alpha: 0.8),
-                  barWidth: 1.5,
-                  dashArray: <int>[5, 3],
-                  dotData: const FlDotData(show: false),
-                  belowBarData: BarAreaData(),
-                ),
-            ],
+            lineBarsData: bars,
           ),
         ),
       ),

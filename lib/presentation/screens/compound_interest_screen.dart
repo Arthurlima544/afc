@@ -1,10 +1,17 @@
+import 'dart:async';
+
+import 'package:clerk_flutter/clerk_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../domain/entity/type_entity.dart';
 import '../../domain/usecase/compound_interest_calculator.dart';
 import '../../domain/usecase/inflation_calculator.dart';
+import '../blocs/auth/auth_bloc.dart';
 import '../widgets/design_system.dart';
 
 // ─── Comparison rates ─────────────────────────────────────────────────────────
@@ -42,10 +49,22 @@ class _CompoundInterestScreenState extends State<CompoundInterestScreen> {
   CompoundResult? _result;
   List<CompoundResult> _comparisons = <CompoundResult>[];
 
+  // Real data from Firestore
+  double? _realMonthlySavings;
+
   @override
   void initState() {
     super.initState();
     _calculate();
+    final AuthBloc auth = context.read<AuthBloc>();
+    final String userId =
+        auth.state.whenOrNull(
+          signedIn: (ClerkAuthState s) => s.user?.id,
+        ) ??
+        '';
+    if (userId.isNotEmpty) {
+      unawaited(_loadRealSavings(userId));
+    }
   }
 
   @override
@@ -56,6 +75,78 @@ class _CompoundInterestScreenState extends State<CompoundInterestScreen> {
     _yearsCtrl.dispose();
     _inflationCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadRealSavings(String userId) async {
+    try {
+      final DateTime now = DateTime.now();
+      final DateTime threeMonthsAgo = DateTime(now.year, now.month - 3);
+
+      final QuerySnapshot<Map<String, dynamic>> snap = await FirebaseFirestore
+          .instance
+          .collection('transaction')
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      double totalIncome = 0;
+      double totalExpenses = 0;
+      int monthCount = 0;
+
+      // Build monthly sums for the last 3 months
+      final Map<String, double> incomeByMonth = <String, double>{};
+      final Map<String, double> expenseByMonth = <String, double>{};
+
+      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in snap.docs) {
+        final Map<String, dynamic> data = doc.data();
+        final dynamic rawDate = data['data'];
+        final DateTime date;
+        if (rawDate is Timestamp) {
+          date = rawDate.toDate();
+        } else if (rawDate is String) {
+          date = DateTime.parse(rawDate);
+        } else if (rawDate is DateTime) {
+          date = rawDate;
+        } else {
+          continue;
+        }
+        if (date.isBefore(threeMonthsAgo)) {
+          continue;
+        }
+        final String monthKey = '${date.year}-${date.month}';
+        final double amount = (data['amount'] as num?)?.toDouble() ?? 0;
+        final String typeUuid = data['typeUuid'] as String? ?? '';
+        if (typeUuid == TypeEntity.income.name) {
+          incomeByMonth[monthKey] = (incomeByMonth[monthKey] ?? 0) + amount;
+        } else if (typeUuid == TypeEntity.expense.name) {
+          expenseByMonth[monthKey] =
+              (expenseByMonth[monthKey] ?? 0) + amount;
+        }
+      }
+
+      final Set<String> months = <String>{
+        ...incomeByMonth.keys,
+        ...expenseByMonth.keys,
+      };
+      monthCount = months.length;
+
+      for (final String m in months) {
+        totalIncome += incomeByMonth[m] ?? 0;
+        totalExpenses += expenseByMonth[m] ?? 0;
+      }
+
+      if (monthCount == 0) {
+        return;
+      }
+
+      final double avgNetSavings =
+          (totalIncome - totalExpenses) / monthCount;
+
+      if (mounted) {
+        setState(() => _realMonthlySavings = avgNetSavings);
+      }
+    } on Exception {
+      // silently ignore — real data overlay is optional
+    }
   }
 
   void _calculate() {
@@ -134,6 +225,10 @@ class _CompoundInterestScreenState extends State<CompoundInterestScreen> {
                 realFinalAmount: realTimeline?.lastOrNull,
               ),
               const Gap(16),
+              if (_realMonthlySavings != null) ...<Widget>[
+                _RealSavingsBadge(savings: _realMonthlySavings!),
+                const Gap(12),
+              ],
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
@@ -151,7 +246,26 @@ class _CompoundInterestScreenState extends State<CompoundInterestScreen> {
                 comparisons:
                     _showComparison ? _comparisons : <CompoundResult>[],
                 realTimeline: realTimeline,
+                realMonthlySavings: _realMonthlySavings,
               ),
+              if (_realMonthlySavings != null) ...<Widget>[
+                const Gap(8),
+                _RealSavingsCallout(
+                  savings: _realMonthlySavings!,
+                  initialAmount:
+                      double.tryParse(
+                        _initialCtrl.text.replaceAll(',', '.'),
+                      ) ??
+                      0,
+                  annualRate:
+                      (double.tryParse(
+                            _rateCtrl.text.replaceAll(',', '.'),
+                          ) ??
+                          0) /
+                      100,
+                  years: int.tryParse(_yearsCtrl.text)?.clamp(1, 50) ?? 20,
+                ),
+              ],
               if (_showComparison) ...<Widget>[
                 const Gap(8),
                 _ComparisonLegend(
@@ -163,6 +277,101 @@ class _CompoundInterestScreenState extends State<CompoundInterestScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─── Real savings badge ────────────────────────────────────────────────────────
+
+class _RealSavingsBadge extends StatelessWidget {
+  const _RealSavingsBadge({required this.savings});
+
+  final double savings;
+
+  @override
+  Widget build(BuildContext context) {
+    final NumberFormat brl = NumberFormat.currency(
+      locale: 'pt_BR',
+      symbol: 'R\$',
+      decimalDigits: 2,
+    );
+    final bool positive = savings >= 0;
+    return AppCard(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        children: <Widget>[
+          Icon(
+            positive ? Icons.trending_up : Icons.trending_down,
+            color: positive ? AppColors.income : AppColors.expense,
+            size: 20,
+          ),
+          const Gap(12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const Text(
+                  'Poupança real atual',
+                  style: AppTextStyles.label,
+                ),
+                const Gap(2),
+                Text(
+                  'Baseado nos últimos 3 meses',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.muted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            brl.format(savings),
+            style: AppTextStyles.bodyBold.copyWith(
+              color: positive ? AppColors.income : AppColors.expense,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Real savings callout ─────────────────────────────────────────────────────
+
+class _RealSavingsCallout extends StatelessWidget {
+  const _RealSavingsCallout({
+    required this.savings,
+    required this.initialAmount,
+    required this.annualRate,
+    required this.years,
+  });
+
+  final double savings;
+  final double initialAmount;
+  final double annualRate;
+  final int years;
+
+  @override
+  Widget build(BuildContext context) {
+    if (savings <= 0) {
+      return const SizedBox.shrink();
+    }
+    final CompoundResult withRealSavings = CompoundInterestCalculator.calculate(
+      initialAmount: initialAmount,
+      monthlyContribution: savings,
+      annualRate: annualRate,
+      years: years,
+    );
+
+    final NumberFormat brl = NumberFormat.currency(
+      locale: 'pt_BR',
+      symbol: 'R\$',
+      decimalDigits: 0,
+    );
+    return Text(
+      'Com sua poupança atual de ${brl.format(savings)}/mês, você atingiria '
+      '${brl.format(withRealSavings.finalAmount)} em $years anos',
+      style: AppTextStyles.caption.copyWith(color: AppColors.muted),
     );
   }
 }
@@ -537,11 +746,13 @@ class _GrowthChart extends StatelessWidget {
     required this.result,
     required this.comparisons,
     this.realTimeline,
+    this.realMonthlySavings,
   });
 
   final CompoundResult result;
   final List<CompoundResult> comparisons;
   final List<double>? realTimeline;
+  final double? realMonthlySavings;
 
   @override
   Widget build(BuildContext context) {
@@ -623,6 +834,29 @@ class _GrowthChart extends StatelessWidget {
       ];
     }
 
+    // Horizontal reference line at actual monthly savings level (if positive).
+    final ExtraLinesData extraLines =
+        (realMonthlySavings != null && realMonthlySavings! > 0)
+        ? ExtraLinesData(
+            horizontalLines: <HorizontalLine>[
+              HorizontalLine(
+                y: realMonthlySavings!,
+                color: AppColors.income.withValues(alpha: 0.6),
+                strokeWidth: 1.5,
+                dashArray: <int>[6, 4],
+                label: HorizontalLineLabel(
+                  padding: const EdgeInsets.only(left: 4, bottom: 2),
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.income,
+                    fontSize: 9,
+                  ),
+                  labelResolver: (_) => 'Você hoje',
+                ),
+              ),
+            ],
+          )
+        : const ExtraLinesData();
+
     return AppCard(
       padding: const EdgeInsets.fromLTRB(8, 16, 16, 8),
       child: SizedBox(
@@ -633,6 +867,7 @@ class _GrowthChart extends StatelessWidget {
             maxX: (result.yearlyTimeline.length - 1).toDouble(),
             minY: 0,
             maxY: maxY,
+            extraLinesData: extraLines,
             gridData: FlGridData(
               drawVerticalLine: false,
               horizontalInterval: maxY / 4,
