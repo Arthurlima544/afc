@@ -23,13 +23,18 @@ class LoginScreen extends StatelessWidget {
     listener: (BuildContext context, AuthState state) {
       state.whenOrNull(signedIn: (_) => context.go('/home'));
     },
-    child: child ??
-        const Scaffold(
-          body: SafeArea(
-            child: ClerkErrorListener(
-              child: ClerkAuthentication(),
-            ),
-          ),
-        ),
+    child: child ?? _buildClerkAuth(),
+  );
+
+  /// Builds the Clerk authentication widget with a no-op error handler.
+  ///
+  /// Clerk's sign-in panel surfaces errors inline via its own callback, so
+  /// we suppress the default snackbar path (which requires a [Scaffold]) to
+  /// avoid a [ScaffoldMessenger] assertion crash.
+  static Widget _buildClerkAuth() => ClerkErrorListener(
+    handler: (_, _) {},
+    child: const SafeArea(
+      child: ClerkAuthentication(),
+    ),
   );
 }
