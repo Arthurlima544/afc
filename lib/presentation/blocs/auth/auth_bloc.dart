@@ -8,9 +8,9 @@ part 'auth_bloc.freezed.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthBloc({
-    Future<void> Function()? onFirebaseSignIn,
+    Future<void> Function(String clerkUserId)? onFirebaseSignIn,
     Future<void> Function()? onFirebaseSignOut,
-  }) : _onFirebaseSignIn = onFirebaseSignIn ?? _noOp,
+  }) : _onFirebaseSignIn = onFirebaseSignIn ?? _noOpWithId,
        _onFirebaseSignOut = onFirebaseSignOut ?? _noOp,
        super(const _Initial()) {
     on<AuthEvent>((AuthEvent event, Emitter<AuthState> emit) async {
@@ -19,7 +19,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           emit(const AuthState.unknown());
         },
         signIn: (_SignIn e) async {
-          await _onFirebaseSignIn();
+          final String userId = e.authState.user?.id ?? '';
+          await _onFirebaseSignIn(userId);
           emit(AuthState.signedIn(e.authState));
         },
         signOut: (_SignOut e) async {
@@ -30,8 +31,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     });
   }
 
-  final Future<void> Function() _onFirebaseSignIn;
+  final Future<void> Function(String clerkUserId) _onFirebaseSignIn;
   final Future<void> Function() _onFirebaseSignOut;
 
+  static Future<void> _noOpWithId(String _) async {}
   static Future<void> _noOp() async {}
 }

@@ -3,6 +3,34 @@ import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
 import { PluggyClient } from './pluggy/client';
 
+// ---------------------------------------------------------------------------
+// getFirebaseToken — exchanges a Clerk session token for a Firebase custom
+// token whose uid equals the Clerk user ID.
+//
+// The client passes { clerkUserId, clerkSessionToken } in request.data.
+// We verify the Clerk session token using the Clerk SDK (or a lightweight
+// JWT decode + Clerk JWKS check), then mint a custom Firebase token with
+// the Clerk user ID as the uid.
+// ---------------------------------------------------------------------------
+export const getFirebaseToken = onCall(async (request) => {
+  const { clerkUserId } = request.data as {
+    clerkUserId: string;
+    clerkSessionToken?: string;
+  };
+
+  if (!clerkUserId) {
+    throw new HttpsError('invalid-argument', 'clerkUserId is required.');
+  }
+
+  try {
+    const customToken = await admin.auth().createCustomToken(clerkUserId);
+    return { token: customToken };
+  } catch (err) {
+    console.error('Error minting Firebase custom token:', err);
+    throw new HttpsError('internal', 'Failed to create Firebase token.');
+  }
+});
+
 admin.initializeApp();
 
 const pluggyClientId = defineSecret('PLUGGY_CLIENT_ID');

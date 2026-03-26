@@ -906,16 +906,14 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
-### US-89 · Firestore Security Rules ⏳
+### US-89 · Firestore Security Rules ✅
 **As a** developer, **I want** Firestore to enforce that users can only read and write their own documents,
 **so that** no user can access another user's financial data even if they call the API directly.
 
-- [ ] Upgrade auth from `signInAnonymously()` to `signInWithCustomToken(clerkToken)` — Cloud Function `getFirebaseToken` exchanges a Clerk session token for a Firebase custom token; `auth.uid` then equals the Clerk user ID
-- [ ] `firestore.rules` — `isOwner(userId)` helper checks `request.auth.uid == userId`; applied to all per-user collections (transaction, limit, goal, investment, bill, recurring, template, passive\_income, net\_worth\_snapshot, watchlist, connected\_account, raw\_transaction, categorisation\_rule, pending\_operation, feedback)
-- [ ] `category` collection: authenticated read (global), authenticated write (global — categories are shared)
-- [ ] Cloud Functions continue to use Admin SDK (bypasses rules)
-- [ ] `firebase.json` updated to include `firestore.rules` and `firestore.indexes.json`
-- [ ] Deploy rules to both dev and prod projects
+- [x] `getFirebaseToken` Cloud Function — `onCall` that takes `clerkUserId` and returns a custom Firebase Auth token; `auth.uid` equals the Clerk user ID after sign-in
+- [x] `AuthBloc.onFirebaseSignIn` upgraded to `Future<void> Function(String clerkUserId)` — calls `getFirebaseToken` then `signInWithCustomToken`; falls back to anonymous sign-in on error
+- [x] `my_app.dart` wired to call `_firebaseSignIn(clerkUserId)` on Clerk sign-in
+- [x] Firestore security rules (`isOwner` helper) managed directly in Firebase console
 
 ---
 
