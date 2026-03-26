@@ -1012,4 +1012,4 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 16 (US-82–83) | `feat/sprint16-offline-first` | 🔄 In Progress |
 | Sprint 17 (US-84–85) | `feat/sprint17-benefits-accounts` | ✅ Done |
 | Sprint 18 (US-86–89) | `feat/sprint18-quality-reporting` | ✅ Done |
-| Sprint 19 (US-90–93) | `feat/sprint19-search-export-insights` | ⏳ Planned |
+| Sprint 19 (US-90–93) | `feat/sprint19-search-export-insights` | ✅ Done |
