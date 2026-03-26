@@ -968,6 +968,253 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
+## Sprint 20 — Fixes, Resilience & Polish (US-94–101)
+
+> **Goal**: Eliminate every crash, infinite-loader, and data-staleness bug reported in user testing. Harden offline writes across all forms, make financial scores react to new data, unify the card design language, and fix all visual polish issues.
+
+### US-94 · Offline write resilience — no more infinite loading ⏳
+**As a** user, **I want** adding transactions, limits, metas, categories, recurring rules, and importing extracts to complete immediately even without internet,
+**so that** the form sheet always closes and I am never left staring at a spinner.
+
+**Root cause**: Firestore `.add()` / `.set()` Futures only resolve once the server ACKs the write. When offline the Future never resolves → the cubit stays in `loading` state forever.
+
+**Fix required in each cubit that uses `emit(loading)` before a Firestore write**:
+- `TransactionCubit.saveTransaction` and `updateTransaction`
+- `LimitCubit.saveLimit` and `updateLimit`
+- `GoalCubit.createGoal` and `updateGoal`
+- `CategoryCubit.saveCategory` and `updateCategory`
+- `RecurringCubit.saveRecurring`
+
+**Implementation rule** (apply consistently to every write method):
+```dart
+if (ConnectivityService.instance.isOnline) {
+  await _firestore.collection('x').add(data);    // await only when online
+} else {
+  unawaited(_firestore.collection('x').add(data)); // fire-and-forget; Firestore buffers locally
+}
+SyncQueue.enqueueIfOffline(...);
+emit(State.success(entity));                      // always emit success
+```
+
+**Offline confirmation**: when `!ConnectivityService.instance.isOnline` at the time of save, the form sheet must show a `SnackBar` (or equivalent) saying "Salvo localmente — será sincronizado quando a internet voltar" before popping. This confirmation must appear for **all** forms affected above, plus:
+- `ImportCubit` / import extrato flow
+- `RecurringCubit` save form
+
+**Local list visibility**: because Firestore `.add()` fires without await when offline, the new document enters Firestore's pending-write buffer and **will** appear in subsequent `.snapshots()` and `.get()` calls from local cache — no manual optimistic update needed. Verify this holds for categories (confirm `getCategories()` uses cache).
+
+**Unit tests**: for each affected cubit, add a test that verifies `emit(success)` is reached when the Firestore instance is an offline-mode `FakeFirebaseFirestore`.
+
+---
+
+### US-95 · Health score & FI score reactive to new data ⏳
+**As a** user, **I want** "Saúde financeira" and "Independência Financeira" cards to reflect my latest transactions and goals automatically,
+**so that** I don't need to restart the app to see updated scores.
+
+**Root cause**: `HealthScoreCubit.loadScore` and `FiScoreCubit.load` use one-shot `.get()` calls. They are only triggered once (on initial dashboard load) and never re-run when new transactions, goals, or investments are added.
+
+**Fix**:
+- Replace all `.get()` calls in both cubits with `.snapshots()` streams using `emit.forEach` (same pattern as `HomeBloc`).
+- `HealthScoreCubit` depends on: `transaction`, `limit`, `goal` collections → subscribe to all three and recompute on any change.
+- `FiScoreCubit` depends on: `transaction`, `investment`, `goal` (passive income) collections → same approach.
+- If merging three streams is complex, an acceptable alternative is to expose a `reload(userId)` method on each cubit, then call it from `ScaffoldShell` whenever `TransactionCubit`, `GoalCubit`, or `InvestmentCubit` emit a `success` state (via `BlocListener` in `ScaffoldShell`).
+- Either approach must result in scores updating within 1–2 seconds of a new transaction/goal/investment being saved.
+
+**Unit tests**: cubit emits an updated score after a second Firestore write (or `reload()` call) in `FakeFirebaseFirestore`.
+
+---
+
+### US-96 · Contas a pagar — paid status & transaction title auto-match ⏳
+**As a** user, **I want** to mark a bill as paid and optionally tie it to a transaction title keyword so the app auto-detects payment,
+**so that** I can track which bills are settled each month without manual data entry.
+
+**Data model changes** (`BillEntity` — requires Freezed regeneration):
+```dart
+@Default(false) bool isPaid,           // manual paid toggle for current month
+@Default('') String transactionTitle,  // keyword to match against transaction titles (e.g. "conta de luz")
+```
+Both fields are optional with safe defaults so existing Firestore documents parse without migration.
+
+**BillCubit changes**:
+- `togglePaid(String billUuid, bool paid)` — updates `isPaid` field in Firestore; enqueues in SyncQueue if offline.
+- Auto-match hook: `TransactionCubit.saveTransaction` and `updateTransaction` (after emitting success) should call a `BillAutoMatcher.checkAndMark(userId, transactionTitle)` use-case that:
+  1. Loads all bills for `userId` from Firestore (cache-ok).
+  2. For each bill where `transactionTitle.isNotEmpty` and `txTitle.toLowerCase().contains(bill.transactionTitle.toLowerCase())`, calls `togglePaid(billUuid, true)`.
+  3. Does nothing silently if no matches.
+  `BillAutoMatcher` is a pure domain use-case in `lib/domain/usecase/`.
+
+**UI changes** (`lista_contas.dart`):
+- Each bill card shows a checkmark icon button (checked = green, unchecked = grey) that calls `togglePaid`.
+- If `transactionTitle` is non-empty, show a small "auto" chip/icon on the card to indicate auto-detection is configured.
+- `CadastrarConta` form gains an optional text field "Título da transação correspondente" (hint: "ex: conta de luz") — maps to `transactionTitle`.
+
+**Unit tests**: `BillAutoMatcher` — matches case-insensitively, matches partial substring, does not match unrelated title, handles empty `transactionTitle` gracefully.
+
+---
+
+### US-97 · Privacy mode persists across restarts ⏳
+**As a** user, **I want** the eye icon (hide/show values) state to be remembered even when I close and reopen the app,
+**so that** I don't have to re-tap it on every launch.
+
+**Implementation** (`PrivacyCubit`):
+- Inject `SharedPreferences` (accept as optional constructor parameter for testability).
+- On `PrivacyCubit()` construction, read `SharedPreferences.getBool('privacy_mode') ?? false` as the initial state.
+- Override `toggle()` to also call `prefs.setBool('privacy_mode', newValue)`.
+- `ScaffoldShell` (which creates `PrivacyCubit`) must use `Future<PrivacyCubit>` or the lazy-getter pattern to avoid reading SharedPreferences synchronously in the widget tree — use `Future<void>.microtask` + `setState` or load in `initState`.
+
+**Simpler alternative** (preferred if the async init adds complexity): make `PrivacyCubit` synchronous by having its `register()` static method accept a pre-loaded `bool` initial value, and load that value in `main_dev.dart` / `main_prod.dart` before `runApp`.
+
+**Unit tests**: after `toggle()`, the stored SharedPreferences key is updated; a new `PrivacyCubit` instance reads the persisted value as its initial state.
+
+---
+
+### US-98 · Firestore composite index fix for Patrimônio Líquido ⏳
+**As a** user, **I want** the Patrimônio Líquido card to load without errors,
+**so that** my net worth is always visible on the dashboard.
+
+**Root cause**: the query that backs the net worth calculation performs a compound `where` + `orderBy` that Firestore requires a composite index for. Until the index is deployed, the query throws `cloud_firestore/failed-precondition`.
+
+**Fix options** (choose the simpler one):
+- **Option A — Restructure query**: remove the server-side `orderBy` or the compound `where` clause that triggers the index requirement; sort or filter in memory after fetching.
+- **Option B — Add index**: create the required composite index via `firestore.indexes.json` (checked into the repo) so it is deployed automatically with `firebase deploy --only firestore:indexes`.
+
+Identify the exact query in `_NetWorthCardState` (or wherever the query lives), reproduce the `failed-precondition` error, and apply Option A (preferred — no infra change needed) or Option B.
+
+**Acceptance**: the net worth card loads on first open in both dev and prod with no console errors.
+
+---
+
+### US-99 · Layout & UX micro-fixes ⏳
+**As a** user, **I want** text that fits its container, a clear path to add investments from the empty portfolio state, reliable pull-to-refresh, correct decimal formatting, a pre-selected current month in limit creation, and the offline banner fully visible on notched devices,
+**so that** the app looks and behaves correctly on all devices.
+
+Fix each item independently — they can be committed together in one PR:
+
+**a) Text overflow — "Independência financeira" and other headers**
+- Use `Flexible` or `Expanded` around any `Text` widgets in `Row` children that can overflow.
+- Apply `overflow: TextOverflow.ellipsis` (or `FittedBox(fit: BoxFit.scaleDown)`) to labels that are long and adjacent to other content.
+- Audit `home_page.dart` card headers and `scaffold_shell.dart` navigation labels for the same pattern.
+
+**b) Portfolio empty state — no add button**
+- In `lista_investimentos.dart`, when the empty-state widget is shown ("Nenhum investimento cadastrado"), also render an `AppButton` (or `FloatingActionButton` if the screen has one) labelled "Adicionar investimento" that navigates to the add-investment form.
+- This matches the UX of every other empty-state screen in the app.
+
+**c) Pull-to-refresh animation completes instantly**
+- The `RefreshIndicator.onRefresh` callback must return a `Future` that **does not complete** until the stream emits new data. Currently it fires `unawaited(cubit.loadTransactions(...))` and returns immediately.
+- Fix: use a `Completer<void>` — resolve it inside the `BlocListener` when `listed` state is received, or replace with a `Future.delayed` minimum duration (500 ms) combined with the actual load call.
+- Apply to all screens that have `RefreshIndicator`: `lista_transacoes.dart`, and any others.
+
+**d) Decimal format in Planejador de Metas chart**
+- In the "evolução do patrimônio" line chart (investment goal planner screen), all monetary Y-axis labels and tooltip values must use exactly 2 decimal places — either `NumberFormat.currency(decimalDigits: 2)` or `toStringAsFixed(2)`. Remove any raw `double.toString()` calls on monetary values.
+
+**e) Pre-selected current month in CadastrarLimites**
+- When `initialLimit` is `null` (creating new), `_monthValue` must be initialised to the current month's `CalendarEntity` name:
+  ```dart
+  _monthValue = CalendarEntity.values[DateTime.now().month - 1].name;
+  ```
+- When editing an existing limit, keep the existing behaviour (use `limit.month`).
+
+**f) Offline banner cut by device camera notch**
+- In `offline_banner.dart`, the `_BannerContent` sits at the very top of the `Column`. Wrap the `_BannerContent` in a `SafeArea(bottom: false)` so the banner content begins below the status-bar/notch area.
+
+---
+
+### US-100 · Skeleton sizing matches real content ⏳
+**As a** user, **I want** loading skeletons in Transações, Renda Passiva, and Limites to match the actual size and shape of the list items they represent,
+**so that** the layout does not jump when data loads.
+
+**Reference**: the Metas page skeleton already does this correctly — each skeleton card has the same height/padding as a real goal card.
+
+**Fix pattern for each affected screen**:
+- Measure (or read from code) the exact height of one real list item (including padding).
+- In the corresponding `SkeletonList` (or inline skeleton widget), set the same height and internal padding on each shimmer placeholder.
+- Number of skeleton rows should match a realistic list size (3–5 rows is typical).
+
+**Screens to update**:
+- `lista_transacoes.dart` — skeleton row height must match `_TransacaoItem` card height (approx 68 dp).
+- `passive_income_screen.dart` — skeleton must match the passive income card height.
+- `lista_limites.dart` — skeleton must match the limit progress card height.
+
+If a shared `SkeletonList` widget is used, add a `itemHeight` parameter so each screen passes its own value.
+
+---
+
+### US-101 · Unified card design — Renda Passiva style ⏳
+**As a** user, **I want** all list cards (transactions, limits, goals, investments, bills, templates, recurring) to follow a consistent design with a hidden delete action,
+**so that** the app feels polished and the delete option is not visually noisy.
+
+**Reference design** (Renda Passiva card): icon on the left, title + subtitle in the middle, amount on the right, action icons (edit / delete) revealed only on long-press or via a trailing `...` menu — **not** permanently visible.
+
+**Changes**:
+- Audit every card widget across all list screens.
+- Cards that currently show an always-visible delete `IconButton` (e.g. `_TransacaoItem`, bill cards, template cards) must hide it.
+- Replace with one of:
+  - **Long-press reveal**: `GestureDetector(onLongPress: ...)` that slides in action buttons (edit, delete) via `AnimatedSize` or an inline `Row` toggle.
+  - **Trailing `...` menu** (simpler): an `AppIconButton(Icons.more_vert)` that opens a small `PopupMenuButton` with "Editar" and "Excluir" options.
+- The trailing `...` (more_vert) approach is preferred for simplicity and consistency.
+- Apply the same icon-left / content-center / actions-right layout across all cards.
+- Keep the existing tap-to-edit behaviour where applicable.
+
+**Do not change** the Metas card (goal card) if it already follows the reference design.
+
+---
+
+## Sprint 21 — Financial Trajectory (US-102–104)
+
+> **Goal**: Transform the FIRE Calculator, Compound Interest Simulator, and Investment Goal Planner from static what-if tools into living projections that overlay each user's **actual** financial trajectory. Users see where they are today on the path to their long-term goals — making the app indispensable for multi-year financial planning.
+
+### US-102 · FIRE Calculator — real data trajectory ⏳
+**As a** user, **I want** the FIRE Calculator to show my actual savings rate and net worth as a starting point, and plot a projected path to financial independence over up to 10 years,
+**so that** I can see whether my current spending and saving habits will get me to FIRE on time.
+
+**Data sources** (read from Firestore; use cache when offline):
+- Last 3-month average monthly income → from `transaction` collection (type = income).
+- Last 3-month average monthly expenses → from `transaction` collection (type = expense).
+- Current investable net worth → sum of `investment` collection (`quantity × currentPrice`).
+
+**UI additions** to `fire_calculator_screen.dart` (or equivalent):
+- A "Sua posição atual" section at the top showing: current avg monthly income, avg monthly expenses, derived savings rate (%), current portfolio value — all editable by the user if they want to override the computed values.
+- A 10-year line chart with two series:
+  - **Projeção** (dashed line): the theoretical compounding growth using the user-entered FIRE parameters (existing simulator logic).
+  - **Trajetória real** (solid coloured line): a series built from actual monthly net worth snapshots (pulled from the `net_worth_snapshot` collection introduced in Sprint 12 / US-64, or computed on-the-fly from Firestore transaction history).
+- A vertical marker on the X-axis (today) separating historical data (left, solid) from future projection (right, dashed).
+- If fewer than 2 real data points exist, hide the "Trajetória real" series and show a hint "Adicione transações e investimentos para ver sua trajetória real".
+
+**Technical note**: chart library is `fl_chart` (`LineChart` with two `LineChartBarData` series — existing pattern in `net_worth_evolution_screen.dart`).
+
+---
+
+### US-103 · Compound Interest Simulator — actual savings trajectory ⏳
+**As a** user, **I want** the Compound Interest Simulator to show how my real monthly savings compare to the simulated contribution,
+**so that** I can immediately see whether I am on track with the plan I modelled.
+
+**Data source**: last 3-month average monthly net savings (income − expenses) from the `transaction` collection.
+
+**UI additions** to `compound_interest_screen.dart` (or equivalent):
+- A read-only "Poupança real atual" badge above the chart showing the computed average monthly net savings, with a sub-label "Baseado nos últimos 3 meses".
+- On the existing bar/line chart, overlay a horizontal reference line at Y = `current net savings value` labelled "Você hoje". This lets the user visually compare their real saving capacity against the simulated monthly contribution.
+- A short text callout below the chart: "Com a sua poupança atual de R$ X, você atingiria R$ Y em Z anos" (using the simulator's own formula with `X` substituted as the contribution). This replaces one of the static placeholder texts if present.
+- If no transaction data exists, hide the overlay and show a hint.
+
+---
+
+### US-104 · Investment Goal Planner — actual vs projected progress ⏳
+**As a** user, **I want** the Investment Goal Planner to display both my projected wealth growth and my actual net worth history on the same chart,
+**so that** I can see at a glance whether my investment contributions are keeping pace with my long-term plan.
+
+**Data source**: monthly net worth snapshots from the `net_worth_snapshot` Firestore collection (written by the net-worth evolution screen — US-64). Each snapshot: `{ userId, year, month, totalAmount }`.
+
+**UI additions** to `investment_goal_screen.dart` (or equivalent):
+- On the existing "evolução do patrimônio" `LineChart`, add a second `LineChartBarData` series for actual net worth history:
+  - X = months elapsed since plan start date (or since first snapshot, whichever is earlier).
+  - Y = `totalAmount` from each snapshot.
+  - Style: solid line, distinct colour from the projection line (e.g. `AppColors.income` green).
+- A legend below the chart distinguishing "Projeção" and "Patrimônio real".
+- A vertical "hoje" marker (same pattern as US-102).
+- Decimal formatting fix (from US-99d) must also be applied here: all chart values use `NumberFormat.currency(decimalDigits: 2)`.
+- If fewer than 1 snapshot exists, show the chart with projection only and a hint to add investments.
+
+---
+
 ## Technical Debt & Cross-cutting
 
 These items are not user stories but are necessary for long-term quality.
@@ -1013,3 +1260,5 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 17 (US-84–85) | `feat/sprint17-benefits-accounts` | ✅ Done |
 | Sprint 18 (US-86–89) | `feat/sprint18-quality-reporting` | ✅ Done |
 | Sprint 19 (US-90–93) | `feat/sprint19-search-export-insights` | ✅ Done |
+| Sprint 20 (US-94–101) | `fix/sprint20-resilience-polish` | ⏳ Planned |
+| Sprint 21 (US-102–104) | `feat/sprint21-financial-trajectory` | ⏳ Planned |
