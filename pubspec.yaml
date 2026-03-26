@@ -35,6 +35,7 @@ dependencies:
   json_annotation: ^4.9.0
   logger: ^2.6.1
   package_info_plus: ^9.0.0
+  path_provider: ^2.1.5
   pdf: ^3.11.1
   printing: ^5.13.1
   result_dart: ^2.1.1

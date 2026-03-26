@@ -1,11 +1,16 @@
+import 'dart:io';
+
 import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../../domain/usecase/csv_exporter.dart';
 import '../../domain/usecase/pdf_report_builder.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/report/report_cubit.dart';
@@ -100,6 +105,22 @@ class _RelatorioState extends State<Relatorio> {
     );
   }
 
+  Future<void> _exportCsv(ReportData data) async {
+    final List<int> bytes = CsvExporter.export(
+      data.transactions,
+      data.categoryNames,
+    );
+    final Directory dir = await getTemporaryDirectory();
+    final String fileName =
+        'afc_${data.year}_${data.month.toString().padLeft(2, '0')}.csv';
+    final File file = File('${dir.path}/$fileName');
+    await file.writeAsBytes(bytes);
+    await Share.shareXFiles(
+      <XFile>[XFile(file.path, mimeType: 'text/csv')],
+      subject: 'Transações AFC — ${_kMonthNames[data.month - 1]} ${data.year}',
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     body: SafeArea(
@@ -124,9 +145,24 @@ class _RelatorioState extends State<Relatorio> {
                   final ReportData? data = state.whenOrNull(
                     success: (ReportData d) => d,
                   );
-                  return AppIconButton(
-                    onPressed: data != null ? () => _exportPdf(data) : null,
-                    icon: const Icon(Icons.picture_as_pdf_outlined),
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      AppIconButton(
+                        onPressed: data != null
+                            ? () => _exportCsv(data)
+                            : null,
+                        icon: const Icon(Icons.table_chart_outlined),
+                        tooltip: 'Exportar CSV',
+                      ),
+                      const Gap(4),
+                      AppIconButton(
+                        onPressed:
+                            data != null ? () => _exportPdf(data) : null,
+                        icon: const Icon(Icons.picture_as_pdf_outlined),
+                        tooltip: 'Exportar PDF',
+                      ),
+                    ],
                   );
                 },
               ),

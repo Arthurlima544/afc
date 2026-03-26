@@ -917,6 +917,57 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
+## Sprint 19 — Search, Export & Insights (US-90–93)
+
+> **Goal**: Make the app feel complete for daily power users — find any transaction instantly, get data out in spreadsheet-friendly form, and surface actionable insights without the user having to dig.
+
+### US-90 · Transaction search & filter ✅
+**As a** user, **I want** to search and filter my transactions by keyword, date range, and type,
+**so that** I can quickly locate any transaction without scrolling through the full list.
+
+- [x] Search bar at the top of `lista_transacoes.dart` — filters by `title` (case-insensitive substring)
+- [x] Date range picker (start / end) — chip row opens a `DateRangePicker` dialog
+- [x] Type filter chips: Todas / Receitas / Despesas
+- [x] All three filters compose (AND logic) on the already-loaded in-memory list
+- [x] Clear all filters button shown when any filter is active
+- [x] Unit tests: search, date range, type filter, combined filters, clear
+
+---
+
+### US-91 · CSV transaction export ✅
+**As a** user, **I want** to export my transactions to a CSV file,
+**so that** I can analyse my data in a spreadsheet without leaving the app.
+
+- [x] `CsvExporter` use-case in `lib/domain/usecase/` — pure Dart, converts `List<TransactionEntity>` + `Map<String,String> categoryNames` to RFC-4180 CSV bytes
+- [x] CSV columns: Data, Título, Categoria, Tipo, Valor
+- [x] Export button added to the Report screen (next to the PDF button) — uses the same loaded `ReportData.transactions`
+- [x] `Share.shareXFiles` via `share_plus` to open system share sheet
+- [x] Unit tests: header row correct, data rows correct, special characters escaped
+
+---
+
+### US-92 · Spending insights on dashboard ⏳
+**As a** user, **I want** to see smart insight cards on my dashboard,
+**so that** I can spot unusual spending without manually reviewing reports.
+
+- [ ] `InsightEngine` use-case — takes current-month and previous-month transaction lists, returns `List<SpendingInsight>`
+- [ ] Insight types: `topCategory` (highest spend category), `biggestExpense` (single largest transaction), `monthOverMonthDelta` (% change in total expenses vs prev month), `savingsRateTrend` (improving/worsening)
+- [ ] `InsightsCard` widget on `home_page.dart` — horizontal `PageView` of insight chips (hidden when no transactions)
+- [ ] Unit tests: each insight type computed correctly, empty list when no data
+
+---
+
+### US-93 · Limit overspend push alert ⏳
+**As a** user, **I want** to receive a push notification when I am approaching or have exceeded a spending limit,
+**so that** I can adjust my spending before the month ends.
+
+- [ ] `LimitAlertService` — checks all limits after every transaction create/update; calls `LocalNotificationService.show` when `spent / limitAmount >= 0.80` (warning) or `>= 1.0` (exceeded)
+- [ ] Alert fires once per threshold crossing per category per month (tracks last-alerted month in `SharedPreferences`)
+- [ ] `TransactionCubit.create` and `TransactionCubit.update` call `LimitAlertService.checkAfterTransaction(userId)`
+- [ ] Unit tests: alert fires at 80 %, fires at 100 %, does not fire twice in same month, does not fire below 80 %
+
+---
+
 ## Technical Debt & Cross-cutting
 
 These items are not user stories but are necessary for long-term quality.
@@ -960,4 +1011,5 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 15 (US-79–81) | `feat/sprint15-smart-data` | ✅ Merged |
 | Sprint 16 (US-82–83) | `feat/sprint16-offline-first` | 🔄 In Progress |
 | Sprint 17 (US-84–85) | `feat/sprint17-benefits-accounts` | ✅ Done |
-| Sprint 18 (US-86–89) | `feat/sprint18-quality` | ⏳ Planned |
+| Sprint 18 (US-86–89) | `feat/sprint18-quality-reporting` | ✅ Done |
+| Sprint 19 (US-90–93) | `feat/sprint19-search-export-insights` | ⏳ Planned |
