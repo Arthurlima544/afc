@@ -12,6 +12,7 @@ sealed class BillEntity with _$BillEntity {
     required double amount,
     required int dueDay,
     required String categoryUuid,
+    @Default(false) bool isPaid,
   }) = _BillEntity;
 
   factory BillEntity.fromJson(Map<String, Object?> json) =>

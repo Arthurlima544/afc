@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -90,7 +92,8 @@ class _HomeContent extends StatelessWidget {
               builder: (BuildContext context, bool isHidden) => Semantics(
                 label: isHidden ? 'Mostrar valores' : 'Ocultar valores',
                 child: AppIconButton(
-                  onPressed: () => context.read<PrivacyCubit>().toggle(),
+                  onPressed: () =>
+                      unawaited(context.read<PrivacyCubit>().toggle()),
                   icon: Icon(
                     isHidden
                         ? Icons.visibility_off_outlined

@@ -13,6 +13,7 @@ _BillEntity _$BillEntityFromJson(Map<String, dynamic> json) => _BillEntity(
   amount: (json['amount'] as num).toDouble(),
   dueDay: (json['dueDay'] as num).toInt(),
   categoryUuid: json['categoryUuid'] as String,
+  isPaid: json['isPaid'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$BillEntityToJson(_BillEntity instance) =>
@@ -23,4 +24,5 @@ Map<String, dynamic> _$BillEntityToJson(_BillEntity instance) =>
       'amount': instance.amount,
       'dueDay': instance.dueDay,
       'categoryUuid': instance.categoryUuid,
+      'isPaid': instance.isPaid,
     };

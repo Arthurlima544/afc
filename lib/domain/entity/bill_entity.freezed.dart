@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$BillEntity {
 
- String get uuid; String get userId; String get name; double get amount; int get dueDay; String get categoryUuid;
+ String get uuid; String get userId; String get name; double get amount; int get dueDay; String get categoryUuid; bool get isPaid;
 /// Create a copy of BillEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $BillEntityCopyWith<BillEntity> get copyWith => _$BillEntityCopyWithImpl<BillEnt
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is BillEntity&&(identical(other.uuid, uuid) || other.uuid == uuid)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.name, name) || other.name == name)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.dueDay, dueDay) || other.dueDay == dueDay)&&(identical(other.categoryUuid, categoryUuid) || other.categoryUuid == categoryUuid));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is BillEntity&&(identical(other.uuid, uuid) || other.uuid == uuid)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.name, name) || other.name == name)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.dueDay, dueDay) || other.dueDay == dueDay)&&(identical(other.categoryUuid, categoryUuid) || other.categoryUuid == categoryUuid)&&(identical(other.isPaid, isPaid) || other.isPaid == isPaid));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,uuid,userId,name,amount,dueDay,categoryUuid);
+int get hashCode => Object.hash(runtimeType,uuid,userId,name,amount,dueDay,categoryUuid,isPaid);
 
 @override
 String toString() {
-  return 'BillEntity(uuid: $uuid, userId: $userId, name: $name, amount: $amount, dueDay: $dueDay, categoryUuid: $categoryUuid)';
+  return 'BillEntity(uuid: $uuid, userId: $userId, name: $name, amount: $amount, dueDay: $dueDay, categoryUuid: $categoryUuid, isPaid: $isPaid)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $BillEntityCopyWith<$Res>  {
   factory $BillEntityCopyWith(BillEntity value, $Res Function(BillEntity) _then) = _$BillEntityCopyWithImpl;
 @useResult
 $Res call({
- String uuid, String userId, String name, double amount, int dueDay, String categoryUuid
+ String uuid, String userId, String name, double amount, int dueDay, String categoryUuid, bool isPaid
 });
 
 
@@ -65,7 +65,7 @@ class _$BillEntityCopyWithImpl<$Res>
 
 /// Create a copy of BillEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? uuid = null,Object? userId = null,Object? name = null,Object? amount = null,Object? dueDay = null,Object? categoryUuid = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? uuid = null,Object? userId = null,Object? name = null,Object? amount = null,Object? dueDay = null,Object? categoryUuid = null,Object? isPaid = null,}) {
   return _then(_self.copyWith(
 uuid: null == uuid ? _self.uuid : uuid // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -73,7 +73,8 @@ as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non
 as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
 as double,dueDay: null == dueDay ? _self.dueDay : dueDay // ignore: cast_nullable_to_non_nullable
 as int,categoryUuid: null == categoryUuid ? _self.categoryUuid : categoryUuid // ignore: cast_nullable_to_non_nullable
-as String,
+as String,isPaid: null == isPaid ? _self.isPaid : isPaid // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -155,10 +156,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String uuid,  String userId,  String name,  double amount,  int dueDay,  String categoryUuid)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String uuid,  String userId,  String name,  double amount,  int dueDay,  String categoryUuid,  bool isPaid)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _BillEntity() when $default != null:
-return $default(_that.uuid,_that.userId,_that.name,_that.amount,_that.dueDay,_that.categoryUuid);case _:
+return $default(_that.uuid,_that.userId,_that.name,_that.amount,_that.dueDay,_that.categoryUuid,_that.isPaid);case _:
   return orElse();
 
 }
@@ -176,10 +177,10 @@ return $default(_that.uuid,_that.userId,_that.name,_that.amount,_that.dueDay,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String uuid,  String userId,  String name,  double amount,  int dueDay,  String categoryUuid)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String uuid,  String userId,  String name,  double amount,  int dueDay,  String categoryUuid,  bool isPaid)  $default,) {final _that = this;
 switch (_that) {
 case _BillEntity():
-return $default(_that.uuid,_that.userId,_that.name,_that.amount,_that.dueDay,_that.categoryUuid);}
+return $default(_that.uuid,_that.userId,_that.name,_that.amount,_that.dueDay,_that.categoryUuid,_that.isPaid);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -193,10 +194,10 @@ return $default(_that.uuid,_that.userId,_that.name,_that.amount,_that.dueDay,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String uuid,  String userId,  String name,  double amount,  int dueDay,  String categoryUuid)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String uuid,  String userId,  String name,  double amount,  int dueDay,  String categoryUuid,  bool isPaid)?  $default,) {final _that = this;
 switch (_that) {
 case _BillEntity() when $default != null:
-return $default(_that.uuid,_that.userId,_that.name,_that.amount,_that.dueDay,_that.categoryUuid);case _:
+return $default(_that.uuid,_that.userId,_that.name,_that.amount,_that.dueDay,_that.categoryUuid,_that.isPaid);case _:
   return null;
 
 }
@@ -208,7 +209,7 @@ return $default(_that.uuid,_that.userId,_that.name,_that.amount,_that.dueDay,_th
 @JsonSerializable()
 
 class _BillEntity implements BillEntity {
-  const _BillEntity({required this.uuid, required this.userId, required this.name, required this.amount, required this.dueDay, required this.categoryUuid});
+  const _BillEntity({required this.uuid, required this.userId, required this.name, required this.amount, required this.dueDay, required this.categoryUuid, this.isPaid = false});
   factory _BillEntity.fromJson(Map<String, dynamic> json) => _$BillEntityFromJson(json);
 
 @override final  String uuid;
@@ -217,6 +218,7 @@ class _BillEntity implements BillEntity {
 @override final  double amount;
 @override final  int dueDay;
 @override final  String categoryUuid;
+@override@JsonKey() final  bool isPaid;
 
 /// Create a copy of BillEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -231,16 +233,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BillEntity&&(identical(other.uuid, uuid) || other.uuid == uuid)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.name, name) || other.name == name)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.dueDay, dueDay) || other.dueDay == dueDay)&&(identical(other.categoryUuid, categoryUuid) || other.categoryUuid == categoryUuid));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BillEntity&&(identical(other.uuid, uuid) || other.uuid == uuid)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.name, name) || other.name == name)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.dueDay, dueDay) || other.dueDay == dueDay)&&(identical(other.categoryUuid, categoryUuid) || other.categoryUuid == categoryUuid)&&(identical(other.isPaid, isPaid) || other.isPaid == isPaid));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,uuid,userId,name,amount,dueDay,categoryUuid);
+int get hashCode => Object.hash(runtimeType,uuid,userId,name,amount,dueDay,categoryUuid,isPaid);
 
 @override
 String toString() {
-  return 'BillEntity(uuid: $uuid, userId: $userId, name: $name, amount: $amount, dueDay: $dueDay, categoryUuid: $categoryUuid)';
+  return 'BillEntity(uuid: $uuid, userId: $userId, name: $name, amount: $amount, dueDay: $dueDay, categoryUuid: $categoryUuid, isPaid: $isPaid)';
 }
 
 
@@ -251,7 +253,7 @@ abstract mixin class _$BillEntityCopyWith<$Res> implements $BillEntityCopyWith<$
   factory _$BillEntityCopyWith(_BillEntity value, $Res Function(_BillEntity) _then) = __$BillEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String uuid, String userId, String name, double amount, int dueDay, String categoryUuid
+ String uuid, String userId, String name, double amount, int dueDay, String categoryUuid, bool isPaid
 });
 
 
@@ -268,7 +270,7 @@ class __$BillEntityCopyWithImpl<$Res>
 
 /// Create a copy of BillEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? uuid = null,Object? userId = null,Object? name = null,Object? amount = null,Object? dueDay = null,Object? categoryUuid = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? uuid = null,Object? userId = null,Object? name = null,Object? amount = null,Object? dueDay = null,Object? categoryUuid = null,Object? isPaid = null,}) {
   return _then(_BillEntity(
 uuid: null == uuid ? _self.uuid : uuid // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
@@ -276,7 +278,8 @@ as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non
 as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
 as double,dueDay: null == dueDay ? _self.dueDay : dueDay // ignore: cast_nullable_to_non_nullable
 as int,categoryUuid: null == categoryUuid ? _self.categoryUuid : categoryUuid // ignore: cast_nullable_to_non_nullable
-as String,
+as String,isPaid: null == isPaid ? _self.isPaid : isPaid // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

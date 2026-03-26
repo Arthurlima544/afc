@@ -24,11 +24,10 @@ class ConnectivityService {
   /// Returns `true` when online. Returns `true` (optimistic) if the service
   /// has not been registered yet (e.g. in unit-test environments).
   static bool get isOnlineSafe {
-    try {
-      return ConnectivityService.instance.isOnline;
-    } on StateError {
+    if (!GetIt.I.isRegistered<ConnectivityService>()) {
       return true;
     }
+    return ConnectivityService.instance.isOnline;
   }
 
   /// Emits `true` when online, `false` when offline.
