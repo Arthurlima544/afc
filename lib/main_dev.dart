@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,6 +20,10 @@ void main() async {
   await startupLogger(Flavor.flavorType);
 
   await Firebase.initializeApp(options: Flavor.firebaseConfigOptions);
+
+  // Disable Crashlytics in dev so noise doesn't pollute production data.
+  await FirebaseCrashlytics.instance
+      .setCrashlyticsCollectionEnabled(false);
 
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,

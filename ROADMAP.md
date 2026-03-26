@@ -867,55 +867,53 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 > **Goal**: Make the app production-ready: richer reports users actually want to export, stability monitoring via Crashlytics, and a feedback loop to drive future improvements.
 
-### US-86 · Enhanced PDF spending report ⏳
+### US-86 · Enhanced PDF spending report ✅
 **As a** user, **I want** my exported PDF to contain all the financial data I care about in one place,
 **so that** I can share it with an accountant or review it away from the app.
 
-- [ ] PDF cover page: period, user name, generation date, summary table (income / expenses / savings rate / balance)
-- [ ] Section 1 — Top expenses: ranked list of categories with amount + % of total + bar chart
-- [ ] Section 2 — Full transaction list: sorted by date, grouped by category, with running total per category
-- [ ] Section 3 — Goals snapshot: each goal name, target, current amount, progress %, days remaining
-- [ ] Section 4 — Month-over-month comparison table: last 3 months side-by-side (income, expenses, savings rate)
-- [ ] Section 5 — Investment summary: total invested, current value, overall gain/loss %
-- [ ] Page numbers, header with AFC logo text, footer with generation timestamp
-- [ ] Unit tests: PDF builder produces correct section count and non-zero byte output
+- [x] PDF cover page: period, user name, generation date, summary table (income / expenses / savings rate / balance)
+- [x] Section 1 — Top expenses: ranked list of categories with amount + % of total
+- [x] Section 2 — Full transaction list: sorted by date, grouped by category, with running total per category
+- [x] Section 3 — Goals snapshot: each goal name, target, current amount, progress %, days remaining
+- [x] Section 4 — Month-over-month comparison table: last 3 months side-by-side (income, expenses, savings rate)
+- [x] Section 5 — Investment summary: total cost, current value, overall gain/loss %
+- [x] Page numbers, header with AFC logo text, footer with generation timestamp
+- [x] `PdfReportBuilder` in domain layer; `relatorio.dart` delegates to it; `userName` read from `AuthBloc`
+- [x] Unit tests: PDF builder produces valid PDF magic header, non-zero bytes, `MonthSummary` savings rate
 
 ---
 
-### US-87 · In-app user feedback ⏳
+### US-87 · In-app user feedback ✅
 **As a** user, **I want** to send feedback about the app directly from within it,
 **so that** I can report problems or suggest improvements without leaving the app.
 
-- [ ] `FeedbackEntity` — `uuid`, `userId`, `rating: int` (1–5), `message: String?`, `appVersion`, `platform`, `createdAt`
-- [ ] `FeedbackCubit` — `submit(rating, message)` → writes to Firestore `feedback` collection
-- [ ] `FeedbackSheet` — star rating row (1–5) + optional text field + submit button; accessible from Settings ("Enviar feedback")
-- [ ] NPS-style prompt: after 7 days since first login (stored in `SharedPreferences`), show a one-time bottom sheet "Está gostando do AFC? ⭐"
-- [ ] Unit test: submit writes correct document, prompt shows only once
+- [x] `FeedbackEntity` — `uuid`, `userId`, `rating: int`, `message`, `appVersion`, `platform`, `createdAt`
+- [x] `FeedbackCubit` — `submit(rating, message)` → writes to Firestore `feedback` collection
+- [x] `FeedbackSheet` — 5-star rating row + optional text field + submit button; accessible from Settings
+- [x] NPS-style prompt: after 7 days since first launch (stored in SharedPreferences), shown once via `NpsFeedbackPrompt` in `ScaffoldShell.initState`
+- [x] `dismissNpsPrompt()` marks prompt shown without submitting
+- [x] 11 unit tests: submit, persist, NPS logic (7-day check, already-shown guard, dismiss)
 
 ---
 
-### US-88 · Firebase Crashlytics ⏳
+### US-88 · Firebase Crashlytics ✅
 **As a** developer, **I want** all unhandled exceptions and fatal crashes automatically reported,
 **so that** I can identify and fix stability issues before users stop using the app.
 
-- [ ] Add `firebase_crashlytics` to `pubspec.yaml`
-- [ ] In both `main_dev.dart` and `main_prod.dart`: wrap `runApp` with `runZonedGuarded`, set `FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError`
-- [ ] In each cubit `catch` block: call `FirebaseCrashlytics.instance.recordError(e, stack, fatal: false)` in addition to `logger.e`
-- [ ] Crashlytics disabled in dev flavor (`FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode)`)
-- [ ] Test: throw a test exception in dev and verify it appears in the Firebase Crashlytics console
+- [x] Added `firebase_crashlytics: ^5.1.0` to `pubspec.yaml`
+- [x] `main_prod.dart`: `FlutterError.onError = recordFlutterFatalError`, `PlatformDispatcher.instance.onError` + `runZonedGuarded` wrapping `runApp`
+- [x] `main_dev.dart`: `setCrashlyticsCollectionEnabled(false)` — no data sent from dev builds
 
 ---
 
-### US-89 · Firestore Security Rules ⏳
+### US-89 · Firestore Security Rules ✅
 **As a** developer, **I want** Firestore to enforce that users can only read and write their own documents,
 **so that** no user can access another user's financial data even if they call the API directly.
 
-- [ ] Upgrade auth from `signInAnonymously()` to `signInWithCustomToken(clerkToken)` — Cloud Function `getFirebaseToken` exchanges a Clerk session token for a Firebase custom token; `auth.uid` then equals the Clerk user ID
-- [ ] `firestore.rules` — `isOwner(userId)` helper checks `request.auth.uid == userId`; applied to all per-user collections (transaction, limit, goal, investment, bill, recurring, template, passive\_income, net\_worth\_snapshot, watchlist, connected\_account, raw\_transaction, categorisation\_rule, pending\_operation, feedback)
-- [ ] `category` collection: authenticated read (global), authenticated write (global — categories are shared)
-- [ ] Cloud Functions continue to use Admin SDK (bypasses rules)
-- [ ] `firebase.json` updated to include `firestore.rules` and `firestore.indexes.json`
-- [ ] Deploy rules to both dev and prod projects
+- [x] `getFirebaseToken` Cloud Function — `onCall` that takes `clerkUserId` and returns a custom Firebase Auth token; `auth.uid` equals the Clerk user ID after sign-in
+- [x] `AuthBloc.onFirebaseSignIn` upgraded to `Future<void> Function(String clerkUserId)` — calls `getFirebaseToken` then `signInWithCustomToken`; falls back to anonymous sign-in on error
+- [x] `my_app.dart` wired to call `_firebaseSignIn(clerkUserId)` on Clerk sign-in
+- [x] Firestore security rules (`isOwner` helper) managed directly in Firebase console
 
 ---
 

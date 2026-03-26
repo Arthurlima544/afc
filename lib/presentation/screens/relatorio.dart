@@ -1,12 +1,13 @@
+import 'package:clerk_flutter/clerk_flutter.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import '../../domain/usecase/pdf_report_builder.dart';
+import '../blocs/auth/auth_bloc.dart';
 import '../blocs/report/report_cubit.dart';
 import '../widgets/design_system.dart';
 
@@ -59,7 +60,14 @@ class _RelatorioState extends State<Relatorio> {
   }
 
   void _load() {
-    context.read<ReportCubit>().loadReport(widget.userId, _year, _month);
+    final String userName = context
+            .read<AuthBloc>()
+            .state
+            .whenOrNull(signedIn: (ClerkAuthState s) => s.user?.firstName) ??
+        '';
+    context
+        .read<ReportCubit>()
+        .loadReport(widget.userId, _year, _month, userName: userName);
   }
 
   void _prevMonth() {
@@ -87,66 +95,8 @@ class _RelatorioState extends State<Relatorio> {
   }
 
   Future<void> _exportPdf(ReportData data) async {
-    final NumberFormat fmt = NumberFormat.currency(
-      locale: 'pt_BR',
-      symbol: 'R\$',
-    );
     await Printing.layoutPdf(
-      onLayout: (_) {
-        final pw.Document doc = pw.Document()
-          ..addPage(
-            pw.Page(
-              pageFormat: PdfPageFormat.a4,
-              build: (pw.Context ctx) => pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: <pw.Widget>[
-                  pw.Text(
-                    'Relatório Financeiro — ${_kMonthNames[data.month - 1]} ${data.year}',
-                    style: pw.TextStyle(
-                      fontSize: 20,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                  pw.SizedBox(height: 16),
-                  pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: <pw.Widget>[
-                      pw.Text('Receita total: ${fmt.format(data.totalIncome)}'),
-                      pw.Text(
-                        'Despesa total: ${fmt.format(data.totalExpenses)}',
-                      ),
-                      pw.Text(
-                        'Taxa de poupança: ${data.savingsRate.toStringAsFixed(1)}%',
-                      ),
-                    ],
-                  ),
-                  pw.SizedBox(height: 24),
-                  pw.Text(
-                    'Despesas por categoria',
-                    style: pw.TextStyle(
-                      fontSize: 14,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                  pw.SizedBox(height: 8),
-                  ...data.expensesByCategory.entries.map(
-                    (MapEntry<String, double> e) => pw.Padding(
-                      padding: const pw.EdgeInsets.symmetric(vertical: 2),
-                      child: pw.Row(
-                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                        children: <pw.Widget>[
-                          pw.Text(data.categoryNames[e.key] ?? e.key),
-                          pw.Text(fmt.format(e.value)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        return doc.save();
-      },
+      onLayout: (_) => PdfReportBuilder.build(data),
     );
   }
 

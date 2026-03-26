@@ -1,4 +1,5 @@
 import 'package:clerk_flutter/clerk_flutter.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,6 +9,7 @@ import '../config/theme/app_theme.dart';
 import '../presentation/blocs/auth/auth_bloc.dart';
 import '../presentation/blocs/privacy/privacy_cubit.dart';
 import '../presentation/blocs/theme/theme_cubit.dart';
+import 'logger.dart';
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -39,7 +41,7 @@ class _MyAppState extends State<MyApp> {
       BlocProvider<PrivacyCubit>(create: (_) => PrivacyCubit()),
       BlocProvider<AuthBloc>(
         create: (BuildContext context) => AuthBloc(
-          onFirebaseSignIn: () => FirebaseAuth.instance.signInAnonymously(),
+          onFirebaseSignIn: _firebaseSignIn,
           onFirebaseSignOut: () => FirebaseAuth.instance.signOut(),
         ),
       ),
@@ -64,6 +66,28 @@ class _MyAppState extends State<MyApp> {
           ),
     ),
   );
+
+  /// Exchanges a Clerk user ID for a Firebase custom token and signs in.
+  ///
+  /// Falls back to anonymous sign-in if the function call fails so the app
+  /// remains usable in environments where the Cloud Function is unreachable.
+  static Future<void> _firebaseSignIn(String clerkUserId) async {
+    if (clerkUserId.isEmpty) {
+      return;
+    }
+    try {
+      final HttpsCallable callable =
+          FirebaseFunctions.instance.httpsCallable('getFirebaseToken');
+      final HttpsCallableResult<dynamic> result =
+          await callable.call(<String, dynamic>{'clerkUserId': clerkUserId});
+      final String token = (result.data as Map<dynamic, dynamic>)['token']
+          as String;
+      await FirebaseAuth.instance.signInWithCustomToken(token);
+    } on Exception catch (e) {
+      logger.w('getFirebaseToken failed, falling back to anonymous: $e');
+      await FirebaseAuth.instance.signInAnonymously();
+    }
+  }
 
   static ThemeData _themeDataFor(
     ThemePreference preference,
