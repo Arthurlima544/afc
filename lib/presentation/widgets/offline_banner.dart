@@ -86,3 +86,17 @@ class OfflineUnavailableCard extends StatelessWidget {
     ),
   );
 }
+
+/// Shows a [SnackBar] informing the user the record was saved locally and will
+/// sync when connectivity is restored. Call inside a BLoC success listener
+/// whenever `ConnectivityService.instance.isOnline` is `false` at save time.
+void showOfflineSavedSnackBar(BuildContext context) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text(
+        'Salvo localmente — será sincronizado quando a internet voltar',
+      ),
+      duration: Duration(seconds: 3),
+    ),
+  );
+}

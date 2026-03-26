@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import '../../../domain/entity/pending_operation_entity.dart';
 import '../../../domain/entity/recurring_entity.dart';
 import '../../../domain/entity/transaction_entity.dart';
+import '../../../utils/connectivity_service.dart';
 import '../../../utils/logger.dart';
 import '../../../utils/sync_queue.dart';
 
@@ -72,10 +73,16 @@ class RecurringCubit extends Cubit<RecurringState> {
   Future<void> create(RecurringEntity rule) async {
     try {
       emit(const RecurringState.loading());
-      await _firestore.collection('recurring').add(rule.toJson()).then(
-        (DocumentReference<Object> doc) =>
-            logger.d('Recurring rule added with ID: ${doc.id}'),
-      );
+      final Future<DocumentReference<Map<String, dynamic>>> addFuture =
+          _firestore.collection('recurring').add(rule.toJson());
+      if (ConnectivityService.isOnlineSafe) {
+        await addFuture.then(
+          (DocumentReference<Object> doc) =>
+              logger.d('Recurring rule added with ID: ${doc.id}'),
+        );
+      } else {
+        unawaited(addFuture);
+      }
       SyncQueue.enqueueIfOffline(
         PendingOperationEntity(
           uuid: const Uuid().v1(),

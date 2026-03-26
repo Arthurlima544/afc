@@ -10,6 +10,7 @@ import '../../../domain/entity/category_entity.dart';
 import '../../../domain/entity/limit_entity.dart';
 import '../../../domain/entity/pending_operation_entity.dart';
 import '../../../domain/entity/type_entity.dart';
+import '../../../utils/connectivity_service.dart';
 import '../../../utils/logger.dart';
 import '../../../utils/sync_queue.dart';
 
@@ -40,13 +41,16 @@ class LimitCubit extends Cubit<LimitState> {
   Future<void> saveLimit(LimitEntity limit) async {
     try {
       emit(const LimitState.loading());
-      await _firestore
-          .collection('limit')
-          .add(limit.toJson())
-          .then(
-            (DocumentReference<Object> doc) =>
-                logger.d('DocumentSnapshot added with ID: ${doc.id}'),
-          );
+      final Future<DocumentReference<Map<String, dynamic>>> addFuture =
+          _firestore.collection('limit').add(limit.toJson());
+      if (ConnectivityService.isOnlineSafe) {
+        await addFuture.then(
+          (DocumentReference<Object> doc) =>
+              logger.d('DocumentSnapshot added with ID: ${doc.id}'),
+        );
+      } else {
+        unawaited(addFuture);
+      }
       SyncQueue.enqueueIfOffline(
         PendingOperationEntity(
           uuid: const Uuid().v1(),
@@ -228,7 +232,13 @@ class LimitCubit extends Cubit<LimitState> {
           .where('uuid', isEqualTo: limit.uuid)
           .get();
       if (snap.docs.isNotEmpty) {
-        await snap.docs.first.reference.set(limit.toJson());
+        final Future<void> setFuture =
+            snap.docs.first.reference.set(limit.toJson());
+        if (ConnectivityService.isOnlineSafe) {
+          await setFuture;
+        } else {
+          unawaited(setFuture);
+        }
       }
       SyncQueue.enqueueIfOffline(
         PendingOperationEntity(

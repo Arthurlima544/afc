@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/entity/category_entity.dart';
+import '../../utils/connectivity_service.dart';
 import '../blocs/category/category_cubit.dart';
 import '../widgets/design_system.dart';
 
@@ -58,7 +59,12 @@ class _CadastrarCategoriaState extends State<CadastrarCategoria> {
       child: BlocConsumer<CategoryCubit, CategoryState>(
         listener: (BuildContext context, CategoryState state) {
           state.whenOrNull(
-            success: (_) => context.pop(),
+            success: (_) {
+              if (!ConnectivityService.isOnlineSafe) {
+                showOfflineSavedSnackBar(context);
+              }
+              context.pop();
+            },
             error: (String msg) => ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(msg)),
             ),

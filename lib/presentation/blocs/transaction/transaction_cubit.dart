@@ -9,6 +9,7 @@ import '../../../domain/entity/category_entity.dart';
 import '../../../domain/entity/pending_operation_entity.dart';
 import '../../../domain/entity/transaction_entity.dart';
 import '../../../domain/usecase/limit_alert_service.dart';
+import '../../../utils/connectivity_service.dart';
 import '../../../utils/logger.dart';
 import '../../../utils/sync_queue.dart';
 
@@ -41,13 +42,16 @@ class TransactionCubit extends Cubit<TransactionState> {
   Future<void> saveTransaction(TransactionEntity transaction) async {
     try {
       emit(const TransactionState.loading());
-      await _firestore
-          .collection('transaction')
-          .add(transaction.toJson())
-          .then(
-            (DocumentReference<Object> doc) =>
-                logger.d('DocumentSnapshot added with ID: ${doc.id}'),
-          );
+      final Future<DocumentReference<Map<String, dynamic>>> addFuture =
+          _firestore.collection('transaction').add(transaction.toJson());
+      if (ConnectivityService.isOnlineSafe) {
+        await addFuture.then(
+          (DocumentReference<Object> doc) =>
+              logger.d('DocumentSnapshot added with ID: ${doc.id}'),
+        );
+      } else {
+        unawaited(addFuture);
+      }
       SyncQueue.enqueueIfOffline(
         PendingOperationEntity(
           uuid: const Uuid().v1(),
@@ -137,7 +141,13 @@ class TransactionCubit extends Cubit<TransactionState> {
           .where('uuid', isEqualTo: transaction.uuid)
           .get();
       if (snap.docs.isNotEmpty) {
-        await snap.docs.first.reference.set(transaction.toJson());
+        final Future<void> setFuture =
+            snap.docs.first.reference.set(transaction.toJson());
+        if (ConnectivityService.isOnlineSafe) {
+          await setFuture;
+        } else {
+          unawaited(setFuture);
+        }
         SyncQueue.enqueueIfOffline(
           PendingOperationEntity(
             uuid: const Uuid().v1(),

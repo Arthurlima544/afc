@@ -1727,7 +1727,7 @@ class _MarketOpportunitiesCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!ConnectivityService.instance.isOnline) {
+    if (!ConnectivityService.isOnlineSafe) {
       return const OfflineUnavailableCard(
         message: 'Oportunidades de mercado indisponíveis sem conexão',
       );

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -5,6 +7,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../domain/entity/category_entity.dart';
 import '../../../domain/entity/pending_operation_entity.dart';
+import '../../../utils/connectivity_service.dart';
 import '../../../utils/logger.dart';
 import '../../../utils/sync_queue.dart';
 
@@ -29,13 +32,16 @@ class CategoryCubit extends Cubit<CategoryState> {
   Future<void> saveCategory(CategoryEntity category) async {
     try {
       emit(const CategoryState.loading());
-      await _firestore
-          .collection('category')
-          .add(category.toJson())
-          .then(
-            (DocumentReference<Object> doc) =>
-                logger.d('DocumentSnapshot added with ID: ${doc.id}'),
-          );
+      final Future<DocumentReference<Map<String, dynamic>>> addFuture =
+          _firestore.collection('category').add(category.toJson());
+      if (ConnectivityService.isOnlineSafe) {
+        await addFuture.then(
+          (DocumentReference<Object> doc) =>
+              logger.d('DocumentSnapshot added with ID: ${doc.id}'),
+        );
+      } else {
+        unawaited(addFuture);
+      }
       SyncQueue.enqueueIfOffline(
         PendingOperationEntity(
           uuid: const Uuid().v1(),
@@ -103,7 +109,13 @@ class CategoryCubit extends Cubit<CategoryState> {
           .where('uuid', isEqualTo: category.uuid)
           .get();
       if (snap.docs.isNotEmpty) {
-        await snap.docs.first.reference.set(category.toJson());
+        final Future<void> setFuture =
+            snap.docs.first.reference.set(category.toJson());
+        if (ConnectivityService.isOnlineSafe) {
+          await setFuture;
+        } else {
+          unawaited(setFuture);
+        }
         SyncQueue.enqueueIfOffline(
           PendingOperationEntity(
             uuid: const Uuid().v1(),
