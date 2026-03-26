@@ -48,6 +48,33 @@ class LocalNotificationService {
   // Public API
   // ---------------------------------------------------------------------------
 
+  /// Shows a generic one-shot notification.
+  Future<void> show({
+    required int id,
+    required String title,
+    required String body,
+  }) async {
+    await _plugin.show(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'limit_alerts',
+          'Alertas de limite',
+          channelDescription: 'Alertas de limite de gastos por categoria',
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+        ),
+      ),
+    );
+  }
+
   /// Shows (or updates) the persistent "N ops pending" notification.
   Future<void> showPendingOps(int count) async {
     final String body = count == 1

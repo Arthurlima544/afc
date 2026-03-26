@@ -957,14 +957,14 @@ Full migration from `shadcn_flutter` to a custom Material 3 design system:
 
 ---
 
-### US-93 · Limit overspend push alert ⏳
+### US-93 · Limit overspend push alert ✅
 **As a** user, **I want** to receive a push notification when I am approaching or have exceeded a spending limit,
 **so that** I can adjust my spending before the month ends.
 
-- [ ] `LimitAlertService` — checks all limits after every transaction create/update; calls `LocalNotificationService.show` when `spent / limitAmount >= 0.80` (warning) or `>= 1.0` (exceeded)
-- [ ] Alert fires once per threshold crossing per category per month (tracks last-alerted month in `SharedPreferences`)
-- [ ] `TransactionCubit.create` and `TransactionCubit.update` call `LimitAlertService.checkAfterTransaction(userId)`
-- [ ] Unit tests: alert fires at 80 %, fires at 100 %, does not fire twice in same month, does not fire below 80 %
+- [x] `LimitAlertService` — checks all limits after every transaction create/update; calls `LocalNotificationService.show` when `spent / limitAmount >= 0.80` (warning) or `>= 1.0` (exceeded)
+- [x] Alert fires once per threshold crossing per category per month (tracks last-alerted month in `SharedPreferences`)
+- [x] `TransactionCubit.saveTransaction` and `updateTransaction` call `LimitAlertService.checkAfterTransaction(userId)`
+- [x] Unit tests: alert fires at 80 %, fires at 100 %, does not fire twice in same month, does not fire below 80 %
 
 ---
 
