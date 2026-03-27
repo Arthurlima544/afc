@@ -67,7 +67,7 @@ class BrapiService {
     final Uri uri = Uri.parse('$_base/quote/$joined?fundamental=true');
     final http.Response response = await _client.get(uri);
     if (response.statusCode != 200) {
-      throw Exception('Brapi quote error: ${response.statusCode}');
+      return <MarketQuoteEntity>[];
     }
     final Map<String, dynamic> body =
         json.decode(response.body) as Map<String, dynamic>;

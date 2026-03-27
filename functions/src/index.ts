@@ -3,6 +3,9 @@ import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
 import { PluggyClient } from './pluggy/client';
 
+// Must be called before any admin SDK usage.
+admin.initializeApp();
+
 // ---------------------------------------------------------------------------
 // getFirebaseToken — exchanges a Clerk session token for a Firebase custom
 // token whose uid equals the Clerk user ID.
@@ -30,8 +33,6 @@ export const getFirebaseToken = onCall(async (request) => {
     throw new HttpsError('internal', 'Failed to create Firebase token.');
   }
 });
-
-admin.initializeApp();
 
 const pluggyClientId = defineSecret('PLUGGY_CLIENT_ID');
 const pluggyClientSecret = defineSecret('PLUGGY_CLIENT_SECRET');

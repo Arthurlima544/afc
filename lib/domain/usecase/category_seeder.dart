@@ -54,8 +54,14 @@ class CategorySeeder {
     final DocumentReference<Map<String, dynamic>> metaRef =
         _firestore.collection('user_meta').doc(userId);
 
-    final DocumentSnapshot<Map<String, dynamic>> meta = await metaRef.get();
-    if (meta.exists && meta.data()?['seeded_categories'] == true) {
+    try {
+      final DocumentSnapshot<Map<String, dynamic>> meta = await metaRef.get();
+      if (meta.exists && meta.data()?['seeded_categories'] == true) {
+        return;
+      }
+    } on FirebaseException catch (_) {
+      // Firebase auth not yet fully established (e.g. still on anonymous
+      // fallback). Skip seeding — it will run again on the next sign-in.
       return;
     }
 
@@ -81,6 +87,11 @@ class CategorySeeder {
       SetOptions(merge: true),
     );
 
-    await batch.commit();
+    try {
+      await batch.commit();
+    } on FirebaseException catch (_) {
+      // Permission denied on write — same anonymous-fallback scenario.
+      // Silent no-op; seeding will succeed once the real token is established.
+    }
   }
 }
