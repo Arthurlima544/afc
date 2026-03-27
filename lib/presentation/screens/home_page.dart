@@ -1225,7 +1225,6 @@ class _FiScoreCardState extends State<_FiScoreCard> {
   final GlobalKey _shareKey = GlobalKey();
 
   Future<void> _shareCard(FiScoreData data) async {
-    await Future<void>.delayed(const Duration(milliseconds: 80));
     if (!mounted) {
       return;
     }
@@ -1363,10 +1362,19 @@ class _FiScoreCardState extends State<_FiScoreCard> {
                 ),
 
                 // ── Off-screen FI milestone card for share capture ─────────
-                Offstage(
-                  child: RepaintBoundary(
-                    key: _shareKey,
-                    child: FiMilestoneCard(data: data),
+                // SizedBox+OverflowBox keeps the card painted (unlike Offstage
+                // which skips painting, causing toImage() to assert).
+                SizedBox(
+                  width: 0,
+                  height: 0,
+                  child: OverflowBox(
+                    alignment: Alignment.topLeft,
+                    maxWidth: double.infinity,
+                    maxHeight: double.infinity,
+                    child: RepaintBoundary(
+                      key: _shareKey,
+                      child: FiMilestoneCard(data: data),
+                    ),
                   ),
                 ),
               ],

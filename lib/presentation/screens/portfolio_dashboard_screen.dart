@@ -118,7 +118,6 @@ class _PortfolioBodyState extends State<_PortfolioBody> {
   final GlobalKey _shareKey = GlobalKey();
 
   Future<void> _shareCard() async {
-    await Future<void>.delayed(const Duration(milliseconds: 80));
     if (!mounted) {
       return;
     }
@@ -175,10 +174,19 @@ class _PortfolioBodyState extends State<_PortfolioBody> {
             const Gap(8),
           ],
           // ── Off-screen portfolio card for share capture ────────────────
-          Offstage(
-            child: RepaintBoundary(
-              key: _shareKey,
-              child: PortfolioShareCard(summary: widget.summary),
+          // SizedBox+OverflowBox keeps the card painted (unlike Offstage
+          // which skips painting, causing toImage() to assert).
+          SizedBox(
+            width: 0,
+            height: 0,
+            child: OverflowBox(
+              alignment: Alignment.topLeft,
+              maxWidth: double.infinity,
+              maxHeight: double.infinity,
+              child: RepaintBoundary(
+                key: _shareKey,
+                child: PortfolioShareCard(summary: widget.summary),
+              ),
             ),
           ),
         ],
