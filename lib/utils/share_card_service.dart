@@ -13,11 +13,17 @@ class ShareCardService {
 
   /// Captures the widget identified by [key] as a 3× PNG and opens the native
   /// share sheet. The key must be attached to a [RepaintBoundary] that is
-  /// currently part of the widget tree (even if inside an Offstage).
+  /// currently part of the widget tree and has been painted at least once.
+  ///
+  /// Waits for the end of the current frame before capturing, ensuring the
+  /// boundary has been painted even when called immediately after a rebuild.
   static Future<void> captureAndShare(
     GlobalKey key,
     String filename,
   ) async {
+    // Wait for the next frame so the RepaintBoundary is fully painted.
+    await WidgetsBinding.instance.endOfFrame;
+
     final RenderRepaintBoundary boundary =
         key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
     final ui.Image image = await boundary.toImage(pixelRatio: 3.0);

@@ -31,6 +31,7 @@ import '../blocs/home/transaction_state.dart';
 import '../blocs/limit/limit_cubit.dart';
 import '../blocs/market/market_opportunity_cubit.dart';
 import '../blocs/privacy/privacy_cubit.dart';
+import '../blocs/setup_checklist/setup_checklist_cubit.dart';
 import '../widgets/design_system.dart';
 import '../widgets/privacy_text.dart';
 import '../widgets/share_cards/fi_milestone_card.dart';
@@ -114,6 +115,7 @@ class _HomeContent extends StatelessWidget {
         const SyncStatusWidget(),
         const SummaryWidget(),
         const Gap(12),
+        const _SetupChecklist(),
         const _InsightsCard(),
         const Gap(12),
         const _NetWorthCard(),
@@ -1082,6 +1084,133 @@ class _HealthSparkline extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// Setup checklist
+// ---------------------------------------------------------------------------
+
+class _SetupChecklist extends StatelessWidget {
+  const _SetupChecklist();
+
+  static const List<({String label, String route})> _tasks =
+      <({String label, String route})>[
+    (label: 'Cadastre uma categoria', route: '/lista-categorias'),
+    (label: 'Registre sua primeira transação', route: '/lista-transacoes'),
+    (label: 'Defina um limite de gastos', route: '/lista-limites'),
+    (label: 'Crie uma meta de economia', route: '/lista-metas'),
+    (label: 'Adicione um investimento', route: '/lista-investimentos'),
+  ];
+
+  @override
+  Widget build(BuildContext context) =>
+      BlocBuilder<SetupChecklistCubit, SetupChecklistState>(
+        builder: (BuildContext context, SetupChecklistState state) =>
+            state.whenOrNull(
+              visible: (
+                bool hasCategory,
+                bool hasTransaction,
+                bool hasLimit,
+                bool hasGoal,
+                bool hasInvestment,
+              ) {
+                final List<bool> done = <bool>[
+                  hasCategory,
+                  hasTransaction,
+                  hasLimit,
+                  hasGoal,
+                  hasInvestment,
+                ];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: AppCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Row(
+                          children: <Widget>[
+                            const Expanded(
+                              child: Text(
+                                'Primeiros passos',
+                                style: AppTextStyles.sectionTitle,
+                              ),
+                            ),
+                            AppIconButton(
+                              onPressed: () => unawaited(
+                                context
+                                    .read<SetupChecklistCubit>()
+                                    .dismiss(),
+                              ),
+                              icon: const Icon(Icons.close, size: 16),
+                              tooltip: 'Dispensar',
+                            ),
+                          ],
+                        ),
+                        const Gap(12),
+                        for (int i = 0; i < _tasks.length; i++)
+                          _ChecklistRow(
+                            label: _tasks[i].label,
+                            route: _tasks[i].route,
+                            done: done[i],
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ) ??
+            const SizedBox.shrink(),
+      );
+}
+
+class _ChecklistRow extends StatelessWidget {
+  const _ChecklistRow({
+    required this.label,
+    required this.route,
+    required this.done,
+  });
+
+  final String label;
+  final String route;
+  final bool done;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(
+      children: <Widget>[
+        Icon(
+          done ? Icons.check_circle : Icons.radio_button_unchecked,
+          size: 18,
+          color: done ? AppColors.income : AppColors.muted,
+        ),
+        const Gap(10),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: AppTextStyle.sizeSm,
+              color: done ? AppColors.muted : null,
+              decoration: done ? TextDecoration.lineThrough : null,
+            ),
+          ),
+        ),
+        if (!done)
+          GestureDetector(
+            onTap: () => context.push(route),
+            child: const Text(
+              'Fazer agora →',
+              style: TextStyle(
+                fontSize: AppTextStyle.sizeSm,
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
+}
+
+// ---------------------------------------------------------------------------
 // FI Score card
 // ---------------------------------------------------------------------------
 
@@ -1096,7 +1225,6 @@ class _FiScoreCardState extends State<_FiScoreCard> {
   final GlobalKey _shareKey = GlobalKey();
 
   Future<void> _shareCard(FiScoreData data) async {
-    await Future<void>.delayed(const Duration(milliseconds: 80));
     if (!mounted) {
       return;
     }
@@ -1234,10 +1362,19 @@ class _FiScoreCardState extends State<_FiScoreCard> {
                 ),
 
                 // ── Off-screen FI milestone card for share capture ─────────
-                Offstage(
-                  child: RepaintBoundary(
-                    key: _shareKey,
-                    child: FiMilestoneCard(data: data),
+                // SizedBox+OverflowBox keeps the card painted (unlike Offstage
+                // which skips painting, causing toImage() to assert).
+                SizedBox(
+                  width: 0,
+                  height: 0,
+                  child: OverflowBox(
+                    alignment: Alignment.topLeft,
+                    maxWidth: double.infinity,
+                    maxHeight: double.infinity,
+                    child: RepaintBoundary(
+                      key: _shareKey,
+                      child: FiMilestoneCard(data: data),
+                    ),
                   ),
                 ),
               ],

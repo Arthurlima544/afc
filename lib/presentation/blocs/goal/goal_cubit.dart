@@ -9,6 +9,7 @@ import '../../../domain/entity/goal_entity.dart';
 import '../../../domain/entity/pending_operation_entity.dart';
 import '../../../utils/connectivity_service.dart';
 import '../../../utils/logger.dart';
+import '../../../utils/review_service.dart';
 import '../../../utils/sync_queue.dart';
 
 part 'goal_state.dart';
@@ -106,6 +107,11 @@ class GoalCubit extends Cubit<GoalState> {
         ),
       );
       emit(GoalState.success(updated));
+
+      // Prompt for a store review on the first goal completion.
+      if (updated.currentAmount >= updated.targetAmount) {
+        unawaited(ReviewService.maybeRequest());
+      }
     } on Exception catch (e) {
       emit(GoalState.error(e.toString()));
     }

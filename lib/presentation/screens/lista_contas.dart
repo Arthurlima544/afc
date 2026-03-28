@@ -78,10 +78,37 @@ class ListaContas extends StatelessWidget {
                   EmptyState(message: msg, icon: Icons.error_outline),
               success: (_) => const SkeletonList(itemHeight: 90),
               listed: (List<BillEntity> bills) => bills.isEmpty
-                  ? const EmptyState(
-                      message:
-                          'Nenhuma conta ainda.\nToque em + para cadastrar.',
+                  ? EmptyState(
+                      message: 'Nenhuma conta ainda.',
+                      subtitle:
+                          'Cadastre suas contas recorrentes e receba lembretes antes do vencimento.',
                       icon: Icons.receipt_long_outlined,
+                      actionLabel: 'Cadastrar conta',
+                      onAction: () async {
+                        final BillCubit billCubit =
+                            context.read<BillCubit>();
+                        final String userId =
+                            context.read<AuthBloc>().state.whenOrNull(
+                              signedIn: (ClerkAuthState s) => s.user?.id,
+                            ) ??
+                            '';
+                        await showFormSheet<void>(
+                          context,
+                          builder: (BuildContext ctx) => MultiBlocProvider(
+                            providers: <BlocProvider<dynamic>>[
+                              BlocProvider<BillCubit>(
+                                create: (_) => BillCubit(),
+                              ),
+                              BlocProvider<CategoryCubit>(
+                                create: (_) =>
+                                    CategoryCubit()..loadCategories(),
+                              ),
+                            ],
+                            child: const CadastrarConta(),
+                          ),
+                        );
+                        unawaited(billCubit.loadBills(userId));
+                      },
                     )
                   : Column(
                       children: <Widget>[

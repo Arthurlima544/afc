@@ -90,9 +90,30 @@ class ListaMetas extends StatelessWidget {
                 ),
                 success: (_) => const SkeletonList(itemHeight: 140),
                 listed: (List<GoalEntity> goals) => goals.isEmpty
-                    ? const EmptyState(
-                        message: 'Nenhuma meta ainda.\nToque em + para criar.',
+                    ? EmptyState(
+                        message: 'Nenhuma meta ainda.',
+                        subtitle:
+                            'Defina um objetivo financeiro e acompanhe o progresso mês a mês.',
                         icon: Icons.savings_outlined,
+                        actionLabel: 'Criar meta',
+                        onAction: () async {
+                          final GoalCubit goalCubit =
+                              context.read<GoalCubit>();
+                          final String userId =
+                              context.read<AuthBloc>().state.whenOrNull(
+                                signedIn: (ClerkAuthState s) => s.user?.id,
+                              ) ??
+                              '';
+                          await showFormSheet<void>(
+                            context,
+                            builder: (BuildContext ctx) =>
+                                BlocProvider<GoalCubit>(
+                                  create: (_) => GoalCubit(),
+                                  child: const CadastrarMeta(),
+                                ),
+                          );
+                          unawaited(goalCubit.loadGoals(userId));
+                        },
                       )
                     : Column(
                         children: <Widget>[

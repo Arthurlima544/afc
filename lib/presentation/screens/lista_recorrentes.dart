@@ -85,10 +85,27 @@ class ListaRecorrentes extends StatelessWidget {
                 ),
                 success: (_) => const SizedBox(),
                 listed: (List<RecurringEntity> rules) => rules.isEmpty
-                    ? const EmptyState(
-                        message:
-                            'Nenhuma recorrência ainda.\nToque em + para adicionar.',
+                    ? EmptyState(
+                        message: 'Nenhuma recorrência ainda.',
+                        subtitle:
+                            'Configure transações que se repetem (salário, aluguel, assinaturas) e elas serão lançadas automaticamente.',
                         icon: Icons.repeat_outlined,
+                        actionLabel: 'Criar recorrente',
+                        onAction: () => showFormSheet<void>(
+                          context,
+                          builder: (BuildContext ctx) => MultiBlocProvider(
+                            providers: <BlocProvider<dynamic>>[
+                              BlocProvider<TransactionCubit>(
+                                create: (_) =>
+                                    TransactionCubit()..getCategories(),
+                              ),
+                              BlocProvider<RecurringCubit>(
+                                create: (_) => RecurringCubit(),
+                              ),
+                            ],
+                            child: const CadastrarRecorrente(),
+                          ),
+                        ),
                       )
                     : Column(
                         children: <Widget>[

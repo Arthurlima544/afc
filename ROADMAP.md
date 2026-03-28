@@ -1350,6 +1350,152 @@ These items are not user stories but are necessary for long-term quality.
 
 ---
 
+---
+
+## Sprint 23 — Onboarding & Activation (US-109–113)
+
+> **Goal**: Turn new installs into active users. The first 5 minutes in the app are the highest-leverage moment — users who log one transaction, set one goal, and see one insight in the first session have dramatically higher 30-day retention. This sprint eliminates every blank-slate friction point: auto-seeded categories, a guided first-run wizard, smart empty-state CTAs, a visible setup checklist on the dashboard, and a well-timed in-app review nudge after the user's first financial win.
+
+---
+
+### US-109 · First-Run Onboarding Wizard ⏳
+**As a** new user, **I want** a guided setup flow when I first open the app,
+**so that** I understand AFC's value immediately and have real data to work with before I close the app.
+
+**Trigger**: shown once on first authenticated launch. Tracked via `SharedPreferences` key `onboarding_complete` (bool). If `false` (or absent), the wizard is pushed as a full-screen modal over the dashboard after `AuthBloc` emits `signedIn`.
+
+**Flow** (5 steps, each a separate page in a `PageView` with a progress indicator at the top):
+1. **Welcome** — AFC logo, tagline "Seu dinheiro, sob controle", "Começar" primary button.
+2. **Set your first goal** — simplified inline goal form (name + target amount + deadline). "Pular" skip link visible. Uses `GoalCubit`.
+3. **Pick default categories** — grid of 10 preset tiles (Alimentação, Transporte, Moradia, Lazer, Saúde, Educação, Vestuário, Assinaturas, Receita, Outros) with icons; user taps to select/deselect, then "Importar selecionadas". Writes the selected `CategoryEntity` docs to Firestore via `CategoryCubit`. If user already has categories, this step is skipped automatically.
+4. **Log your first expense** — simplified transaction form (amount + category chip selector + title). "Pular" skip link. Uses `TransactionCubit`.
+5. **You're set!** — celebration screen: checkmark animation, summary of what was created ("1 meta, 6 categorias, 1 transação"), "Ir para o dashboard" button that sets `onboarding_complete = true` and pops.
+
+**Implementation**:
+- `OnboardingWizard` StatefulWidget (`lib/presentation/screens/onboarding_wizard.dart`) — full-screen `Scaffold` with `PageController`.
+- `OnboardingCubit` (`lib/presentation/blocs/onboarding/onboarding_cubit.dart`) — tracks `currentStep`, `goalsCreated`, `categoriesImported`, `transactionsCreated`; emits `OnboardingState` (Freezed).
+- Default category list defined as a const list in `lib/domain/usecase/default_categories.dart`.
+- Shown from `ScaffoldShell.initState` after `RecurringCubit.checkAndMaterialise` (same async block), guarded by `SharedPreferences.getBool('onboarding_complete') != true`.
+- Route `/onboarding` added to `router.dart` for deep-link testing.
+
+**Acceptance criteria**:
+- Wizard never appears twice for the same user.
+- Skipping all steps still marks `onboarding_complete = true`.
+- Selected categories are immediately visible in transaction form category chips.
+
+---
+
+### US-110 · Smart Empty States with CTAs ⏳
+**As a** new user, **I want** each empty screen to explain the feature's value and offer a direct action,
+**so that** I'm never stuck staring at a blank screen wondering what to do.
+
+**Screens to update** (all currently show a generic `EmptyState` widget with icon + message):
+
+| Screen | New headline | New body | CTA button |
+|--------|-------------|----------|------------|
+| `lista_transacoes.dart` | "Nenhuma transação ainda" | "Registre receitas e despesas para acompanhar para onde vai seu dinheiro." | "Registrar transação" → opens `CadastrarTransacao` sheet |
+| `lista_metas.dart` | "Nenhuma meta ainda" | "Defina um objetivo financeiro e acompanhe seu progresso mês a mês." | "Criar meta" → opens `CadastrarMeta` sheet |
+| `lista_limites.dart` | "Sem limites definidos" | "Defina um limite de gastos por categoria e receba alertas quando estiver perto do teto." | "Criar limite" → opens `CadastrarLimites` sheet |
+| `lista_investimentos.dart` | "Portfólio vazio" | "Cadastre seus investimentos e acompanhe ROI, alocação e evolução patrimonial." | "Adicionar investimento" → opens `CadastrarInvestimento` sheet |
+| `lista_contas.dart` | "Nenhuma conta a pagar" | "Cadastre suas contas recorrentes e receba lembretes antes do vencimento." | "Cadastrar conta" → opens `CadastrarConta` sheet |
+| `lista_recorrentes.dart` | "Sem transações recorrentes" | "Configure transações que se repetem (salário, aluguel, assinatura) e elas serão lançadas automaticamente." | "Criar recorrente" → opens `CadastrarRecorrente` sheet |
+
+**Implementation**:
+- Extend the existing `EmptyState` widget (`lib/presentation/widgets/empty_state.dart`) to accept an optional `actionLabel` (String) and `onAction` (VoidCallback). When provided, renders an `AppButton` below the message.
+- Each list screen passes the action label and a lambda that calls `showFormSheet(...)`.
+- No new files needed — only `empty_state.dart` + the 6 list screens.
+
+**Acceptance criteria**:
+- All 6 screens show a CTA that directly opens the relevant creation form.
+- Existing screens that pass no `onAction` continue to work as before (no regression).
+
+---
+
+### US-111 · Setup Checklist Widget on Dashboard ⏳
+**As a** new user, **I want** to see a "Getting started" checklist on the dashboard,
+**so that** I know exactly which steps remain to unlock AFC's full value.
+
+**Checklist items** (5 tasks, checked off as user completes them):
+1. ✅ Cadastre uma categoria
+2. ✅ Registre sua primeira transação
+3. ✅ Defina um limite de gastos
+4. ✅ Crie uma meta de economia
+5. ✅ Adicione um investimento
+
+**Widget behaviour**:
+- Shown at the **top of the dashboard** (above the summary cards), below the greeting header.
+- Disappears permanently once all 5 tasks are complete **or** user taps the "✕ Dispensar" dismiss link (saved to `SharedPreferences` key `setup_checklist_dismissed`).
+- Each task row shows a checkmark icon (green when done, grey circle when pending) + label + optional "Fazer agora →" tappable link that navigates to the relevant screen/sheet.
+- Completion status is derived **live** from existing Firestore data via `HomeBloc` (which already loads category and transaction counts) + one-time checks for limit/goal/investment.
+
+**Implementation**:
+- `SetupChecklistCubit` (`lib/presentation/blocs/setup_checklist/setup_checklist_cubit.dart`) — loads completion state from Firestore counts; emits `SetupChecklistState` with five bools + `dismissed` flag.
+- `_SetupChecklist` widget added to `home_page.dart` in the `_HomeContent` column, before `_SummaryCards`.
+- `SetupChecklistCubit` provided at the `/home` route level in `router.dart` (alongside existing cubits).
+
+**Acceptance criteria**:
+- Checklist reflects real data — checking off tasks one-by-one in the app marks them done in real time.
+- Dismissed state persists across app restarts.
+- Widget is invisible to users who have already completed all 5 tasks and to users who have dismissed it.
+
+---
+
+### US-112 · Default Categories Auto-Seed ⏳
+**As a** new user, **I want** a set of common categories already available when I first open the app,
+**so that** I can log my first transaction immediately without having to create categories from scratch.
+
+**Default categories** (10, written to Firestore `category` collection on first use):
+
+| Name | Icon index |
+|------|-----------|
+| Alimentação | 0 (restaurant) |
+| Transporte | 1 (directions_car) |
+| Moradia | 2 (home) |
+| Lazer | 3 (sports_esports) |
+| Saúde | 4 (favorite) |
+| Educação | 5 (school) |
+| Vestuário | 6 (checkroom) |
+| Assinaturas | 7 (subscriptions) |
+| Salário | 8 (payments) |
+| Outros | 9 (category) |
+
+**Trigger**: called from `ScaffoldShell.initState` (after auth, in the same microtask block as recurring materialisation). Guarded by `SharedPreferences` key `default_categories_seeded` — runs only once per user.
+
+**Implementation**:
+- `DefaultCategoriesSeeder.seed(String userId)` static method in `lib/domain/usecase/default_categories.dart` — checks SharedPreferences guard, queries Firestore for existing categories, and batch-writes missing defaults.
+- Pure `CategoryEntity` list defined as a `const` in the same file (reused by US-109 wizard step 3).
+- Called from `ScaffoldShell._init()` after `checkAndMaterialise`.
+
+**Acceptance criteria**:
+- New user sees 10 categories in the category picker on first transaction.
+- Existing users with categories are unaffected (guard prevents double-seeding).
+- Re-installing the app re-seeds if the user clears app data (SharedPreferences cleared).
+
+---
+
+### US-113 · In-App Review Prompt ⏳
+**As a** user who has experienced a financial win, **I want** to be prompted to rate the app at the right moment,
+**so that** AFC gets authentic reviews from engaged users, improving App Store visibility.
+
+**Trigger conditions** (any one satisfied, evaluated after each Firestore write in `GoalCubit` and `ReportCubit`):
+- First goal completed (`currentAmount >= targetAmount` for the first time).
+- First month with savings rate ≥ 20% (detected in `ReportCubit.loadReport` when `data.savingsRate >= 20`).
+- User has logged ≥ 10 transactions total (checked after each `TransactionCubit.save`).
+
+**Rate-limiting**: once triggered, the native prompt is shown at most once every 90 days. Stored in `SharedPreferences` as `last_review_prompt_ms` (epoch ms).
+
+**Implementation**:
+- `ReviewService` static class (`lib/utils/review_service.dart`) — wraps `in_app_review` package. `ReviewService.maybeRequest()` checks the trigger conditions + rate-limit and calls `InAppReview.instance.requestReview()`.
+- Add `in_app_review: ^2.0.9` to `pubspec.yaml` (alphabetically ordered).
+- Called from `GoalCubit.contribute` (after goal reaches 100%), `ReportCubit.loadReport` (after savings rate check), and `TransactionCubit.save` (after count check).
+
+**Acceptance criteria**:
+- Review dialog appears on device/simulator after a goal reaches 100% (first time only).
+- Dialog does not appear more than once per 90-day window regardless of how many triggers fire.
+- Works on both Android (Play In-App Review API) and iOS (SKStoreReviewController).
+
+---
+
 ## Branch Strategy
 
 | Sprint / Work | Branch | Status |
@@ -1377,4 +1523,5 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 19 (US-90–93) | `feat/sprint19-search-export-insights` | ✅ Done |
 | Sprint 20 (US-94–101) | `fix/sprint20-resilience-polish` | ✅ Merged |
 | Sprint 21 (US-102–104) | `feat/sprint21-trajectory` | ✅ Done |
-| Sprint 22 (US-105–108) | `feat/sprint22-social-sharing` | ⏳ Planned |
+| Sprint 22 (US-105–108) | `feat/sprint22-social-sharing` | ✅ Merged |
+| Sprint 23 (US-109–113) | `feat/sprint23-onboarding` | ⏳ Planned |

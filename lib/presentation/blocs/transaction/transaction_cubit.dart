@@ -11,6 +11,7 @@ import '../../../domain/entity/transaction_entity.dart';
 import '../../../domain/usecase/limit_alert_service.dart';
 import '../../../utils/connectivity_service.dart';
 import '../../../utils/logger.dart';
+import '../../../utils/review_service.dart';
 import '../../../utils/sync_queue.dart';
 
 part 'transaction_state.dart';
@@ -66,8 +67,23 @@ class TransactionCubit extends Cubit<TransactionState> {
       unawaited(
         _limitAlertService?.checkAfterTransaction(transaction.userId),
       );
+      unawaited(_maybeRequestReview(transaction.userId));
     } on Exception catch (e) {
       emit(TransactionState.error(e.toString()));
+    }
+  }
+
+  Future<void> _maybeRequestReview(String userId) async {
+    if (userId.isEmpty) {
+      return;
+    }
+    final AggregateQuerySnapshot count = await _firestore
+        .collection('transaction')
+        .where('userId', isEqualTo: userId)
+        .count()
+        .get();
+    if ((count.count ?? 0) >= 10) {
+      await ReviewService.maybeRequest();
     }
   }
 
