@@ -45,6 +45,7 @@ class PassiveIncomeCubit extends Cubit<PassiveIncomeState> {
   }
 
   Future<void> create(PassiveIncomeEntity stream) async {
+    emit(const PassiveIncomeState.loading());
     try {
       await _firestore.collection(_collection).add(stream.toJson());
       await loadStreams(_userId);
@@ -55,6 +56,7 @@ class PassiveIncomeCubit extends Cubit<PassiveIncomeState> {
   }
 
   Future<void> delete(String uuid) async {
+    emit(const PassiveIncomeState.loading());
     try {
       final QuerySnapshot<Map<String, dynamic>> snap = await _firestore
           .collection(_collection)
@@ -71,6 +73,7 @@ class PassiveIncomeCubit extends Cubit<PassiveIncomeState> {
   }
 
   Future<void> update(PassiveIncomeEntity stream) async {
+    emit(const PassiveIncomeState.loading());
     try {
       final QuerySnapshot<Map<String, dynamic>> snap = await _firestore
           .collection(_collection)

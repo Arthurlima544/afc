@@ -301,30 +301,6 @@ final GoRouter router = GoRouter(
     ),
 
     GoRoute(
-      path: '/lista-categorias',
-      builder: (BuildContext context, GoRouterState state) =>
-          BlocProvider<CategoryCubit>(
-            create: (_) => CategoryCubit()..loadCategories(),
-            child: const ListaCategorias(),
-          ),
-    ),
-
-    GoRoute(
-      path: '/lista-recorrentes',
-      builder: (BuildContext context, GoRouterState state) {
-        final String userId =
-            context.read<AuthBloc>().state.whenOrNull(
-                  signedIn: (ClerkAuthState s) => s.user?.id,
-                ) ??
-            '';
-        return BlocProvider<RecurringCubit>(
-          create: (_) => RecurringCubit()..loadRecurring(userId),
-          child: const ListaRecorrentes(),
-        );
-      },
-    ),
-
-    GoRoute(
       path: '/editar-categoria',
       builder: (BuildContext context, GoRouterState state) {
         final CategoryEntity? cat = state.extra as CategoryEntity?;

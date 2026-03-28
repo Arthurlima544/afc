@@ -1,11 +1,18 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:clerk_flutter/clerk_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../../domain/entity/transaction_entity.dart';
+import '../../domain/usecase/csv_exporter.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/feedback/feedback_cubit.dart';
 import '../blocs/settings/settings_cubit.dart';
@@ -62,7 +69,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const _NotificationsCard(),
               const Gap(24),
               const _SectionHeader(label: 'Dados'),
-              const _DataCard(),
+              _DataCard(userId: clerkState?.user?.id ?? ''),
               const Gap(24),
               const _SectionHeader(label: 'Sobre'),
               _AboutCard(appVersion: _appVersion),
@@ -383,7 +390,115 @@ class _ToggleRow extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _DataCard extends StatelessWidget {
-  const _DataCard();
+  const _DataCard({required this.userId});
+
+  final String userId;
+
+  Future<void> _exportCsv(BuildContext context) async {
+    if (userId.isEmpty) {
+      return;
+    }
+    try {
+      final QuerySnapshot<Map<String, dynamic>> txSnap = await FirebaseFirestore
+          .instance
+          .collection('transaction')
+          .where('userId', isEqualTo: userId)
+          .get();
+      final List<TransactionEntity> transactions = txSnap.docs
+          .map(
+            (QueryDocumentSnapshot<Map<String, dynamic>> d) =>
+                TransactionEntity.fromJson(d.data()),
+          )
+          .toList();
+
+      final QuerySnapshot<Map<String, dynamic>> catSnap =
+          await FirebaseFirestore.instance.collection('category').get();
+      final Map<String, String> categoryNames = <String, String>{
+        for (final QueryDocumentSnapshot<Map<String, dynamic>> d
+            in catSnap.docs)
+          (d.data()['uuid'] as String? ?? ''): (d.data()['name'] as String? ?? ''),
+      };
+
+      final List<int> bytes = CsvExporter.export(transactions, categoryNames);
+      final Directory dir = await getTemporaryDirectory();
+      final String ts = DateTime.now().millisecondsSinceEpoch.toString();
+      final File file = File('${dir.path}/afc_transacoes_$ts.csv');
+      await file.writeAsBytes(bytes);
+      await Share.shareXFiles(
+        <XFile>[XFile(file.path, mimeType: 'text/csv')],
+        subject: 'Transações AFC',
+      );
+    } on Exception catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao exportar CSV: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _exportJson(BuildContext context) async {
+    if (userId.isEmpty) {
+      return;
+    }
+    try {
+      final List<Future<QuerySnapshot<Map<String, dynamic>>>> futures =
+          <Future<QuerySnapshot<Map<String, dynamic>>>>[
+        FirebaseFirestore.instance
+            .collection('transaction')
+            .where('userId', isEqualTo: userId)
+            .get(),
+        FirebaseFirestore.instance.collection('category').get(),
+        FirebaseFirestore.instance
+            .collection('limit')
+            .where('userId', isEqualTo: userId)
+            .get(),
+        FirebaseFirestore.instance
+            .collection('goal')
+            .where('userId', isEqualTo: userId)
+            .get(),
+      ];
+
+      final List<QuerySnapshot<Map<String, dynamic>>> results =
+          await Future.wait(futures);
+
+      final Map<String, dynamic> backup = <String, dynamic>{
+        'exported_at': DateTime.now().toIso8601String(),
+        'transactions': results[0]
+            .docs
+            .map((QueryDocumentSnapshot<Map<String, dynamic>> d) => d.data())
+            .toList(),
+        'categories': results[1]
+            .docs
+            .map((QueryDocumentSnapshot<Map<String, dynamic>> d) => d.data())
+            .toList(),
+        'limits': results[2]
+            .docs
+            .map((QueryDocumentSnapshot<Map<String, dynamic>> d) => d.data())
+            .toList(),
+        'goals': results[3]
+            .docs
+            .map((QueryDocumentSnapshot<Map<String, dynamic>> d) => d.data())
+            .toList(),
+      };
+
+      final String json = const JsonEncoder.withIndent('  ').convert(backup);
+      final Directory dir = await getTemporaryDirectory();
+      final String ts = DateTime.now().millisecondsSinceEpoch.toString();
+      final File file = File('${dir.path}/afc_backup_$ts.json');
+      await file.writeAsString(json);
+      await Share.shareXFiles(
+        <XFile>[XFile(file.path, mimeType: 'application/json')],
+        subject: 'Backup AFC',
+      );
+    } on Exception catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao exportar backup: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) => AppCard(
@@ -393,17 +508,13 @@ class _DataCard extends StatelessWidget {
         _ActionRow(
           icon: AppIcons.export,
           label: 'Exportar transações (CSV)',
-          onTap: () {
-            // TODO(sprint10): implement CSV export via share_plus
-          },
+          onTap: () => unawaited(_exportCsv(context)),
         ),
         const Divider(),
         _ActionRow(
           icon: AppIcons.export,
           label: 'Exportar backup (JSON)',
-          onTap: () {
-            // TODO(sprint10): implement JSON export via share_plus
-          },
+          onTap: () => unawaited(_exportJson(context)),
         ),
         const Divider(),
         _ActionRow(
@@ -500,17 +611,17 @@ class _AboutCard extends StatelessWidget {
         _ActionRow(
           icon: AppIcons.info,
           label: 'Política de privacidade',
-          onTap: () {
-            // TODO(sprint10): open privacy policy URL
-          },
+          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Disponível em breve')),
+          ),
         ),
         const Divider(),
         _ActionRow(
           icon: AppIcons.info,
           label: 'Termos de uso',
-          onTap: () {
-            // TODO(sprint10): open terms of use URL
-          },
+          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Disponível em breve')),
+          ),
         ),
       ],
     ),
