@@ -1334,19 +1334,69 @@ If a shared `SkeletonList` widget is used, add a `itemHeight` parameter so each 
 
 These items are not user stories but are necessary for long-term quality.
 
-| Item | Priority | Status | Notes |
-|------|----------|--------|-------|
-| Firestore streams (replace `.get()`) | High | ✅ Done | All list screens and dashboard use `.snapshots()` |
-| Widget test coverage for key screens | High | ✅ Done | home_screen, login_screen, scaffold_shell (373 total tests) |
-| Cloud Functions project setup | High | ✅ Done | Pluggy proxy + webhooks + bill reminders in `functions/src/` |
-| Offline persistence (`persistenceEnabled`) | Medium | ✅ Done | Both entry points configure `CACHE_SIZE_UNLIMITED` |
-| CI: separate lint / test / build jobs | Low | ✅ Done | 3 jobs: lint → test (coverage artifact) → build (APK artifact) |
-| `initializeDateFormatting('pt_BR')` | High | ✅ Done | Called in both entry points before `runApp()` |
-| Pluggy sandbox account & API keys | High | ⏳ Pending | Register at pluggy.ai; add API keys to Cloud Functions env |
-| Firestore security rules + custom token auth | High | ⏳ Pending | Tracked as US-89 in Sprint 18 |
-| Integration tests (golden tests) | Medium | ⏳ Pending | Catch regressions on UI redesign; complex setup required |
-| Repository layer abstraction | Low | ⏳ Pending | BLoCs call Firestore directly — major refactor, lower ROI |
-| Accessibility audit (semantics, contrast) | Medium | ⏳ Pending | Required for app store compliance; needs manual device testing |
+### Completed
+
+| Item | Priority | Notes |
+|------|----------|-------|
+| Firestore streams (replace `.get()`) | High | All list screens and dashboard use `.snapshots()` |
+| Widget test coverage for key screens | High | home_screen, login_screen, scaffold_shell (373 total tests) |
+| Cloud Functions project setup | High | Pluggy proxy + webhooks + bill reminders in `functions/src/` |
+| Offline persistence (`persistenceEnabled`) | Medium | Both entry points configure `CACHE_SIZE_UNLIMITED` |
+| CI: separate lint / test / build jobs | Low | 3 jobs: lint → test (coverage artifact) → build (APK artifact) |
+| `initializeDateFormatting('pt_BR')` | High | Called in both entry points before `runApp()` |
+| Firestore security rules + custom token auth | High | `getFirebaseToken` Cloud Function + `signInWithCustomToken` |
+| `admin.initializeApp()` ordering in Cloud Functions | High | Moved to top of `index.ts` before all exports |
+| `CategorySeeder` unhandled permission exception | High | Wrapped in `on FirebaseException` — silent no-op on fallback |
+
+---
+
+### Pending
+
+#### Critical (blocks correctness or crashes)
+
+| Item | Area | Notes |
+|------|------|-------|
+| **Duplicate route definitions** | `router.dart` | `/lista-categorias` and `/lista-recorrentes` are each defined twice; second definition silently overrides the first. Remove the duplicate `GoRoute` blocks. |
+| **`getFirebaseToken` — IAM permission** | Cloud Functions | `admin.auth().createCustomToken()` requires the Cloud Functions service account to have the `Service Account Token Creator` IAM role (`iam.serviceAccounts.signBlob`). Until granted, the function will keep throwing `internal` and the app will fall back to anonymous auth, breaking Firestore security rules. Fix in GCP Console → IAM. |
+| **`OnBackInvokedCallback` not enabled** | Android manifest | Warning on every launch: `Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.` Required for predictive back gesture on Android 13+. Add to `android/app/src/main/AndroidManifest.xml`. |
+
+---
+
+#### High (significant UX or reliability impact)
+
+| Item | Area | Notes |
+|------|------|-------|
+| **Missing loading states — `PassiveIncomeCubit`** | Presentation | `create()`, `update()`, `delete()` do not emit `loading` before the Firestore write. Users see no feedback while the operation is in flight. Apply the same `emit(loading)` pattern used by `TransactionCubit`. |
+| **Missing loading states — `WatchlistCubit`** | Presentation | `addTicker()`, `removeTicker()`, `setAlert()` do not emit `loading`. Same fix as above. |
+| **Brapi API requires auth token** | External API | Free tier now returns HTTP 401 without an API key. `BrapiService.fetchQuotes()` now returns an empty list on non-200, so the app won't crash, but market data is silently unavailable for all users. Register for a Brapi API key and pass it as an `Authorization: Bearer <token>` header (store as a Cloud Functions secret, proxy via an HTTPS callable, do NOT ship the key in the APK). |
+| **Settings screen — 4 unimplemented TODOs** | Presentation | `settings_screen.dart` has `// TODO(sprint10):` comments for: CSV export via `share_plus`, JSON export via `share_plus`, open privacy policy URL, open terms of use URL. These are visible dead ends for users. |
+| **`WatchlistCubit` live quotes fail silently when Brapi is down** | Presentation | When the 60-second poll returns an empty list (due to the Brapi 401), the watchlist shows stale prices with no visual indicator. Show an "Cotações indisponíveis" chip on the watchlist header when the last fetch returned nothing. |
+
+---
+
+#### Medium (code quality, test coverage, maintainability)
+
+| Item | Area | Notes |
+|------|------|-------|
+| **Missing cubit unit tests — 7 cubits** | Testing | `ImportCubit`, `OpenFinanceCubit`, `ReviewQueueCubit`, `PrivacyCubit`, `SettingsCubit`, `SetupChecklistCubit`, `ThemeCubit` have no test files. The first three handle financial data and are high-risk. |
+| **Missing screen widget tests — ~37 screens** | Testing | Only 4 of 41 screens have widget tests (`home_screen`, `login_screen`, `scaffold_shell`, `lista_transacoes` filters). Critical paths to add first: `lista_metas`, `lista_limites`, `cadastrar_transacao`, `relatorio`, `review_queue_screen`. |
+| **Firestore query-by-uuid anti-pattern** | Persistence | Multiple cubits (`BenefitCubit`, `BillCubit`, `GoalCubit`, `LimitCubit`, `SubAccountCubit`, `WatchlistCubit`) query by `where('uuid', isEqualTo: ...)` then use `snap.docs.first.reference` for updates/deletes. This costs one extra read per mutation. Preferred fix: store the Firestore document ID on the entity and use `_firestore.collection('x').doc(docId)` directly. |
+| **`SyncQueue.pending` — full JSON decode on every access** | Performance | `SyncQueue.pending` getter decodes the full SharedPreferences JSON string on every call. In screens that poll pending count frequently (e.g. badge on Settings icon) this is wasteful. Cache the decoded list in a private field and invalidate on `enqueue`/`flush`/`clear`. |
+| **Integration tests (golden tests)** | Testing | No golden/screenshot tests exist. Regressions on visual redesign go undetected until manual QA. Complex setup but high value for a design-system-heavy app. |
+| **Repository layer abstraction** | Architecture | BLoCs/Cubits access Firestore directly — no repository or data-source layer. Acceptable now, but makes it hard to swap backends (e.g. to SQLite, REST) or write tests that don't use `FakeFirebaseFirestore`. Low ROI until the codebase grows further. |
+| **CLAUDE.md architecture docs outdated** | Documentation | CLAUDE.md lists 14 cubits and 25 screens, but the codebase now has 29 cubits/blocs and 41 screens. Update the Cubits and Screens tables to reflect the current state (BenefitCubit, FiScoreCubit, MarketOpportunityCubit, NetWorthCubit, PassiveIncomeCubit, PendingOpsCubit, PrivacyCubit, SetupChecklistCubit, SubAccountCubit, ThemeCubit, WatchlistCubit, FeedbackCubit, OnboardingCubit + the corresponding screens). |
+
+---
+
+#### Low (polish, non-blocking)
+
+| Item | Area | Notes |
+|------|------|-------|
+| **Pluggy sandbox account & API keys** | Infrastructure | Register at pluggy.ai; add `PLUGGY_CLIENT_ID` and `PLUGGY_CLIENT_SECRET` to Cloud Functions environment. |
+| **Accessibility audit (semantics, contrast)** | Accessibility | Required for app store compliance; needs manual device testing with TalkBack/VoiceOver. Existing `Semantics` labels cover FAB and nav bar — audit all list cards and form fields. |
+| **`PrivacyCubit` persistence on privacy mode toggle** | UX | `PrivacyCubit` resets on every app restart (tracked as US-97 ✅ in ROADMAP but verify implementation persists to SharedPreferences). |
+| **Hardcoded currency symbol `R$`** | i18n | Several screens and widgets hardcode `'R$'` or `'R$ 0'` as string literals instead of reading from a locale/settings constant. Extract to a single `AppLocale.currencySymbol` constant. |
+| **Hardcoded PT-BR UI strings** | i18n | No i18n layer exists. Acceptable for a BR-focused app, but all UI strings should be in a single constants file to make future translation trivial and avoid duplication. |
 
 ---
 
@@ -1496,6 +1546,54 @@ These items are not user stories but are necessary for long-term quality.
 
 ---
 
+## Sprint 24 — Tech Debt: Critical & High Fixes
+
+> **Goal**: Eliminate the critical routing bug, Android back-gesture warning, missing loading feedback on two cubits, dead-end TODO actions in Settings, and the silent stale-quotes state on the Watchlist. No new features — pure quality and reliability improvements.
+
+### TD-01 · Fix duplicate route definitions ✅
+**Problem**: `/lista-categorias` and `/lista-recorrentes` were each registered twice in `router.dart`. GoRouter silently uses the last definition, masking the bug.
+- [x] Removed the duplicate `GoRoute` blocks (lines 303–325 in the original file)
+- [x] Both routes now have exactly one definition (the first occurrence, before `/editar-transacao`)
+
+### TD-02 · Android predictive back gesture ✅
+**Problem**: `OnBackInvokedCallback` warning logged on every launch on Android 13+; required for predictive back gesture support.
+- [x] Added `android:enableOnBackInvokedCallback="true"` to `<application>` in `android/app/src/main/AndroidManifest.xml`
+
+### TD-03 · Loading states in `PassiveIncomeCubit` ✅
+**Problem**: `create()`, `delete()`, and `update()` had no `emit(loading)` before the Firestore write — users saw no feedback while the operation was in flight.
+- [x] Added `emit(const PassiveIncomeState.loading())` at the top of each write method
+
+### TD-04 · Loading states in `WatchlistCubit` ✅
+**Problem**: `addTicker()`, `removeTicker()`, and `setAlert()` had no `emit(loading)` before async work — list appeared frozen during mutations.
+- [x] Added `emit(const WatchlistState.loading())` at the top of each mutation method
+
+### TD-05 · Settings screen — implement CSV export and JSON backup ✅
+**Problem**: "Exportar transações (CSV)" and "Exportar backup (JSON)" had `// TODO(sprint10)` callbacks — tapping them did nothing.
+- [x] `_exportCsv(context)` — queries Firestore for the user's transactions + all categories, runs `CsvExporter.export()`, writes to a temp file, and shares via `share_plus`
+- [x] `_exportJson(context)` — parallel-fetches transactions, categories, limits, and goals via `Future.wait`, serialises to indented JSON, writes to a temp file, and shares via `share_plus`
+- [x] `_DataCard` refactored to accept `userId` parameter (passed from `_SettingsScreenState.build`)
+- [x] Error snackbar shown on any export failure
+
+### TD-06 · Settings screen — remove dead TODO callbacks for legal links ✅
+**Problem**: "Política de privacidade" and "Termos de uso" tapped silently (empty `onTap` with a TODO comment).
+- [x] Both now show a `SnackBar("Disponível em breve")` — a clear response to the user instead of silence
+
+### TD-07 · Watchlist stale-quotes indicator ✅
+**Problem**: When Brapi returns HTTP 401 (or any non-200), `fetchQuotes` returns an empty list and all `WatchlistItem.quote` fields are `null`. The list screen showed cards with missing price data and the header timestamp without any hint that quotes are unavailable.
+- [x] `_WatchlistBody` now detects `items.every((i) => i.quote == null)` and renders a warning line beneath the timestamp: "Cotações indisponíveis — puxe para atualizar" with a `signal_wifi_off_outlined` icon in `AppColors.warning`
+
+---
+
+### Cloud Function IAM — `getFirebaseToken` service account permission ⏳
+**Problem**: `admin.auth().createCustomToken()` requires the Cloud Functions service account to have the `Service Account Token Creator` IAM role (`iam.serviceAccounts.signBlob`). This cannot be fixed in code.
+- [ ] Go to GCP Console → IAM & Admin → IAM
+- [ ] Find the `{project}@appspot.gserviceaccount.com` service account
+- [ ] Add the **Service Account Token Creator** role
+- [ ] Redeploy functions: `firebase deploy --only functions`
+- [ ] Also deploy the `admin.initializeApp()` ordering fix committed to `functions/src/index.ts`
+
+---
+
 ## Branch Strategy
 
 | Sprint / Work | Branch | Status |
@@ -1525,3 +1623,4 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 21 (US-102–104) | `feat/sprint21-trajectory` | ✅ Done |
 | Sprint 22 (US-105–108) | `feat/sprint22-social-sharing` | ✅ Merged |
 | Sprint 23 (US-109–113) | `feat/sprint23-onboarding` | ⏳ Planned |
+| Sprint 24 (TD-01–07) | `chore/sprint24-tech-debt-critical-high` | 🔄 In Progress |

@@ -114,6 +114,10 @@ class _WatchlistBody extends StatelessWidget {
             ? 'há ${diff.inMinutes} min'
             : 'há ${diff.inHours} h';
 
+    final bool quotesUnavailable = items.every(
+      (WatchlistItem i) => i.quote == null,
+    );
+
     return RefreshIndicator(
       onRefresh: () => context.read<WatchlistCubit>().refresh(),
       child: CustomScrollView(
@@ -121,9 +125,35 @@ class _WatchlistBody extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: Text(
-                'Atualizado $timeLabel  ·  ${items.length} ativo${items.length == 1 ? '' : 's'}',
-                style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    'Atualizado $timeLabel  ·  ${items.length} ativo${items.length == 1 ? '' : 's'}',
+                    style:
+                        AppTextStyles.caption.copyWith(color: AppColors.muted),
+                  ),
+                  if (quotesUnavailable) ...<Widget>[
+                    const Gap(6),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        const Icon(
+                          Icons.signal_wifi_off_outlined,
+                          size: 13,
+                          color: AppColors.warning,
+                        ),
+                        const Gap(4),
+                        Text(
+                          'Cotações indisponíveis — puxe para atualizar',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.warning,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
               ),
             ),
           ),

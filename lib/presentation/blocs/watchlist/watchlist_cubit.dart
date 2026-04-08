@@ -56,6 +56,7 @@ class WatchlistCubit extends Cubit<WatchlistState> {
   }
 
   Future<void> addTicker(String ticker, {double? alertThreshold}) async {
+    emit(const WatchlistState.loading());
     final WatchlistEntity entity = WatchlistEntity(
       uuid: const Uuid().v1(),
       userId: _userId,
@@ -68,6 +69,7 @@ class WatchlistCubit extends Cubit<WatchlistState> {
   }
 
   Future<void> removeTicker(String uuid) async {
+    emit(const WatchlistState.loading());
     final QuerySnapshot<Map<String, dynamic>> snap = await _firestore
         .collection('watchlist')
         .where('uuid', isEqualTo: uuid)
@@ -79,6 +81,7 @@ class WatchlistCubit extends Cubit<WatchlistState> {
   }
 
   Future<void> setAlert(String uuid, double? threshold) async {
+    emit(const WatchlistState.loading());
     final QuerySnapshot<Map<String, dynamic>> snap = await _firestore
         .collection('watchlist')
         .where('uuid', isEqualTo: uuid)
