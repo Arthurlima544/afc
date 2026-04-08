@@ -1594,6 +1594,30 @@ These items are not user stories but are necessary for long-term quality.
 
 ---
 
+## Sprint 25 — Android Build Performance
+
+> **Goal**: Cut local and CI Android build time by eliminating unnecessary Jetifier scanning, caching the Gradle daemon across CI runs, pinning the NDK to a stable LTS version, and avoiding triple ABI compilation on every push.
+
+### BD-01 · Disable Jetifier ✅
+**Problem**: `android.enableJetifier=true` scans every dependency for legacy support-library references and rewrites bytecode even for packages that already ship with AndroidX. On a project this size it adds 30–60 s to every build.
+- [x] Set `android.enableJetifier=false` in `android/gradle.properties` — all Flutter packages already target AndroidX.
+
+### BD-02 · Cache Gradle in CI ✅
+**Problem**: The CI `build` job cached pub deps and the Java toolchain but never cached `~/.gradle/caches` or `~/.gradle/wrapper`. Gradle re-downloaded all plugins and dependencies from scratch on every run.
+- [x] Added a dedicated `🐘 Cache Gradle` step in `.github/workflows/main.yml` caching `~/.gradle/caches` and `~/.gradle/wrapper`, keyed on `*.gradle.kts` + `gradle-wrapper.properties`.
+
+### BD-03 · Pin NDK to 27.x LTS ✅
+**Problem**: NDK `28.2.13676358` is a large, newly-released toolchain not yet cached on GitHub-hosted runners. Downloading it adds significant time to every cold run.
+- [x] Changed `ndkVersion` in `android/app/build.gradle.kts` to `27.0.12077973` (stable LTS, pre-cached on GitHub runners).
+
+### BD-04 · Fat APK for dev CI; split-per-abi only on release tags ✅
+**Problem**: `--split-per-abi` triggers three separate Dart→native compile passes (arm64-v8a, armeabi-v7a, x86_64). For CI validation on dev pushes the extra two passes are pure waste.
+- [x] Dev CI (push/PR) uses `flutter build apk --release` (single fat APK — one compile pass).
+- [x] Release tag builds still use `--split-per-abi` so the GitHub Release gets properly sized per-arch APKs.
+- [x] Re-enabled `tags: [ 'v*.*.*' ]` trigger in the workflow (it was commented out).
+
+---
+
 ## Branch Strategy
 
 | Sprint / Work | Branch | Status |
@@ -1623,4 +1647,5 @@ These items are not user stories but are necessary for long-term quality.
 | Sprint 21 (US-102–104) | `feat/sprint21-trajectory` | ✅ Done |
 | Sprint 22 (US-105–108) | `feat/sprint22-social-sharing` | ✅ Merged |
 | Sprint 23 (US-109–113) | `feat/sprint23-onboarding` | ⏳ Planned |
-| Sprint 24 (TD-01–07) | `chore/sprint24-tech-debt-critical-high` | 🔄 In Progress |
+| Sprint 24 (TD-01–07) | `chore/sprint24-tech-debt-critical-high` | ✅ Merged |
+| Sprint 25 (BD-01–04) | `chore/sprint25-android-build-perf` | 🔄 In Progress |
